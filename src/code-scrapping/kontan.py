@@ -7,6 +7,7 @@ import time
 import re
 import gzip
 import io
+import os
 
 # ============================== TEXT CLEANING ==============================
 def clean_text(text):
@@ -232,18 +233,31 @@ def scrape_kontan(keyword, date=None):
         time.sleep(1.0)
     return articles
 
-def save_to_excel(data, keyword):
-    """Save articles to Excel file."""
-    if not data:
-        print("No data to save.")
-        return
+def save_to_excel(data, query, output_filename=None):
+    # Pastikan data berupa DataFrame
+    if isinstance(data, list):
+        df = pd.DataFrame(data)
+    else:
+        df = data
 
-    filename = f"kontan_{keyword.replace(' ', '_')}_{datetime.now():%Y%m%d_%H%M%S}.xlsx"
-    df = pd.DataFrame(data)
-    cols = ['Judul', 'Tanggal', 'Link', 'Konten']
-    df = df[[c for c in cols if c in df.columns]]
-    df.to_excel(filename, index=False, engine='openpyxl')
-    print(f"[INFO] Saved: {filename}")
+    # Ubah nama kolom jika perlu
+    df.columns = ["Judul", "Tanggal", "Link", "Konten"]
+
+    # Tentukan folder hasil
+    results_folder = r"..\hasil-scrapping"
+    os.makedirs(results_folder, exist_ok=True)
+
+    # Buat nama file
+    if output_filename is None:
+        output_filename = f"hasil_scraping_kontan_{query.replace(' ', '_')}.xlsx"
+    if not output_filename.endswith('.xlsx'):
+        output_filename += '.xlsx'
+
+    full_path = os.path.join(results_folder, output_filename)
+    df.to_excel(full_path, index=False)
+
+    print(f"\n✅ Berhasil menyimpan {len(df)} data ke '{full_path}'")
+    return df
 
 # ============================== MAIN EXECUTION ==============================
 if __name__ == '__main__':

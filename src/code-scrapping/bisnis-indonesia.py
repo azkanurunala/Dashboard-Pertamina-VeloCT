@@ -6,6 +6,7 @@ import pandas as pd
 from datetime import datetime
 import os
 
+# ============================== Fungsi bantu: Ubah format tanggal ==============================
 def change_format_date(teks):
     """Mengubah format tanggal dari 'DD NamaBulan YYYY' ke 'YYYY-MM-DD'."""
     bulan = {
@@ -27,6 +28,7 @@ def change_format_date(teks):
         pass 
     return None
 
+# ============================== Fungsi bantu: Bersihkan teks konten ==============================
 def clean_teks(teks):
     if not teks or teks == 'N/A':
         return teks
@@ -34,6 +36,7 @@ def clean_teks(teks):
     teks = re.sub(r'\n{3,}', '\n\n', teks)
     return teks.strip()
 
+# ============================== Fungsi bantu: Dapatkan total halaman ==============================
 def get_total_pages_bisnis(soup) -> int:
     pagination_list = soup.find("ol", class_="pagingList")
     if not pagination_list:
@@ -52,6 +55,7 @@ def get_total_pages_bisnis(soup) -> int:
         return 1
     return max(nums)
 
+# ============================== Fungsi utama: Scrape Bisnis.com ==============================
 def scrap_all_article(keyword, halaman, headers):
     url = f"https://search.bisnis.com/?q={keyword}" + (f"&page={halaman}" if halaman > 1 else "")
     try:
@@ -62,7 +66,8 @@ def scrap_all_article(keyword, halaman, headers):
     except Exception as e:
         print(f"  -> Gagal mengambil halaman {halaman}: {e}")
         return [], None
-    
+
+# ============================== Fungsi bantu: Ambil konten artikel ==============================    
 def get_article_content(url, headers):
     try:
         r = requests.get(url, headers=headers, timeout=10)
@@ -95,6 +100,7 @@ def get_article_content(url, headers):
         print(f"    -> Gagal ambil konten {url}: {e}")
         return 'N/A'
 
+# ============================== Fungsi utama: Scrape dan filter artikel ==============================
 def scrape_bisnis(keyword, tanggal, headers):
     """Scrape semua halaman berdasarkan pagination, lalu filter."""
     hasil = []
@@ -149,6 +155,7 @@ def scrape_bisnis(keyword, tanggal, headers):
             time.sleep(1.5) 
     return hasil
 
+# ============================== Fungsi bantu: Simpan ke Excel ==============================
 def save_excel(data, keyword, folder_path):
     try:
         os.makedirs(folder_path, exist_ok=True)
@@ -160,6 +167,7 @@ def save_excel(data, keyword, folder_path):
     pd.DataFrame(data).to_excel(path_lengkap, index=False, engine='openpyxl')
     print(f"\nData disimpan ke {path_lengkap}")
 
+# ============================== Main script ==============================
 def main_bisnis_indonesia():
     keyword = "Purbaya"
     tanggal = "2025-10-22" 
