@@ -1,38 +1,173 @@
 import requests
-import xml.etree.ElementTree as ET
-from datetime import datetime
 from bs4 import BeautifulSoup
 import pandas as pd
-import time
+from datetime import datetime, timedelta
 import re
-import gzip
-import io
+import locale
+import time
+import os
 
-# ============================== TEXT CLEANING ==============================
-def clean_text(text):
-    """Remove irrelevant lines from article content."""
-    if not text or text == 'N/A':
-        return text
 
-    lines = []
-    for line in text.splitlines():
-        # Skip lines containing unwanted phrases
-        if re.search(r'(Baca\s+Juga|Selanjutnya|Menarik\s+Dibaca|Cek\s+Berita|INDEKS\s+BERITA)', line, flags=re.IGNORECASE):
-            continue
-        # Skip lines containing only URLs
-        if re.match(r'^\s*https?://', line.strip()):
-            continue
-        lines.append(line.strip())
+locale.setlocale(locale.LC_TIME, "C")
+# ============================== Fungsi: Bersihkan dan format tanggal ==============================
+def clean_date(raw_date: str) -> str:
+    now = datetime.now()
+    raw_date = raw_date.replace("|", "").strip().lower()
+    if "menit yang lalu" in raw_date or "jam yang lalu" in raw_date:
+        match_jam = re.search(r"(\d+)\s*jam", raw_date)
+        hours_ago = int(match_jam.group(1)) if match_jam else 0
+        match_menit = re.search(r"(\d+)\s*menit", raw_date)
+        minutes_ago = int(match_menit.group(1)) if match_menit else 0
+        delta = timedelta(hours=hours_ago, minutes=minutes_ago)
+        target_datetime = now - delta
+        return target_datetime.strftime("%d %b %Y")
+    if match_hari := re.search(r"(\d+)\s*hari(?:\s*yang)?\s*lalu", raw_date):
+        days_ago = int(match_hari.group(1))
+        target_date = now - timedelta(days=days_ago)
+        return target_date.strftime("%d %b %Y")
+    if match_tanggal := re.match(r"(\d{1,2}\s+\w+\s+\d{4})", raw_date):
+        return match_tanggal.group(1).strip()
+    return raw_date 
 
-    # Clean multiple blank lines
-    cleaned = "\n".join(line for line in lines if line)
-    cleaned = re.sub(r'\n{2,}', '\n\n', cleaned).strip()
+# ============================== FUNGSI: Ambil konten artikel ==============================
+def scrape_article_content(url: str, headers: dict) -> str:
+    try:
+        all_text_lines = []
+        page = 1
+        while True:
+            if page == 1:
+                page_url = url
+            else:
+                page_url = f"{url}/{page}"
+            print(f"  [Konten] Mengambil halaman {page}: {page_url}")
+            r = requests.get(page_url, headers=headers, timeout=10)
+            r.raise_for_status()
+            soup = BeautifulSoup(r.text, "lxml")
+            articles = soup.find_all("div", class_="article")
+            if not articles:
+                print(f"  [Konten] Tidak ada article di halaman {page}, berhenti.")
+                break
+            found_content = False
+            for article in articles:
+                detail_div = article.find("div", class_="detail-in")
+                if not detail_div:
+                    continue
+                found_content = True
+                for p in detail_div.find_all("p"):
+                    text = p.get_text(strip=True)
+                    if text and "Baca Juga" not in text:
+                        all_text_lines.append(text)
+                for ol in detail_div.find_all("ol"):
+                    for li in ol.find_all("li", recursive=False):
+                        text = li.get_text(strip=True)
+                        if text:
+                            all_text_lines.append(text)
+            if not found_content:
+                print(f"  [Konten] Tidak ada konten di halaman {page}, berhenti.")
+                break
+            status_div = soup.find("div", class_="status")
+            if status_div:
+                no_more = status_div.find("div", class_="no-more")
+                if no_more and no_more.get_text(strip=True) == "No more pages":
+                    print(f"  [Konten] Mencapai akhir artikel.")
+                    break
+            page += 1
+            if page > 10:
+                print(f"  [Konten] Batas maksimal 10 halaman tercapai.")
+                break
+            time.sleep(1) 
+        print(f"  [Konten] Total baris text dari semua halaman: {len(all_text_lines)}")
+        content = "\n".join(all_text_lines)
+        return content
+        
+    except Exception as e:
+        print(f"  [Konten] Gagal mengambil artikel {url}: {e}")
+        import traceback
+        traceback.print_exc()
+        return ""
+            
+# ============================== Fungsi: Ambil total jumlah halaman dari pagination ==============================
+def get_total_pages(soup) -> int:
+    pagination = soup.find("ul", class_="pagging") if soup else None
+    if not pagination:
+        return 1 
+    page_links = pagination.find_all("a", href=True)
+    nums = []
+    for a in page_links:
+        match = re.search(r"pagenum=(\d+)", a["href"])
+        if match:
+            nums.append(int(match.group(1)))
+    return max(nums) if nums else 1
 
-    return cleaned
+# ============================== Fungsi: Parse DAFTAR halaman ==============================
+def parse_page_list(url: str, headers: dict, base_url: str):
+    try:
+        r = requests.get(url, headers=headers, timeout=10)
+        r.raise_for_status()
+    except Exception as e:
+        print(f"Gagal mengakses halaman list {url}: {e}")
+        return [], None
+    soup = BeautifulSoup(r.text, "html.parser")
+    cards = soup.find_all("div", class_="card-box")
+    page_results = []
+    for card in cards:
+        a_tag = card.find("a", href=True)
+        title_tag = card.find("h2", class_="title")
+        date_tag = card.find("span", class_="cl-gray")
+        title = title_tag.get_text(strip=True) if title_tag else ""
+        link = a_tag["href"] if a_tag else ""
+        if link and not link.startswith("http"):
+            link = base_url + link
+        raw_date = date_tag.get_text(strip=True) if date_tag else ""
+        pub_date = clean_date(raw_date)
+        if not title or not link:
+            continue 
+        page_results.append({
+            "title": title,
+            "date": pub_date,
+            "link": link,
+        })  
+    return page_results, soup
 
-# ============================== CONTENT SCRAPER ==============================
-def fetch_article_content(url):
-    """Scrape main article content from Kontan page."""
+# ============================== Fungsi utama (MODIFIKASI): Scrape semua halaman ==============================
+def scrape_bloomberg_technoz_all(query: str, headers: dict, filter_date: str = None):
+    base_url = "https://www.bloombergtechnoz.com"
+    search_base = f"{base_url}/search?query={query}&type=berita"
+    all_results, soup_first = parse_page_list(search_base, headers, base_url)
+    total_pages = get_total_pages(soup_first)
+    print(f"Ditemukan total {total_pages} halaman hasil untuk '{query}'")
+    for page_num in range(2, total_pages + 1):
+        next_url = f"{search_base}&pagenum={page_num}"
+        page_results, _ = parse_page_list(next_url, headers, base_url)
+        all_results.extend(page_results)
+    print(f"\nScraping daftar selesai. Total berita mentah: {len(all_results)}")
+    # FILTER BERDASARKAN TANGGAL 
+    if filter_date:
+        print(f"Memfilter hasil hanya untuk tanggal: {filter_date}")
+        filtered_list = [r for r in all_results if r["date"] == filter_date]
+        print(f"Total berita setelah filter: {len(filtered_list)}")
+    else:
+        print("Tidak ada filter tanggal, akan mengambil konten untuk semua hasil.")
+        filtered_list = all_results 
+    if not filtered_list:
+        print("Tidak ada berita yang lolos filter.")
+        return []
+    # AMBIL KONTEN UNTUK ARTIKEL YANG LOLOS FILTER
+    final_results_with_content = []
+    total_filtered = len(filtered_list)
+    print(f"\nMemulai pengambilan konten untuk {total_filtered} berita yang relevan...")
+    for i, article in enumerate(filtered_list):
+        konten = scrape_article_content(article['link'], headers)
+        article['konten'] = konten
+        final_results_with_content.append(article)
+    print("Pengambilan konten selesai.")
+    return final_results_with_content
+
+
+# ============================== Main script (MODIFIKASI) ==============================
+def main_bloomberg_technoz(query: str, filter_tanggal: str = None, output_filename: str = None):
+    if filter_tanggal is None:
+        filter_tanggal = datetime.now().strftime("%d %b %Y")
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -40,219 +175,24 @@ def fetch_article_content(url):
             "Chrome/121.0.0.0 Safari/537.36"
         )
     }
-
-    try:
-        r = requests.get(url, headers=headers, timeout=15)
-        r.raise_for_status()
-        soup = BeautifulSoup(r.content, "html.parser")
-
-        # Remove unnecessary tags
-        for bad in soup(["script", "style", "figure", "iframe", "noscript"]):
-            bad.decompose()
-
-        div = soup.select_one("div.tmpt-desk-kon")
-        if not div:
-            print(f"[WARN] Missing div.tmpt-desk-kon in {url}")
-            return "N/A"
-
-        # Collect text only from <p> and <li>
-        elements = div.find_all(["p", "li"])
-        paragraphs = []
-        for e in elements:
-            text = e.get_text(strip=True)
-            if text and not re.search(r'Baca\s+Juga', text, re.IGNORECASE):
-                paragraphs.append(text)
-
-        if not paragraphs:
-            print(f"[WARN] No paragraph text found in {url}")
-            return "N/A"
-
-        content = "\n\n".join(paragraphs)
-        return clean_text(content)
-
-    except Exception as e:
-        print(f"[ERROR] Failed to fetch content {url}: {e}")
-        return "N/A"
-
-# ============================== XML FETCHER ==============================
-def fetch_xml(url):
-    """Fetch and decompress XML or GZ sitemap file."""
-    r = requests.get(url, timeout=15)
-    r.raise_for_status()
-    content = r.content
-    if url.endswith('.gz') or content[:2] == b'\x1f\x8b':
-        try:
-            with gzip.GzipFile(fileobj=io.BytesIO(content)) as f:
-                content = f.read()
-        except Exception as e:
-            print(f"[WARN] Failed to decompress gzip {url}: {e}")
-    return content
-
-# ============================== SITEMAP HANDLING ==============================
-def get_main_sitemap():
-    """Retrieve main sitemap root."""
-    url = "https://www.kontan.co.id/sitemap.xml"
-    print(f"[INFO] Fetching main sitemap: {url}")
-    content = fetch_xml(url)
-    return ET.fromstring(content)
-
-def get_news_sitemaps(root):
-    """Get sub-sitemaps that contain 'news' and 'investasi' or 'industri'."""
-    ns = {'sm': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
-    links = []
-    for loc in root.findall('.//sm:loc', ns):
-        if loc.text:
-            href = loc.text.strip().lower()
-            if (
-                ('news' in href)
-                and (('investasi' in href) or ('industri' in href))
-                and (href.endswith('.xml') or href.endswith('.xml.gz'))
-                and ('sitemap' in href or '/sitemaps/' in href)
-            ):
-                links.append(href)
-
-    unique_links = list(dict.fromkeys(links))  # remove duplicates
-    print(f"[INFO] Found {len(unique_links)} news sub-sitemaps for investasi/industri.")
-    for i, link in enumerate(unique_links, 1):
-        print(f"   {i}. {link}")
-    return unique_links
-
-# ============================== EXTRACT NEWS INFO ==============================
-def extract_news_info(url_tag, ns):
-    """Extract title, link, and publication date from a <url> tag."""
-    loc_tag = url_tag.find('sm:loc', ns)
-    if loc_tag is None or not loc_tag.text:
+    print(f"Memulai scraping untuk query='{query}' dengan filter tanggal='{filter_tanggal}'\n")
+    results = scrape_bloomberg_technoz_all(query, headers, filter_date=filter_tanggal)
+    if not results:
+        print("\nTidak ada hasil ditemukan.")
         return None
+    df = pd.DataFrame(results)
+    df['date'] = pd.to_datetime(df['date'], format="%d %b %Y")
+    df['date'] = df['date'].dt.date
+    results_folder = "../hasil-scrapping"
+    os.makedirs(results_folder, exist_ok=True)
+    if output_filename is None:
+        output_filename = f"hasil_scraping_bloomberg_{query.replace(' ', '_')}.xlsx"
+    if not output_filename.endswith('.xlsx'):
+        output_filename += '.xlsx'
+    full_path = os.path.join(results_folder, output_filename)
+    df.to_excel(full_path, index=False)
+    print(f"\nBerhasil menyimpan {len(df)} data ke '{full_path}'")
+    return df
 
-    link = loc_tag.text.strip()
-    news_ns = {'news': 'http://www.google.com/schemas/sitemap-news/0.9'}
-    title = ""
-    pubdate_raw = ""
-    keywords = ""
-
-    news_tag = url_tag.find('news:news', news_ns)
-    if news_tag is not None:
-        t = news_tag.find('news:title', news_ns)
-        p = news_tag.find('news:publication_date', news_ns)
-        k = news_tag.find('news:keywords', news_ns)
-        if t is not None and t.text:
-            title = t.text.strip()
-        if p is not None and p.text:
-            pubdate_raw = p.text.strip()
-        if k is not None and k.text:
-            keywords = k.text.strip()
-
-    if not pubdate_raw:
-        lastmod = url_tag.find('sm:lastmod', ns)
-        if lastmod is not None and lastmod.text:
-            pubdate_raw = lastmod.text.strip()
-
-    date_only = pubdate_raw.split('T')[0] if 'T' in pubdate_raw else pubdate_raw or '-'
-
-    return {
-        'title': title or '(No Title)',
-        'link': link,
-        'pubdate': pubdate_raw,
-        'date': date_only,
-        'keywords': keywords
-    }
-
-# ============================== FILTER NEWS BY KEYWORD ==============================
-def get_kontan_news_by_keyword(keyword):
-    """Find all Kontan articles that match a given keyword."""
-    try:
-        root = get_main_sitemap()
-    except Exception as e:
-        print(f"[ERROR] Failed to fetch main sitemap: {e}")
-        return []
-
-    subs = get_news_sitemaps(root)
-    if not subs:
-        print("[WARN] No sub-sitemaps found containing 'news'.")
-        return []
-
-    results = []
-    keyword_lower = keyword.lower()
-    ns = {'sm': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
-
-    for idx, sub in enumerate(subs, 1):
-        print(f"[INFO] ({idx}/{len(subs)}) Processing: {sub}")
-        try:
-            content = fetch_xml(sub)
-            subroot = ET.fromstring(content)
-            urls = subroot.findall('.//sm:url', ns)
-            print(f"   URLs in this sitemap: {len(urls)}")
-            for url_tag in urls:
-                info = extract_news_info(url_tag, ns)
-                if not info or not info.get('link'):
-                    continue
-
-                title = info.get('title') or ""
-                keywords = info.get('keywords') or ""
-                link = info.get('link') or ""
-
-                # Match by title, keywords, or link text
-                if (keyword_lower in title.lower()) or (keyword_lower in keywords.lower()) or (keyword_lower in link.lower()):
-                    results.append({
-                        'Judul': title if title else link,
-                        'Link': link,
-                        'Tanggal': info.get('date') if info.get('date') else '-'
-                    })
-            print(f"   Matching articles so far: {len(results)}")
-        except Exception as e:
-            print(f"[ERROR] Failed to process {sub}: {e}")
-            continue
-        time.sleep(0.15)
-
-    print(f"[INFO] Total articles with keyword '{keyword}': {len(results)}")
-    return results
-
-# ============================== SCRAPE AND SAVE ==============================
-def scrape_kontan(keyword, date=None):
-    """Scrape articles from Kontan that match keyword and optional date."""
-    articles = get_kontan_news_by_keyword(keyword)
-    if not articles:
-        print("[INFO] No articles found for this keyword.")
-        return []
-
-    if date:
-        if isinstance(date, datetime):
-            date = date.strftime('%Y-%m-%d')
-        else:
-            date = str(date)
-        articles = [a for a in articles if a.get('Tanggal') == date]
-        print(f"[INFO] After date filter ({date}), remaining: {len(articles)} articles.")
-
-    if not articles:
-        return []
-
-    for i, a in enumerate(articles, 1):
-        print(f"[INFO] ({i}/{len(articles)}) Fetching content: {a['Link']}")
-        a['Konten'] = fetch_article_content(a['Link'])
-        time.sleep(1.0)
-    return articles
-
-def save_to_excel(data, keyword):
-    """Save articles to Excel file."""
-    if not data:
-        print("No data to save.")
-        return
-
-    filename = f"kontan_{keyword.replace(' ', '_')}_{datetime.now():%Y%m%d_%H%M%S}.xlsx"
-    df = pd.DataFrame(data)
-    cols = ['Judul', 'Tanggal', 'Link', 'Konten']
-    df = df[[c for c in cols if c in df.columns]]
-    df.to_excel(filename, index=False, engine='openpyxl')
-    print(f"[INFO] Saved: {filename}")
-
-# ============================== MAIN EXECUTION ==============================
-if __name__ == '__main__':
-    keyword = "Pembukaan Toko"
-    date_filter = "2025-11-09"
-    data = scrape_kontan(keyword, date=date_filter)
-    if data:
-        save_to_excel(data, keyword)
-        for d in data[:3]:
-            print(d['Judul'], d['Tanggal'], d['Link'])
-    else:
-        print("No articles found.")
+if __name__ == "__main__":
+    df = main_bloomberg_technoz("IHSG")
