@@ -1,0 +1,6 @@
+period,productId,productName,activityId,activityName,countryRegionId,countryRegionName,countryRegionTypeId,countryRegionTypeName,dataFlagId,dataFlagDescription,unitName,value,unit
+2025-07,5,Petroleum and other liquids,5,"Stocks, OECD",AUS,Australia,c,Country,6,"A value exists, but cannot be published",millions barrels,w,MBBL
+2025-07,5,Petroleum and other liquids,5,"Stocks, OECD",AUT,Austria,c,Country,6,"A value exists, but cannot be published",millions barrels,w,MBBL
+2025-07,5,Petroleum and other liquids,5,"Stocks, OECD",BEL,Belgium,c,Country,6,"A value exists, but cannot be published",millions barrels,w,MBBL
+2025-07,5,Petroleum and other liquids,5,"Stocks, OECD",CAN,Canada,c,Country,,,millions barrels,194.053,MBBL
+2025-07,5,Petroleum and other liquids,5,"Stocks, OECD",CHE,Switzerland,c,Country,6,"A value exists, but cannot be published",millions barrels,w,MBBL
