@@ -9,6 +9,10 @@ import os
 # ============================== Fungsi bantu: Ubah format tanggal ==============================
 def change_format_date(teks):
     """Mengubah format tanggal dari 'DD NamaBulan YYYY' ke 'YYYY-MM-DD'."""
+    if not teks:
+        return None
+    
+    # mapping bulan
     bulan = {
         'january': '01', 'february': '02', 'march': '03', 'april': '04',
         'may': '05', 'june': '06', 'july': '07', 'august': '08',
@@ -17,15 +21,15 @@ def change_format_date(teks):
         'mei': '05', 'juni': '06', 'juli': '07', 'agustus': '08',
         'september': '09', 'oktober': '10', 'november': '11', 'desember': '12'
     }
-    try:
-        part = teks.lower().split()
-        if len(part) >= 3:
-            day = part[0].zfill(2)
-            month = bulan.get(part[1], '01') 
-            year = part[2]
-            return f"{year}-{month}-{day}"
-    except:
-        pass 
+
+    # cari pola tanggal DD NamaBulan YYYY di teks
+    match = re.search(r'(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})', teks)
+    if match:
+        day = match.group(1).zfill(2)
+        month = bulan.get(match.group(2).lower(), '01')
+        year = match.group(3)
+        return f"{year}-{month}-{day}"
+
     return None
 
 # ============================== Fungsi bantu: Bersihkan teks konten ==============================
@@ -102,15 +106,21 @@ def get_article_content(url, headers):
 
 # ============================== Fungsi utama: Scrape dan filter artikel ==============================
 def scrape_bisnis(keyword, tanggal, headers):
-    """Scrape semua halaman berdasarkan pagination, lalu filter."""
     hasil = []
+    
     print("Mengambil halaman 1 untuk cek pagination...")
     item_halaman_1, soup_halaman_1 = scrap_all_article(keyword, 1, headers)
+    
     if not soup_halaman_1:
         print("Gagal mengambil halaman pertama. Proses dihentikan.")
         return []
+    
     total_halaman = get_total_pages_bisnis(soup_halaman_1)
     print(f"Ditemukan total {total_halaman} halaman.")
+    
+    should_stop = False
+    target_date = datetime.strptime(tanggal, "%Y-%m-%d")
+    
     for i in item_halaman_1:
         try:
             judul_tag = i.find('h4', class_='artTitle')
@@ -120,38 +130,64 @@ def scrape_bisnis(keyword, tanggal, headers):
             link = i.find('a', class_='artLink')['href']
             tanggal_asli = i.find('div', class_='artDate').get_text(strip=True)
             tgl = change_format_date(tanggal_asli)
-            if tgl == tanggal:
-                hasil.append({'judul': judul, 'link': link, 'tanggal': tgl})
-        except:
-            continue
-    for halaman in range(2, total_halaman + 1):
-        print(f"Mengambil daftar artikel halaman {halaman}/{total_halaman}...")
-        item_list, _ = scrap_all_article(keyword, halaman, headers)
-        if not item_list:
-            print(f"  -> Tidak ada item di halaman {halaman}, mungkin selesai.")
-            break 
-        for i in item_list:
-            try:
-                judul_tag = i.find('h4', class_='artTitle')
-                if not judul_tag:
-                    continue
-                judul = judul_tag.get_text(strip=True)
-                link = i.find('a', class_='artLink')['href']
-                tanggal_asli = i.find('div', class_='artDate').get_text(strip=True)
-                tgl = change_format_date(tanggal_asli)
-                
-                if tgl == tanggal:
+            
+            if tgl:
+                article_date = datetime.strptime(tgl, "%Y-%m-%d")
+                if article_date < target_date:
+                    print(f"Ditemukan artikel dengan tanggal lebih lama ({tgl}) di halaman 1, berhenti scraping")
+                    should_stop = True
+                    break
+                elif tgl == tanggal:
                     hasil.append({'judul': judul, 'link': link, 'tanggal': tgl})
-            except:
-                continue
-        time.sleep(1.5) 
+        except Exception as e:
+            print(f"  -> Error parsing artikel di halaman 1: {e}")
+            continue
+    
+    if not should_stop:
+        for halaman in range(2, total_halaman + 1):
+            print(f"Mengambil daftar artikel halaman {halaman}/{total_halaman}...")
+            item_list, _ = scrap_all_article(keyword, halaman, headers)
+            
+            if not item_list:
+                print(f"  -> Tidak ada item di halaman {halaman}, mungkin selesai.")
+                break 
+            
+            for i in item_list:
+                try:
+                    judul_tag = i.find('h4', class_='artTitle')
+                    if not judul_tag:
+                        continue
+                    judul = judul_tag.get_text(strip=True)
+                    link = i.find('a', class_='artLink')['href']
+                    tanggal_asli = i.find('div', class_='artDate').get_text(strip=True)
+                    tgl = change_format_date(tanggal_asli)
+                    
+                    if tgl:
+                        article_date = datetime.strptime(tgl, "%Y-%m-%d")
+                        if article_date < target_date:
+                            print(f"Ditemukan artikel dengan tanggal lebih lama ({tgl}) di halaman {halaman}, berhenti scraping")
+                            should_stop = True
+                            break
+                        elif tgl == tanggal:
+                            hasil.append({'judul': judul, 'link': link, 'tanggal': tgl})
+                except Exception as e:
+                    print(f"  -> Error parsing artikel di halaman {halaman}: {e}")
+                    continue
+            
+            if should_stop:
+                break
+            
+            time.sleep(1.5)
+    
     print(f"\nDitemukan {len(hasil)} artikel yang cocok dengan tanggal {tanggal}.")
+    
     if hasil:
         print("Mulai mengambil konten untuk artikel yang difilter...")
         for i, h in enumerate(hasil):
             print(f"  ({i+1}/{len(hasil)}) Mengambil konten: {h['judul'][:50]}...")
             h['konten'] = get_article_content(h['link'], headers)
-            time.sleep(1.5) 
+            time.sleep(1.5)
+    
     return hasil
 
 # ============================== Fungsi bantu: Simpan ke Excel ==============================
@@ -169,7 +205,7 @@ def save_excel(data, keyword, folder_path):
 # ============================== Main script ==============================
 def main_bisnis_indonesia():
     keyword = "Purbaya"
-    tanggal = "2025-10-22" 
+    tanggal = "2025-11-12" 
     results_folder = "../hasil-scrapping"
     headers = {
         "User-Agent": (
