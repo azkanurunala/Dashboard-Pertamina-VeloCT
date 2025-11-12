@@ -104,7 +104,6 @@ def get_article_content(url, headers):
 def scrape_bisnis(keyword, tanggal, headers):
     """Scrape semua halaman berdasarkan pagination, lalu filter."""
     hasil = []
-    total_halaman = 1 
     print("Mengambil halaman 1 untuk cek pagination...")
     item_halaman_1, soup_halaman_1 = scrap_all_article(keyword, 1, headers)
     if not soup_halaman_1:
