@@ -136,27 +136,44 @@ def scrape_bloomberg_technoz_all(query: str, headers: dict, filter_date: str = N
     all_results, soup_first = parse_page_list(search_base, headers, base_url)
     total_pages = get_total_pages(soup_first)
     print(f"Ditemukan total {total_pages} halaman hasil untuk '{query}'")
-    for page_num in range(2, total_pages + 1):
-        next_url = f"{search_base}&pagenum={page_num}"
-        page_results, _ = parse_page_list(next_url, headers, base_url)
-        all_results.extend(page_results)
+    should_stop = False
+    if filter_date and all_results:
+        dates_in_page = [r["date"] for r in all_results]
+        if any(date != filter_date for date in dates_in_page):
+            print(f"Ditemukan berita dengan tanggal berbeda di halaman 1")
+            all_results = [r for r in all_results if r["date"] == filter_date]
+            should_stop = True
+    if not should_stop:
+        for page_num in range(2, total_pages + 1):
+            next_url = f"{search_base}&pagenum={page_num}"
+            page_results, _ = parse_page_list(next_url, headers, base_url)
+            if not page_results:
+                print(f"Tidak ada hasil di halaman {page_num}, berhenti.")
+                break
+            if filter_date:
+                dates_in_page = [r["date"] for r in page_results]
+                matching_results = [r for r in page_results if r["date"] == filter_date]
+                if len(matching_results) < len(page_results):
+                    print(f"Ditemukan berita dengan tanggal berbeda di halaman {page_num}")
+                    print(f"Mengambil {len(matching_results)} berita yang sesuai tanggal, lalu berhenti.")
+                    all_results.extend(matching_results)
+                    should_stop = True
+                    break
+                else:
+                    all_results.extend(matching_results)
+            else:
+                all_results.extend(page_results)
+            time.sleep(1)  
     print(f"\nScraping daftar selesai. Total berita mentah: {len(all_results)}")
     # FILTER BERDASARKAN TANGGAL 
-    if filter_date:
-        print(f"Memfilter hasil hanya untuk tanggal: {filter_date}")
-        filtered_list = [r for r in all_results if r["date"] == filter_date]
-        print(f"Total berita setelah filter: {len(filtered_list)}")
-    else:
-        print("Tidak ada filter tanggal, akan mengambil konten untuk semua hasil.")
-        filtered_list = all_results 
-    if not filtered_list:
+    if not all_results :
         print("Tidak ada berita yang lolos filter.")
         return []
     # AMBIL KONTEN UNTUK ARTIKEL YANG LOLOS FILTER
     final_results_with_content = []
-    total_filtered = len(filtered_list)
+    total_filtered = len(all_results)
     print(f"\nMemulai pengambilan konten untuk {total_filtered} berita yang relevan...")
-    for i, article in enumerate(filtered_list):
+    for i, article in enumerate(all_results):
         konten = scrape_article_content(article['link'], headers)
         article['konten'] = konten
         final_results_with_content.append(article)
@@ -195,4 +212,4 @@ def main_bloomberg_technoz(query: str, filter_tanggal: str = None, output_filena
     return df
 
 if __name__ == "__main__":
-    df = main_bloomberg_technoz("IHSG")
+    df = main_bloomberg_technoz("Biodiesel")
