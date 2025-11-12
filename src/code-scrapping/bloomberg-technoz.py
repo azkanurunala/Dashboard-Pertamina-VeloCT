@@ -217,6 +217,14 @@ def scrape_bloomberg_technoz_all(query: str, headers: dict, filter_date: str = N
 def main_bloomberg_technoz(query: str, filter_tanggal: str = None, output_filename: str = None):
     if filter_tanggal is None:
         filter_tanggal = datetime.now().strftime("%d %b %Y")
+    else:
+        if re.match(r"\d{4}-\d{2}-\d{2}", filter_tanggal):
+            try:
+                temp_date = datetime.strptime(filter_tanggal, "%Y-%m-%d")
+                filter_tanggal = temp_date.strftime("%d %b %Y")
+                print(f"Format tanggal dikonversi: {filter_tanggal}")
+            except Exception as e:
+                print(f"Warning: Gagal konversi tanggal '{filter_tanggal}': {e}")
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -244,4 +252,4 @@ def main_bloomberg_technoz(query: str, filter_tanggal: str = None, output_filena
     return df
 
 if __name__ == "__main__":
-    df = main_bloomberg_technoz("Biodiesel", filter_tanggal="20 Sep 2025")
+    df = main_bloomberg_technoz("Biodiesel", filter_tanggal="2025-09-20")
