@@ -26,7 +26,6 @@ def clean_text(text):
 
 # ============================== CONTENT SCRAPER ==============================
 def fetch_article_content(url):
-    """Scrape main article content from Kontan page."""
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -219,7 +218,7 @@ def save_to_excel(data, query, output_filename=None):
     return df
 
 # ============================== MAIN EXECUTION ==============================
-def main_kontan(keyword="Pembukaan Toko", date_filter="2025-11-09"):
+def main_kontan(keyword="Perkuat jangkauan AZKO di wilayah baru", date_filter="2025-11-13"):
     data = scrape_kontan(keyword, date=date_filter)
     if data:
         df = save_to_excel(data, keyword)
