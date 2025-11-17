@@ -218,7 +218,7 @@ def save_to_excel(data, query, output_filename=None):
     return df
 
 # ============================== MAIN EXECUTION ==============================
-def main_kontan(keyword="Perkuat jangkauan AZKO di wilayah baru", date_filter="2025-11-13"):
+def main_kontan(keyword="Pembukaan Toko", date_filter="2025-11-09"):
     data = scrape_kontan(keyword, date=date_filter)
     if data:
         df = save_to_excel(data, keyword)
