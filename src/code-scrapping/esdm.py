@@ -55,9 +55,9 @@ def create_initial_excel_file():
     # Data awal yang Anda mau
     initial_data = {
         'Tahun': [2025],
-        'Bulan': ['Mei'],
+        'Bulan': ['September'],
         'Harga': ['86.87'],
-        'Tanggal': ['4 Juni']
+        'Tanggal': ['4 Oktober']
     }
     
     df = pd.DataFrame(initial_data)
@@ -68,7 +68,7 @@ def create_initial_excel_file():
     # Save to Excel
     try:
         df.to_excel(excel_path, index=False)
-        print(f"[SUCCESS] ✅ File Excel baru berhasil dibuat!")
+        print(f"[SUCCESS] File Excel baru berhasil dibuat!")
         print(f"\nPath: {excel_path}")
         print(f"Size: {os.path.getsize(excel_path)} bytes")
         
@@ -77,9 +77,6 @@ def create_initial_excel_file():
         print(f"{'='*80}")
         print(df.to_string(index=False))
         print(f"{'='*80}\n")
-        
-        print("[INFO] ✅ Sekarang Anda bisa jalankan script utama!")
-        print("[INFO] Script akan download PDF mulai dari Juni 2025 ke depan.")
         
     except Exception as e:
         print(f"[ERROR] ❌ Gagal membuat Excel: {e}")
