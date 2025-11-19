@@ -173,23 +173,30 @@ def transform_data_to_excel_format(all_data):
     return pd.DataFrame(rows)
 
 def save_to_excel(df, excel_path):
-    os.makedirs(os.path.dirname(excel_path) if os.path.dirname(excel_path) else '.', exist_ok=True)
+    print("Step 5: Saving to Excel...")
     if os.path.exists(excel_path):
-        existing_df = pd.read_excel(excel_path)
-        combined_df = pd.concat([existing_df, df], ignore_index=True)
-        combined_df['Bulan_Lower'] = combined_df['Bulan'].astype(str).str.lower()
-        combined_df = combined_df.drop_duplicates(subset=['Bulan_Lower', 'Tahun'], keep='last')
-        combined_df = combined_df.drop('Bulan_Lower', axis=1)
-        combined_df['Bulan_Angka'] = combined_df['Bulan'].astype(str).str.lower().map(_MONTH_TO_NUMBER)
-        combined_df = combined_df.sort_values(['Tahun', 'Bulan_Angka'])
-        combined_df = combined_df.drop('Bulan_Angka', axis=1)
-        combined_df.to_excel(excel_path, index=False)
-        print(f"\nData updated in: {excel_path}")
-        print(f"Total rows: {len(combined_df)}")
+        try:
+            existing_df = pd.read_excel(excel_path, engine='openpyxl')
+            df_combined = pd.concat([existing_df, df], ignore_index=True)
+            df_combined.drop_duplicates(subset=['Bulan', 'Tahun'], keep='last', inplace=True)
+            month_order = {
+                'Januari': 1, 'Februari': 2, 'Maret': 3, 'April': 4,
+                'Mei': 5, 'Juni': 6, 'Juli': 7, 'Agustus': 8,
+                'September': 9, 'Oktober': 10, 'November': 11, 'Desember': 12
+            }
+            df_combined['Bulan_Order'] = df_combined['Bulan'].map(month_order)
+            df_combined = df_combined.sort_values(['Tahun', 'Bulan_Order'])
+            df_combined = df_combined.drop('Bulan_Order', axis=1)
+            print(f"Merged with existing data. Total rows: {len(df_combined)}")  
+        except Exception as e:
+            print(f"Error reading existing file: {e}")
+            print("Creating new file instead...")
+            df_combined = df
     else:
-        df.to_excel(excel_path, index=False)
-        print(f"\nNew file created: {excel_path}")
-        print(f"Total rows: {len(df)}")
+        df_combined = df
+    df_combined.to_excel(excel_path, index=False, engine='openpyxl')
+    print(f"✅ Saved to {excel_path}")
+    print(f"Total records: {len(df_combined)}")
 
 def main():
     print("=" * 80)
