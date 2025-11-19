@@ -44,7 +44,7 @@ def create_initial_excel_file():
             print(f"[WARN] Gagal backup: {e}")
             try:
                 os.remove(excel_path)
-                print(f"[SUCCESS] ✅ File lama dihapus")
+                print(f"[SUCCESS] File lama dihapus")
             except Exception as e2:
                 print(f"[ERROR] Gagal hapus: {e2}")
                 return
@@ -55,9 +55,9 @@ def create_initial_excel_file():
     # Data awal yang Anda mau
     initial_data = {
         'Tahun': [2025],
-        'Bulan': ['September'],
+        'Bulan': ['Agustus'],
         'Harga': ['86.87'],
-        'Tanggal': ['4 Oktober']
+        'Tanggal': ['4 September']
     }
     
     df = pd.DataFrame(initial_data)

@@ -1,9 +1,3 @@
-"""
-Web Scraper Bank Indonesia - Berita (Siaran Pers)
-Fitur: Search, Pagination, Export ke CSV
-Author: Assistant
-"""
-
 import time
 import pandas as pd
 from selenium import webdriver
