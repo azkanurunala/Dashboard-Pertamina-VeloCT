@@ -1,140 +1,181 @@
 import os
 import pandas as pd
-import google.genai as genai
+import google.generativeai as genai
 from dotenv import load_dotenv
-from datetime import date
+from datetime import datetime
+from openpyxl import load_workbook
 
-# ===========================================================
-# 1. SETUP GEMINI CLIENT
-# ===========================================================
-dotenv_path = os.path.join(os.getcwd(), '.env')
-load_dotenv(dotenv_path)
-try:
-    client = genai.Client()
-    print("✅ Klien Gemini berhasil diinisialisasi.")
-except Exception as e:
-    print(f"❌ Gagal inisialisasi klien Gemini. Detail: {e}")
-    exit()
-
-# ===========================================================
-# 2. KONFIGURASI DASAR
-# ===========================================================
-SOURCE_FILE = "Scrapping.xlsx"
-NEWS_COLUMN = "content"
-DATE_COLUMN = "date"
-TANGGAL_PILIHAN = "2025-10-28"
-today = pd.to_datetime(TANGGAL_PILIHAN).normalize()
-
-# ===========================================================
-# 3. DEFINISI TOPIK MANUAL
-# ===========================================================
-TOPIC_MAP = {
-    "(News)HIP": "harga industri primer",
-    "(News)Kurs": "nilai tukar rupiah",
-    "(News)CPO": "harga minyak sawit mentah",
-    "(News)BBM": "harga bahan bakar minyak",
-    "(News)Emas": "harga emas",
-    # tambahkan lagi jika ada sheet lain
+EXCEL_SCRAP_PATH = "../results/(News)Sentiment.xlsx"
+OUTPUT_PATH = "../results/(News)Sentiment.xlsx"
+TOPICS = {
+    "Energi Fosil": {
+        "target_sheets": ["(News)Energi Fosil"],
+        "output_sheet": "(Summary)Energi Fosil"
+    },
+    "Bioenergi": {
+        "target_sheets": ["(News)minyak kelapa sawit", "(News)HIP BBN Biodesel"],
+        "output_sheet": "(Summary)Bioenergi"
+    }
 }
+def setup_gemini():
+    load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
+    api_key = os.getenv('GEMINI_API_KEY')
+    if not api_key:
+        raise ValueError("API key tidak ditemukan di .env")
+    genai.configure(api_key=api_key)
+    print("✅ Gemini berhasil dikonfigurasi.")
+    return genai.GenerativeModel("gemini-2.5-flash")
 
-# ===========================================================
-# 4. LOOP UNTUK SETIAP SHEET
-# ===========================================================
-xls = pd.ExcelFile(SOURCE_FILE)
-news_sheets = [s for s in xls.sheet_names if s.startswith("(News)")]
+def get_last_summary_date(output_path, sheet_name):
+    """Ambil tanggal terakhir dari summary yang sudah ada"""
+    if not os.path.exists(output_path):
+        return None
+    try:
+        df = pd.read_excel(output_path, sheet_name=sheet_name)
+        if "Tanggal akhir" in df.columns:
+            last_date = pd.to_datetime(df["Tanggal akhir"].dropna()).max()
+            print(f"📅 Tanggal terakhir summary ({sheet_name}): {last_date.date()}")
+            return last_date
+    except Exception as e:
+        print(f"⚠️ Gagal membaca {sheet_name} di {output_path}: {e}")
+    return None
 
-if not news_sheets:
-    print("⚠️ Tidak ditemukan sheet yang diawali '(News)'.")
-    exit()
-
-all_summaries = []  # kumpulan rekap semua topik
-
-with pd.ExcelWriter(SOURCE_FILE, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
-    for sheet in news_sheets:
-        print(f"\n================== MEMPROSES {sheet} ==================")
-
-        # Ambil topik dari mapping, fallback ke nama sheet
-        topik = TOPIC_MAP.get(sheet, sheet.replace("(News)", "").strip())
-
+def collect_news_from_sheets(excel_path, target_sheets, start_date, end_date):
+    """Kumpulkan berita dari sheets yang ditargetkan"""
+    all_news_list = []
+    for sheet in target_sheets:
+        print(f"📄 Ambil berita sheet: {sheet}")
         try:
-            df = pd.read_excel(SOURCE_FILE, sheet_name=sheet)
+            df = pd.read_excel(excel_path, sheet_name=sheet)
+            df['date'] = pd.to_datetime(df['date'], errors='coerce').dt.normalize()
+            mask = (df['date'] > start_date) & (df['date'] <= end_date)
+            df_new = df.loc[mask].dropna(subset=['content'])
+            all_news_list.extend(df_new['content'].tolist())
+            print(f"   ✓ {len(df_new)} berita dari {sheet}")
         except Exception as e:
-            print(f"❌ Gagal membaca sheet {sheet}: {e}")
-            continue
+            print(f"⚠️ Gagal baca sheet {sheet}: {e}")
+    return all_news_list
 
-        if NEWS_COLUMN not in df.columns or DATE_COLUMN not in df.columns:
-            print(f"⚠️ Sheet {sheet} tidak memiliki kolom '{NEWS_COLUMN}' atau '{DATE_COLUMN}'. Lewati.")
-            continue
+def summarize_all_news(model, all_news_list, start_date, end_date, sheet_names):
+    """Generate summary menggunakan Gemini"""
+    if not all_news_list:
+        print("⚠️ Tidak ada berita baru dari semua sheet.")
+        return None
 
-        # Filter data tanggal tertentu
-        df = df.dropna(subset=[NEWS_COLUMN])
-        df[DATE_COLUMN] = pd.to_datetime(df[DATE_COLUMN], errors="coerce").dt.normalize()
-        df_today = df[df[DATE_COLUMN] == today].copy()
+    all_news_text = "\n\n".join(all_news_list)
 
-        if df_today.empty:
-            print(f"⚠️ Tidak ada berita untuk {today.date()} di sheet {sheet}.")
-            continue
+    prompt = f"""
+    Kamu adalah analis ekonomi Indonesia.
+    Berikut kumpulan berita dari topik {', '.join(sheet_names)} antara tanggal {start_date.strftime('%d %B %Y')} dan {end_date.strftime('%d %B %Y')}:
 
-        # ===========================================================
-        # 5. SIAPKAN PROMPT UNTUK GEMINI
-        # ===========================================================
-        all_news = "\n\n".join([f"{i+1}. {n}" for i, n in enumerate(df_today[NEWS_COLUMN])])
-        prompt = f"""
-Kamu adalah analis berita ekonomi Indonesia.
+    {all_news_text}
 
-Berikut adalah kumpulan berita tentang {topik} dari tanggal {today.strftime('%d %B %Y')}:
+    Buatkan 3–4 poin ringkasan umum.
+    Semua teks pada bagian ini jangan ada yang bold, dan tolong berikan nomor setiap poinnya.
 
-{all_news}
+    Format jawaban:
+    ===SUMMARY===
+    (isi ringkasan di sini)
+    """
 
-Tolong buatkan ringkasan singkat (3–4 poin utama)
-yang menjelaskan arah sentimen keseluruhan dan dampaknya terhadap {topik}.
-Jangan gunakan teks tebal atau huruf kapital berlebihan, dan beri nomor di setiap poin.
+    try:
+        response = model.generate_content(prompt)
+        result = response.text
+        summary = result.split("===SUMMARY===")[-1].strip() if "===SUMMARY===" in result else result.strip()
 
-Format jawaban:
-===SUMMARY===
-(isi ringkasan di sini)
-"""
+        print("✅ Summary selesai.")
+        return {
+            "Tanggal awal": start_date.date(),
+            "Tanggal akhir": end_date.date(),
+            "Summary": summary
+        }
+    except Exception as e:
+        print(f"❌ Gagal generate summary: {e}")
+        return None
 
-        print(f"⏳ Mengirim berita tentang '{topik}' ke Gemini...")
+def save_to_excel(new_data, output_path, sheet_name):
+    """Simpan summary ke Excel"""
+    if not new_data:
+        print("⚠️ Tidak ada summary yang dihasilkan.")
+        return
+
+    new_df = pd.DataFrame(new_data)
+
+    if os.path.exists(output_path):
+        book = load_workbook(output_path)
         try:
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt,
-            )
-            output_text = response.text
-            print("✅ Respons diterima dari Gemini.")
-        except Exception as e:
-            print(f"❌ Gagal mengirim ke Gemini. Detail: {e}")
-            continue
+            existing_df = pd.read_excel(output_path, sheet_name=sheet_name)
 
-        # ===========================================================
-        # 6. AMBIL BAGIAN SUMMARY
-        # ===========================================================
-        try:
-            summary_part = output_text.split("===SUMMARY===")[1].strip()
+            # Konversi kolom tanggal lama agar hanya tanggal tanpa jam
+            for col in ["Tanggal awal", "Tanggal akhir"]:
+                if col in existing_df.columns:
+                    existing_df[col] = pd.to_datetime(existing_df[col]).dt.date
+
+            combined_df = pd.concat([existing_df, new_df], ignore_index=True)
+            print(f"📎 Menambahkan summary baru ke sheet '{sheet_name}'.")
         except Exception:
-            summary_part = output_text.strip()
+            combined_df = new_df
+            print(f"📄 Sheet '{sheet_name}' belum ada, membuat baru.")
+        
+        with pd.ExcelWriter(output_path, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+            writer._book = book
+            combined_df.to_excel(writer, index=False, sheet_name=sheet_name)
+    else:
+        with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
+            new_df.to_excel(writer, index=False, sheet_name=sheet_name)
 
-        senti_sheet = sheet.replace("(News)", "(Senti)")
-        summary_df = pd.DataFrame({
-            "date": [today.date()],
-            "topic": [topik],
-            "summary": [summary_part]
-        })
+    print(f"💾 Data berhasil disimpan ke {output_path} - {sheet_name}")
 
-        # Simpan sheet hasil
-        summary_df.to_excel(writer, index=False, sheet_name=senti_sheet)
-        print(f"💾 Ringkasan '{topik}' disimpan ke sheet '{senti_sheet}'.")
+def process_topic(model, topic_name, config):
+    """Proses satu topik (Energi Fosil atau Bioenergi)"""
+    print(f"\n{'='*60}")
+    print(f"🔄 Memproses topik: {topic_name}")
+    print(f"{'='*60}")
+    
+    target_sheets = config["target_sheets"]
+    output_sheet = config["output_sheet"]
+    
+    # Ambil tanggal terakhir summary
+    last_date = get_last_summary_date(OUTPUT_PATH, output_sheet)
+    start_date = last_date if last_date is not None else datetime(2025, 1, 1)
+    end_date = pd.to_datetime(datetime.now()).normalize()
 
-        # Simpan juga ke list rekap
-        all_summaries.append(summary_df)
+    print(f"🕒 Akan proses berita dari {start_date.date()} sampai {end_date.date()}")
+    
+    # Kumpulkan berita
+    all_news_list = collect_news_from_sheets(EXCEL_SCRAP_PATH, target_sheets, start_date, end_date)
+    
+    if not all_news_list:
+        print(f"⚠️ Tidak ada berita baru untuk {topic_name}")
+        return
+    
+    print(f"📊 Total berita ditemukan: {len(all_news_list)}")
+    
+    # Generate summary
+    summary = summarize_all_news(model, all_news_list, start_date, end_date, target_sheets)
+    
+    # Simpan ke Excel
+    if summary:
+        save_to_excel([summary], OUTPUT_PATH, output_sheet)
 
-    # ===========================================================
-    # 7. BUAT SHEET GABUNGAN ALL SUMMARY
-    # ===========================================================
-    if all_summaries:
-        all_summary_df = pd.concat(all_summaries, ignore_index=True)
-        all_summary_df.to_excel(writer, index=False, sheet_name="All_Summary")
-        print("\n🧾 Rekap semua topik disimpan di sheet 'All_Summary'.")
+def main():
+    """Fungsi utama untuk memproses semua topik"""
+    print("🚀 Memulai proses summarization untuk semua topik...\n")
+    
+    # Setup Gemini
+    model = setup_gemini()
+    
+    # Proses setiap topik
+    for topic_name, config in TOPICS.items():
+        try:
+            process_topic(model, topic_name, config)
+        except Exception as e:
+            print(f"❌ Error saat memproses {topic_name}: {e}")
+            continue
+    
+    print(f"\n{'='*60}")
+    print("✅ Semua proses selesai!")
+    print(f"{'='*60}\n")
 
-print("\n✅ Semua sheet selesai diproses!")
+if __name__ == "__main__":
+    main()
