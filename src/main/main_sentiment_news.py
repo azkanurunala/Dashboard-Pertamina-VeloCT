@@ -5,15 +5,15 @@ from dotenv import load_dotenv
 from datetime import datetime
 from openpyxl import load_workbook
 
-EXCEL_SCRAP_PATH = "../results/(News)Sentiment.xlsx"
+EXCEL_SCRAP_PATH = "../results/(News)Scrapping.xlsx"
 OUTPUT_PATH = "../results/(News)Sentiment.xlsx"
 TOPICS = {
     "Energi Fosil": {
-        "target_sheets": ["(News)Energi Fosil"],
+        "target_sheets": ["(News)Energi Fosil", "(News)Energi Fosil Volume"],
         "output_sheet": "(Summary)Energi Fosil"
     },
     "Bioenergi": {
-        "target_sheets": ["(News)minyak kelapa sawit", "(News)HIP BBN Biodesel"],
+        "target_sheets": ["(News)minyak kelapa sawit", "(News)HIP BBN Biodiesel"],
         "output_sheet": "(Summary)Bioenergi"
     }
 }
