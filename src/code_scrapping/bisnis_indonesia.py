@@ -191,22 +191,18 @@ def scrape_bisnis(keyword, tanggal, headers):
     return hasil
 
 # ============================== Fungsi bantu: Simpan ke Excel ==============================
-def save_excel(data, keyword, folder_path):
-    try:
-        os.makedirs(folder_path, exist_ok=True)
-    except OSError as e:
-        print(f"Gagal membuat folder {folder_path}: {e}")
-        folder_path = "."
-    nama_file = f"bisnis_{keyword.replace(' ', '_')}_{datetime.now():%Y%m%d_%H%M%S}.xlsx"
-    path_lengkap = os.path.join(folder_path, nama_file)
-    pd.DataFrame(data).to_excel(path_lengkap, index=False, engine='openpyxl')
-    print(f"\nData disimpan ke {path_lengkap}")
+def reformat(data):
+    df = pd.DataFrame(data)
+    df = df.rename(columns={
+        'judul' : 'title', 
+        'tanggal' : 'date', 
+        'link' : 'url', 
+        'konten' : 'content'
+    })
+    return df
 
 # ============================== Main script ==============================
-def main_bisnis_indonesia():
-    keyword = "Purbaya"
-    tanggal = "2025-11-12" 
-    results_folder = "../hasil-scrapping"
+def main_bisnis_indonesia(keyword="Purbaya", tanggal="2025-11-12"):
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -216,16 +212,16 @@ def main_bisnis_indonesia():
     }
     print(f"Memulai scrape Bisnis.com untuk keyword: '{keyword}' pada tanggal: {tanggal}")
     data = scrape_bisnis(keyword, tanggal, headers)
-    if data:
-        save_excel(data, keyword, results_folder)
-        print("\n=== PRATINJAU HASIL ===")
-        for d in data[:3]: 
-            print(f"\nJudul: {d['judul']}")
-            print(f"Tanggal: {d['tanggal']}")
-            print(f"Link: {d['link']}")
-            print(f"Konten: {d['konten'][:120]}...")
-    else:
-        print("Tidak ada artikel ditemukan yang sesuai dengan kriteria.")
+    if not data:  
+        print(f"Tidak ada artikel ditemukan untuk keyword '{keyword}' pada tanggal {tanggal}")
+        return None
+    df = reformat(data)
+    if df.empty:
+        print("DataFrame kosong setelah reformatting.")
+        return None
+    print(f"Berhasil scrape {len(df)} artikel") 
+    return df
 
 if __name__ == "__main__":
-    main_bisnis_indonesia()
+    data = main_bisnis_indonesia()
+    print(data)

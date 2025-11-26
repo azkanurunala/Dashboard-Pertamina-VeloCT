@@ -179,7 +179,7 @@ def get_kontan_news_by_keyword(keyword):
     return results
 
 # ============================== SCRAPE AND SAVE ==============================
-def scrape_kontan(keyword, date=None):
+def scrape_kontan_biodiesel(keyword, date=None):
     """Scrape articles from Kontan that match keyword and optional date."""
     articles = get_kontan_news_by_keyword(keyword)
     if not articles:
@@ -200,35 +200,29 @@ def scrape_kontan(keyword, date=None):
         time.sleep(1.0)
     return articles
 
-def save_to_excel(data, query, output_filename=None):
-    if isinstance(data, list):
-        df = pd.DataFrame(data)
-    else:
-        df = data
-    df.columns = ["Judul", "Tanggal", "Link", "Konten"]
-    results_folder = r"..\hasil-scrapping"
-    os.makedirs(results_folder, exist_ok=True)
-    if output_filename is None:
-        output_filename = f"hasil_scraping_kontan_{query.replace(' ', '_')}.xlsx"
-    if not output_filename.endswith('.xlsx'):
-        output_filename += '.xlsx'
-    full_path = os.path.join(results_folder, output_filename)
-    df.to_excel(full_path, index=False)
-    print(f"\nBerhasil menyimpan {len(df)} data ke '{full_path}'")
+def reformat(data):
+    df = pd.DataFrame(data)
+    df = df.rename(
+        columns={
+            'Judul' : 'tittle', 
+            'Tanggal' : 'date', 
+            'Link' : 'url', 
+            'Konten' : 'content' 
+        }
+    )
     return df
 
 # ============================== MAIN EXECUTION ==============================
-def main_kontan(keyword="Pembukaan Toko", date_filter="2025-11-09"):
-    data = scrape_kontan(keyword, date=date_filter)
-    if data:
-        df = save_to_excel(data, keyword)
-        for d in data[:3]:
-            print(d['Judul'], d['Tanggal'], d['Link'])
-        return df
-    else:
+def main_kontan_biodiesel(keyword="BBM", tanggal="2025-11-10"):
+    data = scrape_kontan_biodiesel(keyword, date=tanggal)
+    if not data:  
         print("No articles found.")
         return None
-
+    df = reformat(data)
+    if df.empty:
+        print("DataFrame is empty after reformatting.")
+        return None
+    return df
 
 if __name__ == '__main__':
-    main_kontan()
+    main_kontan_biodiesel(keyword="BBM", tanggal="2025-11-10")

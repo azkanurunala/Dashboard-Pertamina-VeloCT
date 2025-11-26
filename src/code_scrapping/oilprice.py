@@ -155,49 +155,31 @@ def scrape_oilprice(keyword=None, date_filter=None):
     return articles
 
 # ======== Fungsi : Menyimpan Ke Excel ========    
-def save_to_excel(data, keyword=None, output_filename=None):
+def reformat(data):
     if not data:
         print("[WARN] No data to save.")
         return None
     df = pd.DataFrame(data)
-    column_order = ['Judul', 'Tanggal', 'Link', 'Konten']
-    df = df[[col for col in column_order if col in df.columns]]
-    results_folder = r"..\hasil-scrapping"
-    os.makedirs(results_folder, exist_ok=True)
-    if output_filename is None:
-        if keyword:
-            safe_keyword = keyword.replace(' ', '_').replace('/', '_')
-            output_filename = f"oilprice_{safe_keyword}.xlsx"
-        else:
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            output_filename = f"oilprice_news_{timestamp}.xlsx"
-    if not output_filename.endswith('.xlsx'):
-        output_filename += '.xlsx'
-    full_path = os.path.join(results_folder, output_filename)
-    df.to_excel(full_path, index=False)
-    print(f"\n[SUCCESS] Berhasil menyimpan {len(df)} artikel ke '{full_path}'")
+    df = df.rename(
+        columns={
+            'Judul' : 'title', 
+            'Tanggal' : 'date', 
+            'Link' : 'url', 
+            'Konten' : 'content'
+        }
+    )
     return df
 
 # ======== Fungsi : Main ========   
-def main_oilprice(keyword=None, date_filter=None):
+def main_oilprice(keyword=None, tanggal=None):
     print(f"\n{'='*60}")
     print(f"OilPrice.com News Scraper")
     print(f"{'='*60}\n")
-    data = scrape_oilprice(keyword, date_filter)
-    if data:
-        df = save_to_excel(data, keyword)
-        print(f"\n{'='*60}")
-        print(f"Preview (first 3 articles):")
-        print(f"{'='*60}\n")
-        for i, article in enumerate(data[:3], 1):
-            print(f"{i}. {article['Judul']}")
-            print(f"   Tanggal: {article['Tanggal']}")
-            print(f"   Link: {article['Link']}")
-            print()
-        return df
-    else:
+    data = scrape_oilprice(keyword, tanggal)
+    if not data:  
         print("[INFO] No articles to save.")
         return None
-    
+    df = reformat(data)
+    return df if not df.empty else None
 if __name__ == '__main__':
-    main_oilprice(keyword="Oil Price", date_filter="2025-11-14")
+    main_oilprice(keyword="Oil Price", date_filter="2025-11-17")

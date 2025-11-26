@@ -240,15 +240,12 @@ def main_bloomberg_technoz(query: str, filter_tanggal: str = None, output_filena
     df = pd.DataFrame(results)
     df['date'] = pd.to_datetime(df['date'], format="%d %b %Y")
     df['date'] = df['date'].dt.date
-    results_folder = "../hasil-scrapping"
-    os.makedirs(results_folder, exist_ok=True)
-    if output_filename is None:
-        output_filename = f"hasil_scraping_bloomberg_{query.replace(' ', '_')}.xlsx"
-    if not output_filename.endswith('.xlsx'):
-        output_filename += '.xlsx'
-    full_path = os.path.join(results_folder, output_filename)
-    df.to_excel(full_path, index=False)
-    print(f"\nBerhasil menyimpan {len(df)} data ke '{full_path}'")
+    df = df.rename(
+        columns={
+            'konten' : 'content', 
+            'link' : 'url'
+        }
+    )
     return df
 
 if __name__ == "__main__":

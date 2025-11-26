@@ -5,7 +5,8 @@ import os
 
 _API_KEY = "kODFA7mKVrNKWrGyFiIk5fIdlC1AKGXzba5lJxzY"
 _BASE_API_URL = "https://api.eia.gov/v2/steo/data/"
-_EXCEL_PATH = "../hasil-scrapping/data_migas_eia.xlsx"
+_EXCEL_PATH = "../results/Terstruktur(Data Scrapping).xlsx"
+_SHEET_NAME = "(Data)eia"
 
 _MONTH_TO_NUMBER = {
     'januari': 1, 'februari': 2, 'maret': 3, 'april': 4,
@@ -27,14 +28,14 @@ _SERIES_IDS = {
     'PATC_OECD': 'OECD Consumption'
 }
 
-def read_last_entry_from_excel(excel_path: str):
+def read_last_entry_from_excel(excel_path: str, sheet_name: str):
     if not os.path.exists(excel_path):
         print("File Excel belum ada, semua data akan diunduh.")
         return None, None
     try:
-        df = pd.read_excel(excel_path)
+        df = pd.read_excel(excel_path, sheet_name=sheet_name, engine='openpyxl')
         if df.empty or "Bulan" not in df.columns or "Tahun" not in df.columns:
-            print("Excel kosong atau format salah. Semua data akan diunduh.")
+            print("Sheet kosong atau format salah. Semua data akan diunduh.")
             return None, None
         df["Bulan"] = df["Bulan"].astype(str).str.lower()
         df["Bulan_Angka"] = df["Bulan"].map(_MONTH_TO_NUMBER)
@@ -46,12 +47,15 @@ def read_last_entry_from_excel(excel_path: str):
         last_row = df_sorted.iloc[-1]
         print(f"Data terakhir di Excel: {last_row['Bulan'].capitalize()} {int(last_row['Tahun'])}")
         return int(last_row["Tahun"]), int(last_row["Bulan_Angka"])
+    except ValueError:
+        print(f"Sheet '{sheet_name}' tidak ditemukan. Semua data akan diunduh.")
+        return None, None
     except Exception as e:
         print(f"Error membaca Excel: {e}")
         return None, None
 
 def get_migas_eia_needed_data():
-    last_read_year, last_read_month = read_last_entry_from_excel(_EXCEL_PATH)
+    last_read_year, last_read_month = read_last_entry_from_excel(_EXCEL_PATH, _SHEET_NAME)
     today = datetime.today()
     month = today.month - 1
     year = today.year
@@ -172,11 +176,12 @@ def transform_data_to_excel_format(all_data):
         rows.append(row)
     return pd.DataFrame(rows)
 
-def save_to_excel(df, excel_path):
+def save_to_excel(df, excel_path, sheet_name):
     print("Step 5: Saving to Excel...")
+    
     if os.path.exists(excel_path):
         try:
-            existing_df = pd.read_excel(excel_path, engine='openpyxl')
+            existing_df = pd.read_excel(excel_path, sheet_name=sheet_name, engine='openpyxl')
             df_combined = pd.concat([existing_df, df], ignore_index=True)
             df_combined.drop_duplicates(subset=['Bulan', 'Tahun'], keep='last', inplace=True)
             month_order = {
@@ -187,18 +192,33 @@ def save_to_excel(df, excel_path):
             df_combined['Bulan_Order'] = df_combined['Bulan'].map(month_order)
             df_combined = df_combined.sort_values(['Tahun', 'Bulan_Order'])
             df_combined = df_combined.drop('Bulan_Order', axis=1)
-            print(f"Merged with existing data. Total rows: {len(df_combined)}")  
+            print(f"Merged with existing data. Total rows: {len(df_combined)}")
+        except ValueError:
+            print(f"Sheet '{sheet_name}' tidak ditemukan, membuat sheet baru")
+            df_combined = df
         except Exception as e:
             print(f"Error reading existing file: {e}")
             print("Creating new file instead...")
             df_combined = df
     else:
         df_combined = df
-    df_combined.to_excel(excel_path, index=False, engine='openpyxl')
-    print(f"✅ Saved to {excel_path}")
-    print(f"Total records: {len(df_combined)}")
+    
+    # Simpan ke sheet spesifik
+    try:
+        if os.path.exists(excel_path):
+            with pd.ExcelWriter(excel_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                df_combined.to_excel(writer, sheet_name=sheet_name, index=False)
+        else:
+            with pd.ExcelWriter(excel_path, engine='openpyxl', mode='w') as writer:
+                df_combined.to_excel(writer, sheet_name=sheet_name, index=False)
+        
+        print(f"✅ Saved to {excel_path}")
+        print(f"Sheet: {sheet_name}")
+        print(f"Total records: {len(df_combined)}")
+    except Exception as e:
+        print(f"Error saving to Excel: {e}")
 
-def main():
+def main_eia():
     print("=" * 80)
     print("EIA STEO DATA SCRAPER")
     print("=" * 80)
@@ -239,11 +259,11 @@ def main():
     print(df.head(10).to_string(index=False))
     print()
     print("Step 5: Saving to Excel...")
-    save_to_excel(df, _EXCEL_PATH)
+    save_to_excel(df, _EXCEL_PATH, _SHEET_NAME)
     print()
     print("=" * 80)
     print("DONE!")
     print("=" * 80)
 
 if __name__ == "__main__":
-    main()
+    main_eia()

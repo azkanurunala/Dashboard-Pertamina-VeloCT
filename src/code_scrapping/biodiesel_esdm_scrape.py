@@ -6,6 +6,7 @@ import os
 import pdfplumber
 from datetime import datetime
 from tqdm import tqdm
+from openpyxl import load_workbook
 
 def parse_date(date_str):
     months = {
@@ -25,11 +26,11 @@ def matches_biodiesel_criteria(title):
     keywords = ["HIP", "BBN", "JENIS", "BIODIESEL", "BULAN"]
     return all(keyword in title.upper() for keyword in keywords)
 
-def get_missing_months_from_excel(filename='../hasil-scrapping/Biodiesel_Fix.xlsx'):
+def get_missing_months_from_excel(filename='../results/Terstruktur(Data Scrapping).xlsx', sheet_name='(Data)Biodesel'):
     try:
-        df = pd.read_excel(filename, engine="openpyxl")
+        df = pd.read_excel(filename, sheet_name=sheet_name, engine="openpyxl")
         if df.empty or 'Bulan HIP' not in df.columns:
-            print("File Excel kosong atau kolom 'Bulan HIP' tidak ada, asumsikan scraping awal")
+            print("Sheet kosong atau kolom 'Bulan HIP' tidak ada, asumsikan scraping awal")
             return None
         df = df[df['Bulan HIP'].notna()]
         if df.empty:
@@ -85,6 +86,9 @@ def get_missing_months_from_excel(filename='../hasil-scrapping/Biodiesel_Fix.xls
         print(f"Error membaca file: {e}")
         print("Asumsikan scraping awal")
         return None
+    except ValueError as e:
+        print(f"Sheet '{sheet_name}' tidak ditemukan, asumsikan scraping awal")
+        return None
 
 def extract_pdf_url_from_html(html_content):
     if not html_content:
@@ -94,8 +98,8 @@ def extract_pdf_url_from_html(html_content):
         return match.group(1)
     return None
 
-def scrape_biodiesel_articles_api(excel_filename='../hasil-scrapping/Biodiesel_Fix.xlsx'):
-    missing_months = get_missing_months_from_excel(excel_filename)
+def scrape_biodiesel_articles_api(excel_filename='../results/Terstruktur(Data Scrapping).xlsx', sheet_name='(Data)Biodesel'):
+    missing_months = get_missing_months_from_excel(excel_filename, sheet_name)
     if missing_months == 0:
         print("Tidak ada artikel baru yang perlu diambil")
         return [], missing_months
@@ -264,7 +268,7 @@ def parse_all_pdfs(pdf_links):
                 print(f"Gagal menghapus {pdf_file}: {e}")
     return excel_data
 
-def save_to_excel(data, filename='../hasil-scrapping/Biodiesel_Fix.xlsx'):
+def save_to_excel(data, filename='../results/Terstruktur(Data Scrapping).xlsx', sheet_name='(Data)Biodesel'):
     if not data:
         print("Tidak ada data baru untuk disimpan")
         return None
@@ -275,17 +279,20 @@ def save_to_excel(data, filename='../hasil-scrapping/Biodiesel_Fix.xlsx'):
     
     new_df = pd.DataFrame(data)
     new_df['HIP Biodiesel IDR/L'] = new_df['HIP Biodiesel IDR/L'].apply(
-        lambda x: str(x).strip().replace('.', ',')
+        lambda x: str(float(x)).replace('.', ',')
     )
     new_df['Date'] = pd.to_datetime(new_df['Date'], errors='coerce')
     
     if os.path.exists(filename):
         try:
-            existing_df = pd.read_excel(filename)
+            existing_df = pd.read_excel(filename, sheet_name=sheet_name, engine='openpyxl')
             existing_df['Date'] = pd.to_datetime(existing_df['Date'], errors='coerce')
             combined_df = pd.concat([existing_df, new_df], ignore_index=True)
+        except ValueError:
+            print(f"Sheet '{sheet_name}' tidak ditemukan, membuat sheet baru")
+            combined_df = new_df
         except Exception as e:
-            print("File existing corrupt, buat file baru:", e)
+            print(f"Error membaca sheet existing: {e}")
             combined_df = new_df
     else:
         combined_df = new_df
@@ -295,15 +302,21 @@ def save_to_excel(data, filename='../hasil-scrapping/Biodiesel_Fix.xlsx'):
     combined_df['Date'] = combined_df['Date'].dt.strftime('%Y-%m-%d')
 
     try:
-        combined_df.to_excel(filename, index=False)
+        if os.path.exists(filename):
+            with pd.ExcelWriter(filename, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                combined_df.to_excel(writer, sheet_name=sheet_name, index=False)
+        else:
+            with pd.ExcelWriter(filename, engine='openpyxl', mode='w') as writer:
+                combined_df.to_excel(writer, sheet_name=sheet_name, index=False)
         print(f"\nData saved to: {filename}")
+        print(f"Sheet: {sheet_name}")
         print(f"Total rows: {len(combined_df)} (sorted ascending by Date)")
         return combined_df
     except Exception as e:
         print(f"Error saving to Excel: {e}")
         return None
 
-if __name__ == "__main__":
+def main_biodiesel_esdm():
     print("="*60)
     print("SCRAPER HIP BBN BIODIESEL (API VERSION)")
     print("="*60)
@@ -324,3 +337,7 @@ if __name__ == "__main__":
                 print("\n" + "="*60)
                 print("SELESAI!")
                 print("="*60)
+
+
+if __name__ == "__main__":
+    main_biodiesel_esdm()
