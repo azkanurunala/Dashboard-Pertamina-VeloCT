@@ -8,12 +8,24 @@ from openpyxl import load_workbook
 EXCEL_SCRAP_PATH = "../results/(News)Scrapping.xlsx"
 OUTPUT_PATH = "../results/(News)Sentiment.xlsx"
 TOPICS = {
-    "Energi Fosil": {
-        "target_sheets": ["(News)Energi Fosil", "(News)Energi Fosil Volume"],
-        "output_sheet": "(Summary)Energi Fosil"
+    "Harga Minyak": {
+        "target_sheets": ["(News)Harga Minyak"],
+        "output_sheet": "(Summary)Harga Minyak"
+    },
+    "Volume Minyak": {
+        "target_sheets": ["(News)Volume Minyak"],
+        "output_sheet": "(Summary)Volume Minyak"
+    },
+    "Harga Produk Kilang": {
+        "target_sheets": ["(News)Harga Produk Kilang"],
+        "output_sheet": "(Summary)Harga Produk Kilang"
+    },
+    "Volume Produk Kilang": {
+        "target_sheets": ["(News)Volume Produk Kilang"],
+        "output_sheet": "(Summary)Volume Produk Kilang"
     },
     "Bioenergi": {
-        "target_sheets": ["(News)minyak kelapa sawit", "(News)HIP BBN Biodiesel"],
+        "target_sheets": ["(News)Bioenergi"],
         "output_sheet": "(Summary)Bioenergi"
     }
 }
@@ -48,7 +60,7 @@ def collect_news_from_sheets(excel_path, target_sheets, start_date, end_date):
         try:
             df = pd.read_excel(excel_path, sheet_name=sheet)
             df['date'] = pd.to_datetime(df['date'], errors='coerce').dt.normalize()
-            mask = (df['date'] > start_date) & (df['date'] <= end_date)
+            mask = (df['date'] >= start_date) & (df['date'] <= end_date)
             df_new = df.loc[mask].dropna(subset=['content'])
             all_news_list.extend(df_new['content'].tolist())
             print(f"   ✓ {len(df_new)} berita dari {sheet}")
@@ -57,21 +69,27 @@ def collect_news_from_sheets(excel_path, target_sheets, start_date, end_date):
     return all_news_list
 
 def summarize_all_news(model, all_news_list, start_date, end_date, sheet_names):
-    """Generate summary menggunakan Gemini"""
     if not all_news_list:
         print("⚠️ Tidak ada berita baru dari semua sheet.")
-        return None
+        return {
+            "Tanggal awal": start_date.date(),
+            "Tanggal akhir": end_date.date(),
+            "Summary": "Tidak ada berita"
+        }
 
     all_news_text = "\n\n".join(all_news_list)
 
     prompt = f"""
-    Kamu adalah analis ekonomi Indonesia.
+    Kamu adalah analis energi di Indonesia.
     Berikut kumpulan berita dari topik {', '.join(sheet_names)} antara tanggal {start_date.strftime('%d %B %Y')} dan {end_date.strftime('%d %B %Y')}:
 
     {all_news_text}
 
-    Buatkan 3–4 poin ringkasan umum.
+    Buatkan 3 poin ringkasan umum.
     Semua teks pada bagian ini jangan ada yang bold, dan tolong berikan nomor setiap poinnya.
+
+    Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti "signifikan", "dahsyat", dst. 
+    Serta hasil summarynya fokus pada movement data saja, serta exclude kasus-kasus hukum!
 
     Format jawaban:
     ===SUMMARY===
@@ -137,8 +155,12 @@ def process_topic(model, topic_name, config):
     
     # Ambil tanggal terakhir summary
     last_date = get_last_summary_date(OUTPUT_PATH, output_sheet)
-    start_date = last_date if last_date is not None else datetime(2025, 1, 1)
-    end_date = pd.to_datetime(datetime.now()).normalize()
+    if last_date is not None:
+        start_date = last_date + pd.Timedelta(days=1)
+    else:
+        start_date = datetime(2025, 1, 1)
+    #end_date = pd.to_datetime(datetime.now()).normalize()
+    end_date = pd.to_datetime("2025-11-25")
 
     print(f"🕒 Akan proses berita dari {start_date.date()} sampai {end_date.date()}")
     
@@ -147,7 +169,6 @@ def process_topic(model, topic_name, config):
     
     if not all_news_list:
         print(f"⚠️ Tidak ada berita baru untuk {topic_name}")
-        return
     
     print(f"📊 Total berita ditemukan: {len(all_news_list)}")
     
