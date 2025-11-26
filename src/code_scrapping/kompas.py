@@ -258,36 +258,33 @@ def scrape_kompas(keyword, date=None):
         time.sleep(1.0)
     return articles
 
-def save_to_excel(data, query, output_filename=None):
-    if isinstance(data, list):
-        df = pd.DataFrame(data)
-    else:
-        df = data
-    df.columns = ["Judul", "Tanggal", "Link", "Konten"]
-    results_folder = r"../hasil-scrapping"
-    os.makedirs(results_folder, exist_ok=True)
-    if output_filename is None:
-        output_filename = f"hasil_scraping_kompas_{query.replace(' ', '_')}.xlsx"
-    if not output_filename.endswith('.xlsx'):
-        output_filename += '.xlsx'
-    full_path = os.path.join(results_folder, output_filename)
-    df.to_excel(full_path, index=False)
-    print(f"\nBerhasil menyimpan {len(df)} data ke '{full_path}'")
+def reformat(data):
+    df = pd.DataFrame(data)
+    df = df.rename(
+        columns={
+            'Judul' : 'title', 
+            'Tanggal' : 'date', 
+            'Link' : 'url', 
+            'Konten' : 'content'
+        }
+    )
     return df
 
-def main_kompas(keyword="MotoGP", date_filter="2025-11-16"):
-    data = scrape_kompas(keyword, date=date_filter)
-    if data:
-        df = save_to_excel(data, keyword)
-        print("\n=== Preview (3 artikel pertama) ===")
-        for d in data[:3]:
-            print(f"- {d['Judul']}")
-            print(f"  Tanggal: {d['Tanggal']}")
-            print(f"  Link: {d['Link']}\n")
+def main_kompas(keyword="MotoGP", tanggal="2025-11-16"):
+    try:
+        data = scrape_kompas(keyword, date=tanggal)
+        if not data:
+            print("No articles found.")
+            return None
+        df = reformat(data)
+        if df.empty:
+            print("No articles found after formatting.")
+            return None
+        print(f"Successfully scraped {len(df)} articles from Kompas")
         return df
-    else:
-        print("No articles found.")
+    except Exception as e:
+        print(f"Error in main_kompas: {e}")
         return None
 
 if __name__ == '__main__':
-    main_kompas()
+    print(main_kompas(keyword="MotoGP", tanggal="2025-11-16"))

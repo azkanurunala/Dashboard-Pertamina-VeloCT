@@ -21,14 +21,14 @@ _PRICE_PATTERN = r"US\$[\s]*([\d.,]+)"
 _DATE_PATTERN = rf"Ditetapkan\s+di\s+Jakarta.*?\s+(\d{{1,2}})\s+({_MONTH_PATTERN})\s+(\d{{4}}).*?(?:MENTERI\s+ENERGI|BAHLIL|ttd)"
 
 # ============================== FUNGSI: Baca Excel ==============================
-def read_last_entry_from_excel(excel_path: str):
+def read_last_entry_from_excel(excel_path: str, sheet_name: str):
     if not os.path.exists(excel_path):
         print("File Excel belum ada, semua PDF akan diunduh.")
         return None, None
     try:
-        df = pd.read_excel(excel_path)
+        df = pd.read_excel(excel_path, sheet_name=sheet_name, engine='openpyxl')
         if df.empty or "Bulan" not in df.columns or "Tahun" not in df.columns:
-            print("Excel kosong atau format salah. Semua PDF akan diunduh.")
+            print("Sheet kosong atau format salah. Semua PDF akan diunduh.")
             return None, None
         df["Bulan"] = df["Bulan"].astype(str).str.lower()
         df["Bulan_Angka"] = df["Bulan"].map(_MONTH_TO_NUMBER)
@@ -40,6 +40,9 @@ def read_last_entry_from_excel(excel_path: str):
         last_row = df_sorted.iloc[-1]
         print(f"Data terakhir di Excel: {last_row['Bulan'].capitalize()} {int(last_row['Tahun'])}")
         return int(last_row["Tahun"]), int(last_row["Bulan_Angka"])
+    except ValueError:
+        print(f"Sheet '{sheet_name}' tidak ditemukan. Semua PDF akan diunduh.")
+        return None, None
     except Exception as e:
         print(f"Error membaca Excel: {e}")
         return None, None
@@ -105,7 +108,7 @@ def extract_relevant_pdf_links(html_content: str, last_year: int | None, last_mo
     return pdf_links
 
 # ============================== FUNGSI: Download PDF ==============================
-def download_pdfs(pdf_links: dict, folder: str = "../hasil-scrapping/hasil-migas-esdm-pdf"):
+def download_pdfs(pdf_links: dict, folder: str = "../results/hasil-migas-esdm-pdf"):
     os.makedirs(folder, exist_ok=True)
     total = sum(len(v) for v in pdf_links.values())
     print(f"\nMulai download {total} file PDF...\n")
@@ -172,7 +175,7 @@ def extract_icp_from_pdf(filepath: str, start_page: int = 2, end_page: int = 5):
         print(f"Error membaca {os.path.basename(filepath)}: {e}")
         return None, None, None
 
-def extract_icp_from_all_pdfs(folder: str = "../hasil-scrapping/hasil-migas-esdm-pdf"):
+def extract_icp_from_all_pdfs(folder: str = "../results/hasil-migas-esdm-pdf"):
     results = []
     pdf_files = [f for f in os.listdir(folder) if f.lower().endswith(".pdf")]
     print(f"\nMengekstrak {len(pdf_files)} file PDF...\n")
@@ -197,13 +200,14 @@ def extract_icp_from_all_pdfs(folder: str = "../hasil-scrapping/hasil-migas-esdm
     return pd.DataFrame(results)
 
 # ============================== MAIN ==============================
-def main():
-    EXCEL_PATH = "../hasil-scrapping/data_migas_esdm.xlsx"
+def main_price_esdm():
+    EXCEL_PATH = "../results/Terstruktur(Data Scrapping).xlsx"
+    SHEET_NAME = "(Data)Harga Minyak"
     URL = "https://www.migas.esdm.go.id/post/read/harga-minyak-mentah"
     print("="*80)
     print("SCRAPER ICP MIGAS ESDM")
     print("="*80)
-    last_year, last_month = read_last_entry_from_excel(EXCEL_PATH)
+    last_year, last_month = read_last_entry_from_excel(EXCEL_PATH, SHEET_NAME)
     html = fetch_html_from_website(URL)
     if not html:
         return
@@ -212,15 +216,18 @@ def main():
         print("Tidak ada PDF baru.")
         return
     download_pdfs(pdf_links)
-    df = extract_icp_from_all_pdfs("../hasil-scrapping/hasil-migas-esdm-pdf")
+    df = extract_icp_from_all_pdfs("../results/hasil-migas-esdm-pdf")
     if not df.empty:
         print("\nHasil Akhir:")
         print(df)
         if os.path.exists(EXCEL_PATH):
             try:
-                df_old = pd.read_excel(EXCEL_PATH)
+                df_old = pd.read_excel(EXCEL_PATH, sheet_name=SHEET_NAME, engine='openpyxl')
                 df_combined = pd.concat([df_old, df], ignore_index=True)
                 df_combined.drop_duplicates(subset=["Tahun", "Bulan"], keep="last", inplace=True)
+            except ValueError:
+                print(f"Sheet '{SHEET_NAME}' tidak ditemukan, membuat sheet baru")
+                df_combined = df
             except Exception as e:
                 print(f"Gagal membaca file Excel lama: {e}")
                 df_combined = df
@@ -231,10 +238,19 @@ def main():
         df_combined = df_combined.sort_values(["Tahun", "Bulan_Angka"])
         df_combined = df_combined.drop(columns=["Bulan_Lower", "Bulan_Angka"])
         df_combined = df_combined.reset_index(drop=True)
-        df_combined.to_excel(EXCEL_PATH, index=False)
-        print(f"\nData berhasil diperbarui di: {EXCEL_PATH}")
+        try:
+            if os.path.exists(EXCEL_PATH):
+                with pd.ExcelWriter(EXCEL_PATH, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                    df_combined.to_excel(writer, sheet_name=SHEET_NAME, index=False)
+            else:
+                with pd.ExcelWriter(EXCEL_PATH, engine='openpyxl', mode='w') as writer:
+                    df_combined.to_excel(writer, sheet_name=SHEET_NAME, index=False) 
+            print(f"\nData berhasil diperbarui di: {EXCEL_PATH}")
+            print(f"Sheet: {SHEET_NAME}")
+            print(f"Total rows: {len(df_combined)}")
+        except Exception as e:
+            print(f"Error menyimpan ke Excel: {e}")
     else:
         print("Tidak ada data yang berhasil diekstrak.")
-        
 if __name__ == "__main__":
-    main()
+    main_price_esdm()
