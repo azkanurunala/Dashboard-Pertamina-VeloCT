@@ -278,8 +278,11 @@ def save_to_excel(data, filename='../results/Terstruktur(Data Scrapping).xlsx', 
         os.makedirs(folder, exist_ok=True)
     
     new_df = pd.DataFrame(data)
-    new_df['HIP Biodiesel IDR/L'] = new_df['HIP Biodiesel IDR/L'].apply(
-        lambda x: str(float(x)).replace('.', ',')
+    new_df['HIP Biodiesel IDR/L'] = (
+        new_df['HIP Biodiesel IDR/L']
+        .astype(float)
+        .mul(1000)
+        .astype(int)
     )
     new_df['Date'] = pd.to_datetime(new_df['Date'], errors='coerce')
     

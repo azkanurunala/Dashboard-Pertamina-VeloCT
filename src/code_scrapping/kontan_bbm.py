@@ -166,9 +166,9 @@ def get_kontan_news_by_keyword(keyword):
                 link = info.get('link') or ""
                 if (keyword_lower in title.lower()) or (keyword_lower in keywords.lower()):
                     results.append({
-                        'tittle': title if title else link,
-                        'url': link,
-                        'date': info.get('date') if info.get('date') else '-'
+                        'Judul': title if title else link,
+                        'Link': link,
+                        'Tanggal': info.get('date') if info.get('date') else '-'
                     })
             print(f"   Matching articles so far: {len(results)}")
         except Exception as e:
