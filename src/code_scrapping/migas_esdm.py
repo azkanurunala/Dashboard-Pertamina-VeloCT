@@ -166,7 +166,13 @@ def extract_icp_from_pdf(filepath: str, start_page: int = 2, end_page: int = 5):
                     harga_match = re.search(_PRICE_PATTERN, sentence)
                     if bulan_match and harga_match:
                         find_month = bulan_match.group(0).capitalize() 
-                        find_price = harga_match.group(1).replace(" ", "")
+                        clean_price = (
+                            harga_match.group(1)
+                            .replace(".", "")  
+                            .replace(",", ".")  
+                            .strip()
+                        )
+                        find_price = float(clean_price)
                         break 
             if find_month and find_price and find_date:
                 break 
