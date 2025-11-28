@@ -134,7 +134,7 @@ def clean_ocr_text(text: str) -> str:
     text = re.sub(r'\bU\s*[Ss]\s*[8S\$]?\s*(?=\d)', 'US$', text)
     return text
 
-def extract_icp_from_pdf(filepath: str, start_page: int = 2, end_page: int = 5):
+def extract_icp_from_pdf(filepath: str, start_page: int = 2, end_page: int = 7):
     try:
         pdf = fitz.open(filepath)
         total_pages = len(pdf)
