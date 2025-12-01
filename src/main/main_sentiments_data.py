@@ -84,7 +84,7 @@ def save_summary_to_excel(summary_df, sentiment_file="../results/(Data)Sentiment
 
 
 def run_cpo_analysis():
-    sentiment_file = "../results/(Data)Sentiment.xlsx"
+    sentiment_file = "../results/Terstruktur(Data Scrapping).xlsx"
     source_file = "../results/Terstruktur(Data Scrapping).xlsx"
     source_sheet = "(Data)CPO"
     output_sheet = "(Data)Summary CPO"
