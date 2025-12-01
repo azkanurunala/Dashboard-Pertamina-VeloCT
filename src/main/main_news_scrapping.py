@@ -15,7 +15,7 @@ from code_scrapping.kontan_bbm import scrape_kontan_bbm
 from code_scrapping.kontan_biodiesel import scrape_kontan_biodiesel
 from code_scrapping.kontan import scrape_kontan
 from code_scrapping.cnn import scrape_cnn_international
-from code_scrapping.cnbc_id import scrape_cnbc_id
+from code_scrapping.cnbc_id import main_cnbc
 from code_scrapping.cnbc import scrape_cnbc_international
 from code_scrapping.oilprice import scrape_oilprice
 from code_scrapping.bloomberg_technoz import main_bloomberg_technoz
@@ -37,10 +37,10 @@ sinonim_dict = {
     # "pertumbuhan domestik bruto": ["PDB", "pertumbuhan ekonomi"],
     "bioenergi": ["minyak kelapa sawit", "crude palm oil", "CPO", "minyak sawit", "kelapa sawit", "sawit", 
                   "HIP BBN Biodesel","biodiesel", "harga fame", "harga indeks pasar biodiesel", "b40", "b50", "biodiesel", "biofuel"],
-    "harga bbm" : ["oil price", "bbm"], 
-    "volume bbm" : ["volume bbm", "oil volume", "bbm", "volume minyak"], 
-    "harga produk kilang pertamina" : ["harga kilang pertamina", "kilang pertamina"], 
-    "volume produk kilang pertamina" : ["volume kilang pertamina", "volume kilang"]
+    "harga bbm" : ["oil price", "minyak mentah","crude oil"], 
+    "volume bbm" : ["volume bbm", "oil volume", "minyak mentah", "volume minyak"], 
+    "harga produk kilang pertamina" : ["bbm","harga kilang pertamina", "kilang pertamina", "kilang", "refinery", "harga pertamina"], 
+    "volume produk kilang pertamina" : ["bbm", "volume kilang pertamina", "volume kilang", "refinery", "volume pertamina"]
 }
 
 
@@ -48,17 +48,17 @@ sinonim_dict = {
 sumber_dict = {
     # "indeks risiko geopolitik": [scrape_cnn_international, scrape_cnbc_international],
     # "indeks volatilitas": [scrape_cnn_international, scrape_cnbc_international],
-    # "kurs": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, scrape_cnbc_id],
-    # "ihsg": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, scrape_cnbc_id],
-    # "inflasi": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, scrape_cnbc_id],
-    # "bi rate": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, scrape_cnbc_id],
-    # "jibor": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, scrape_cnbc_id],
-    # "indeks sales retail": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, scrape_cnbc_id],
-    # "indeks kepercayaan konsumen": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, scrape_cnbc_id],
-    # "indeks kinerja manufaktur": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, scrape_cnbc_id],
-    # "indeks kinerja jasa": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, scrape_cnbc_id],
-    # "neraca perdagangan": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, scrape_cnbc_id],
-    # "pertumbuhan domestik bruto": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, scrape_cnbc_id],
+    # "kurs": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    # "ihsg": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    # "inflasi": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    # "bi rate": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    # "jibor": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    # "indeks sales retail": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    # "indeks kepercayaan konsumen": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    # "indeks kinerja manufaktur": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    # "indeks kinerja jasa": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    # "neraca perdagangan": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    # "pertumbuhan domestik bruto": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
     "bioenergi": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
     "harga bbm" : [scrape_kontan_bbm, main_bisnis_indonesia, scrape_oilprice, main_bloomberg_technoz], 
     "volume bbm" : [scrape_kontan_bbm, main_bisnis_indonesia, scrape_oilprice, main_bloomberg_technoz], 
@@ -169,7 +169,7 @@ sheet_to_keyword = {
 
 def main():
     # tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-    tanggal_filter = "2025-11-18"
+    tanggal_filter = "2025-11-30"
     filename = "../results/(News)Scrapping.xlsx"
 
     sheet_names = [
