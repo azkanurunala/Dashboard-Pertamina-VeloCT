@@ -13,27 +13,50 @@ TOPICS = {
     "Harga Minyak": {
         "target_sheets": ["(News)Harga Minyak"],
         "output_sheet": "(Summary)Harga Minyak",
-        "has_cpo": False
+        "has_data_sentiment": False,
+        "role_prompt" : "industri minyak dan gas",
+        "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
+                            "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
+                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan Gunakan satuan dan "
+                            "waktu secara konsisten (USD/bbl, mb/d, kuartal, tahun). Dan exclude kasus-kasus hukum!"
     },
     "Volume Minyak": {
         "target_sheets": ["(News)Volume Minyak"],
         "output_sheet": "(Summary)Volume Minyak",
-        "has_cpo": False
+        "has_data_sentiment": False,
+        "role_prompt" : "industri minyak dan gas",
+        "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
+                            "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
+                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan Gunakan satuan dan "
+                            "waktu secara konsisten (USD/bbl, mb/d, kuartal, tahun). Dan exclude kasus-kasus hukum!"
     },
     "Harga Produk Kilang": {
         "target_sheets": ["(News)Harga Produk Kilang"],
         "output_sheet": "(Summary)Harga Produk Kilang",
-        "has_cpo": False
+        "has_data_sentiment": False,
+        "role_prompt" : "industri minyak dan gas",
+        "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
+                            "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
+                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan Gunakan satuan dan "
+                            "waktu secara konsisten (USD/bbl, mb/d, kuartal, tahun). Dan exclude kasus-kasus hukum!"
     },
     "Volume Produk Kilang": {
         "target_sheets": ["(News)Volume Produk Kilang"],
         "output_sheet": "(Summary)Volume Produk Kilang",
-        "has_cpo": False
+        "has_data_sentiment": False,
+        "role_prompt" : "industri minyak dan gas",
+        "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
+                            "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
+                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan Gunakan satuan dan "
+                            "waktu secara konsisten (USD/bbl, mb/d, kuartal, tahun). Dan exclude kasus-kasus hukum!"
     },
     "Bioenergi": {
         "target_sheets": ["(News)Bioenergi"],
         "output_sheet": "(Summary)Bioenergi",
-        "has_cpo": True
+        "has_data_sentiment": True,
+        "role_prompt" : "bioenergi",
+        "spesific_prompt" : "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst."
+                            "Serta hasil summary fokus pada movement data saja, serta exclude kasus-kasus hukum!"
     }
 }
 
@@ -74,7 +97,7 @@ def collect_news_from_sheets(excel_path, target_sheets, start_date, end_date):
             print(f"Gagal baca sheet {sheet}: {e}")
     return all_news_list
 
-def summarize_all_news(model, all_news_list, start_date, end_date, sheet_names):
+def summarize_all_news(model, all_news_list, start_date, end_date, sheet_names, role_prompt, spesific_prompt):
     if not all_news_list:
         print("⚠️ Tidak ada berita baru dari semua sheet.")
         return {
@@ -86,16 +109,18 @@ def summarize_all_news(model, all_news_list, start_date, end_date, sheet_names):
     all_news_text = "\n\n".join(all_news_list)
 
     prompt = f"""
-    Kamu adalah analis energi di Indonesia.
-    Berikut kumpulan berita dari topik {', '.join(sheet_names)} antara tanggal {start_date.strftime('%d %B %Y')} dan {end_date.strftime('%d %B %Y')}:
+    Kamu adalah analis {role_prompt} di Indonesia.
+
+    Berikut kumpulan berita dari topik {', '.join(sheet_names)}
+    antara tanggal {start_date.strftime('%d %B %Y')} dan {end_date.strftime('%d %B %Y')}:
 
     {all_news_text}
 
     Buatkan 3 poin ringkasan umum.
     Semua teks pada bagian ini jangan ada yang bold, dan tolong berikan nomor setiap poinnya.
 
-    Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti "signifikan", "dahsyat", dst. 
-    Serta hasil summarynya fokus pada movement data saja, serta exclude kasus-kasus hukum!
+    Gunakan panduan penulisan berikut:
+    {spesific_prompt}
 
     Format jawaban:
     ===SUMMARY===
@@ -108,48 +133,124 @@ def summarize_all_news(model, all_news_list, start_date, end_date, sheet_names):
         summary = result.split("===SUMMARY===")[-1].strip() if "===SUMMARY===" in result else result.strip()
 
         print("✅ Summary news selesai.")
-        return {
-            "Tanggal awal": start_date.date(),
-            "Tanggal akhir": end_date.date(),
-            "Summary": summary
-        }
+        return summary
     except Exception as e:
         print(f"❌ Gagal generate summary: {e}")
         return None
 
-def get_cpo_analysis(model, start_date, end_date):
+def get_prev_period():
     try:
-        df = pd.read_excel(EXCEL_DATA_PATH, sheet_name="(Data)CPO", usecols=["Dates", "PX_LAST"])
-        df["Dates"] = pd.to_datetime(df["Dates"]).dt.normalize()
-        mask = (df["Dates"] >= start_date) & (df["Dates"] <= end_date)
-        df = df[mask]
-        if df.empty:
-            print("Tidak ada data CPO untuk rentang tanggal ini")
-            return None
-        print(f"Data CPO ditemukan: {len(df)} rows")
-        data_text = "\n".join([f"{row['Dates'].strftime('%Y-%m-%d')}: {row['PX_LAST']}" for _, row in df.iterrows()])
-        prompt = f"""
-        Buat ringkasan analisis tren harga CPO berikut ini, dalam 1 kalimat singkat saja. 
-        Tunjukkan insight, tren naik/turun, dan highlight pergerakan penting.
-        Data:
-        {data_text}
-        Semua teks pada bagian ini jangan ada yang bold.
-        """
-        response = model.generate_content(prompt)
-        summary_text = response.text.strip()
-        print("Analisis CPO selesai.")
-        return summary_text
-    except Exception as e:
-        print(f"Error saat memproses CPO: {e}")
-        return None
+        df = pd.read_excel(OUTPUT_PATH, sheet_name="(Summary)Bioenergi")
 
-def save_to_excel_with_cpo(new_data, output_path, sheet_name, cpo_analysis=None):
+        # Ambil baris terakhir (previous)
+        row = df.iloc[-1]
+
+        start_prev = pd.to_datetime(row["Tanggal awal"])
+        end_prev = pd.to_datetime(row["Tanggal akhir"])
+
+        return start_prev, end_prev
+    except:
+        return None, None
+
+def compute_cpo_biodiesel(start_date, end_date):
+    # --- CPO (harian) ---
+    df_cpo = pd.read_excel(EXCEL_DATA_PATH, sheet_name="(Data)CPO", usecols=["Dates", "PX_LAST"])
+    df_cpo["Dates"] = pd.to_datetime(df_cpo["Dates"])
+    mask_cpo = (df_cpo["Dates"] >= start_date) & (df_cpo["Dates"] <= end_date)
+    cpo_mean = df_cpo.loc[mask_cpo, "PX_LAST"].mean()
+
+    # --- Biodiesel (bulanan) ---
+    df_bio = pd.read_excel(EXCEL_DATA_PATH, sheet_name="(Data)Biodesel", usecols=["Date", "HIP Biodiesel IDR/L"])
+    df_bio["Date"] = pd.to_datetime(df_bio["Date"])
+
+    mask_bio = (
+        (df_bio["Date"].dt.year == end_date.year) &
+        (df_bio["Date"].dt.month == end_date.month)
+    )
+    bio_mean = df_bio.loc[mask_bio, "HIP Biodiesel IDR/L"].mean()
+
+    return cpo_mean, bio_mean
+
+def get_comparison(start_date, end_date, start_date_prev, end_date_prev):
+    """
+    Mengambil rata-rata CPO untuk rentang sekarang dan rentang sebelumnya,
+    mengambil nilai biodiesel untuk bulan sekarang & bulan sebelumnya,
+    lalu menghitung perubahan persen.
+    Mengembalikan dict: cpo, bio, cpo_change, bio_change, same_month
+    """
+    # --- CPO harian ---
+    df_cpo = pd.read_excel(EXCEL_DATA_PATH, sheet_name="(Data)CPO", usecols=["Dates", "PX_LAST"])
+    df_cpo["Dates"] = pd.to_datetime(df_cpo["Dates"]).dt.normalize()
+
+    # current
+    cur_mask = (df_cpo["Dates"] >= start_date) & (df_cpo["Dates"] <= end_date)
+    cpo_current = df_cpo.loc[cur_mask, "PX_LAST"].mean() if not df_cpo.loc[cur_mask].empty else None
+
+    # previous (rentang yang disediakan)
+    if start_date_prev is not None and end_date_prev is not None:
+        prev_mask = (df_cpo["Dates"] >= start_date_prev) & (df_cpo["Dates"] <= end_date_prev)
+        cpo_previous = df_cpo.loc[prev_mask, "PX_LAST"].mean() if not df_cpo.loc[prev_mask].empty else None
+    else:
+        cpo_previous = None
+
+    # change CPO
+    if cpo_current is None:
+        cpo_current = None
+        cpo_change = None
+    elif cpo_previous in (None, 0):
+        cpo_change = None
+    else:
+        cpo_change = round(((cpo_current - cpo_previous) / cpo_previous) * 100, 2)
+
+    # --- Biodiesel bulanan ---
+    df_bio = pd.read_excel(EXCEL_DATA_PATH, sheet_name="(Data)Biodiesel", usecols=["Date", "HIP Biodiesel IDR/L"])
+    df_bio["Date"] = pd.to_datetime(df_bio["Date"])
+
+    # pilih bulan berdasarkan start_date (kamu bisa ubah nanti jadi mid_date rule jika mau)
+    cur_year = start_date.year
+    cur_month = start_date.month
+    bio_current_rows = df_bio[(df_bio["Date"].dt.year == cur_year) & (df_bio["Date"].dt.month == cur_month)]
+    bio_current = bio_current_rows["HIP Biodiesel IDR/L"].mean() if not bio_current_rows.empty else None
+
+    if start_date_prev is not None:
+        prev_year = start_date_prev.year
+        prev_month = start_date_prev.month
+        bio_prev_rows = df_bio[(df_bio["Date"].dt.year == prev_year) & (df_bio["Date"].dt.month == prev_month)]
+        bio_previous = bio_prev_rows["HIP Biodiesel IDR/L"].mean() if not bio_prev_rows.empty else None
+    else:
+        bio_previous = None
+
+    # change biodiesel
+    if bio_current is None:
+        bio_change = None
+    elif bio_previous in (None, 0):
+        bio_change = None
+    else:
+        bio_change = round(((bio_current - bio_previous) / bio_previous) * 100, 2)
+
+    # apakah minggu sebelumnya ada di bulan yang sama? (bandingkan start_date dan start_date_prev)
+    same_month = False
+    if start_date_prev is not None:
+        same_month = (start_date.month == start_date_prev.month)
+
+    # round numbers for output
+    def _r(x): 
+        return None if x is None else round(x, 2)
+
+    return {
+        "cpo": _r(cpo_current),
+        "bio": _r(bio_current),
+        "cpo_change": cpo_change,
+        "bio_change": bio_change,
+        "same_month": same_month
+    }
+
+def save_to_excel_with_cpo(new_data, output_path, sheet_name):
     if not new_data:
         print("Tidak ada summary yang dihasilkan.")
         return
     new_df = pd.DataFrame(new_data)
-    if cpo_analysis is not None:
-        new_df["Summary Data"] = cpo_analysis
+    need_summary_col = "Summary Data" in new_df.columns
     if os.path.exists(output_path):
         book = load_workbook(output_path)
         try:
@@ -157,7 +258,7 @@ def save_to_excel_with_cpo(new_data, output_path, sheet_name, cpo_analysis=None)
             for col in ["Tanggal awal", "Tanggal akhir"]:
                 if col in existing_df.columns:
                     existing_df[col] = pd.to_datetime(existing_df[col]).dt.date
-            if cpo_analysis is not None and "Summary Data" not in existing_df.columns:
+            if need_summary_col and "Summary Data" not in existing_df.columns:
                 existing_df["Summary Data"] = None
             combined_df = pd.concat([existing_df, new_df], ignore_index=True)
             print(f"Menambahkan summary baru ke sheet '{sheet_name}'.")
@@ -178,26 +279,56 @@ def process_topic(model, topic_name, config):
     print(f"{'='*60}")
     target_sheets = config["target_sheets"]
     output_sheet = config["output_sheet"]
-    has_cpo = config.get("has_cpo", False)
+    has_data_sentiment = config.get("has_data_sentiment", False)
     last_date = get_last_summary_date(OUTPUT_PATH, output_sheet)
     if last_date is not None:
         start_date = last_date + pd.Timedelta(days=1)
     else:
         start_date = datetime(2025, 1, 1)
-    end_date = pd.to_datetime("2025-11-25")
+    end_date = pd.to_datetime("2025-11-28")
     print(f"Akan proses berita dari {start_date.date()} sampai {end_date.date()}")
     all_news_list = collect_news_from_sheets(EXCEL_SCRAP_PATH, target_sheets, start_date, end_date)
     if not all_news_list:
         print(f"⚠️ Tidak ada berita baru untuk {topic_name}")
         return
     print(f"Total berita ditemukan: {len(all_news_list)}")
-    summary = summarize_all_news(model, all_news_list, start_date, end_date, target_sheets)
-    cpo_analysis = None
-    if has_cpo and summary:
-        print(f"\nMengambil data CPO untuk rentang tanggal yang sama...")
-        cpo_analysis = get_cpo_analysis(model, start_date, end_date)
+    summary = summarize_all_news(
+        model,
+        all_news_list,
+        start_date,
+        end_date,
+        target_sheets,
+        config["role_prompt"],
+        config["spesific_prompt"]
+        )
+    summary_data = None
+    if has_data_sentiment and summary:
+        start_prev, end_prev = get_prev_period()
+        if start_prev and end_prev:
+            cpo_now, bio_now = compute_cpo_biodiesel(start_date, end_date)
+            cpo_prev, bio_prev = compute_cpo_biodiesel(start_prev, end_prev)
+            cpo_change = ((cpo_now - cpo_prev) / cpo_prev) * 100 if cpo_prev != 0 else 0
+            bio_change = ((bio_now - bio_prev) / bio_prev) * 100 if bio_prev != 0 else 0
+            cpo_trend = "kenaikan" if cpo_change >= 0 else "penurunan"
+            bio_trend = "kenaikan" if bio_change >= 0 else "penurunan"
+            summary_data = (
+                f"Pada periode {start_date.date()} sampai {end_date.date()}, rata-rata CPO {cpo_now:.2f} dan rata-rata Biodiesel {bio_now:.2f}."
+                f"Periode ini mengalami {cpo_trend} {abs(cpo_change):.2f}% nilai CPO "
+                f"dan {bio_trend} {abs(bio_change):.2f}% biodiesel dibanding week sebelumnya."
+            )
+
     if summary:
-        save_to_excel_with_cpo([summary], OUTPUT_PATH, output_sheet, cpo_analysis)
+        save_to_excel_with_cpo(
+            [{
+                "Tanggal awal": start_date.date(),
+                "Tanggal akhir": end_date.date(),
+                "Summary": summary,
+                "Summary Data": summary_data
+            }],
+            OUTPUT_PATH,
+            output_sheet
+        )
+
 def main():
     print("Memulai proses summarization untuk semua topik...\n")
     model = setup_gemini()
