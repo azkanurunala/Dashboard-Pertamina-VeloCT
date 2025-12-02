@@ -60,8 +60,8 @@ sumber_dict = {
     # "neraca perdagangan": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
     # "pertumbuhan domestik bruto": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
     "bioenergi": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    "harga bbm" : [scrape_kontan_bbm, main_bisnis_indonesia, scrape_oilprice, main_bloomberg_technoz], 
-    "volume bbm" : [scrape_kontan_bbm, main_bisnis_indonesia, scrape_oilprice, main_bloomberg_technoz], 
+    "harga minyak" : [scrape_kontan_bbm, main_bisnis_indonesia, scrape_oilprice, main_bloomberg_technoz], 
+    "volume minyak" : [scrape_kontan_bbm, main_bisnis_indonesia, scrape_oilprice, main_bloomberg_technoz], 
     "harga produk kilang pertamina" : [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
     "volume produk kilang pertamina" : [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz]
 }
@@ -161,8 +161,8 @@ sheet_to_keyword = {
     # "(News)neraca perdagangan": "neraca perdagangan",
     # "(News)PDB": "pertumbuhan domestik bruto",
     "(News)Bioenergi": "bioenergi",
-    "(News)Harga Minyak": "harga bbm",
-    "(News)Volume Minyak" : "volume bbm",
+    "(News)Harga Minyak": "harga minyak",
+    "(News)Volume Minyak" : "volume minyak",
     "(News)Harga Produk Kilang" : "harga produk kilang pertamina", 
     "(News)Volume Produk Kilang" : "volume produk kilang pertamina"
 }
