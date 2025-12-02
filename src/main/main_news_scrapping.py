@@ -37,8 +37,8 @@ sinonim_dict = {
     # "pertumbuhan domestik bruto": ["PDB", "pertumbuhan ekonomi"],
     "bioenergi": ["minyak kelapa sawit", "crude palm oil", "CPO", "minyak sawit", "kelapa sawit", "sawit", 
                   "HIP BBN Biodesel","biodiesel", "harga fame", "harga indeks pasar biodiesel", "b40", "b50", "biodiesel", "biofuel"],
-    "harga bbm" : ["oil price", "minyak mentah","crude oil"], 
-    "volume bbm" : ["volume bbm", "oil volume", "minyak mentah", "volume minyak"], 
+    "harga minyak" : ["oil price", "minyak mentah","crude oil"], 
+    "volume minyak" : ["volume bbm", "oil volume", "minyak mentah", "volume minyak"], 
     "harga produk kilang pertamina" : ["bbm","harga kilang pertamina", "kilang pertamina", "kilang", "refinery", "harga pertamina"], 
     "volume produk kilang pertamina" : ["bbm", "volume kilang pertamina", "volume kilang", "refinery", "volume pertamina"]
 }
