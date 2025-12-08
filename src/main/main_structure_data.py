@@ -7,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from code_scrapping.migas_eia import main_eia
 from code_scrapping.migas_esdm import main_price_esdm
 from code_scrapping.biodiesel_esdm_scrape import main_biodiesel_esdm
-from code_scrapping.cpo import update_harga_komoditas_gapki
+from code_scrapping.scrapping_cpo import main_scraper_cpo
 
 def run_all_tasks():
     print("=== Memulai Proses Scraping Data ===\n")
@@ -31,7 +31,7 @@ def run_all_tasks():
         print(f"ERROR: Biodiesel ESDM Scraper gagal. Pesan: {e}\n")
     print("--- [4/4] Menjalankan GAPKI CPO Updater ---")
     try:
-        update_harga_komoditas_gapki()
+        main_scraper_cpo()
         print("SUCCESS: GAPKI CPO Updater selesai.\n")
     except Exception as e:
         print(f"ERROR: GAPKI CPO Updater gagal. Pesan: {e}\n")
