@@ -5,7 +5,7 @@ import os
 
 _API_KEY = "kODFA7mKVrNKWrGyFiIk5fIdlC1AKGXzba5lJxzY"
 _BASE_API_URL = "https://api.eia.gov/v2/steo/data/"
-_EXCEL_PATH = "../results/Terstruktur(Data Scrapping).xlsx"
+_EXCEL_PATH = "../results/(Terstruktur)Data Scrapping.xlsx"
 _SHEET_NAME = "(Data)eia"
 
 _MONTH_TO_NUMBER = {

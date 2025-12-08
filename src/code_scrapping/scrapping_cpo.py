@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime, date
 from openpyxl import load_workbook
 
-EXCEL_PATH = "../results/Terstruktur(Data Scrapping).xlsx"
+EXCEL_PATH = "../results/(Terstruktur)Data Scrapping.xlsx"
 SHEET_NAME = "(Data)CPO"
 
 def get_max_pagination(base_url):
