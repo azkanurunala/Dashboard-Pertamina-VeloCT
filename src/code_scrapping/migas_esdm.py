@@ -207,7 +207,7 @@ def extract_icp_from_all_pdfs(folder: str = "../results/hasil-migas-esdm-pdf"):
 
 # ============================== MAIN ==============================
 def main_price_esdm():
-    EXCEL_PATH = "../results/Terstruktur(Data Scrapping).xlsx"
+    EXCEL_PATH = "../results/(Terstruktur)Data Scrapping.xlsx"
     SHEET_NAME = "(Data)Harga Minyak"
     URL = "https://www.migas.esdm.go.id/post/read/harga-minyak-mentah"
     print("="*80)

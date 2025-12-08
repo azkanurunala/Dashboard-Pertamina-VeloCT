@@ -26,7 +26,7 @@ def matches_biodiesel_criteria(title):
     keywords = ["HIP", "BBN", "JENIS", "BIODIESEL", "BULAN"]
     return all(keyword in title.upper() for keyword in keywords)
 
-def get_missing_months_from_excel(filename='../results/Terstruktur(Data Scrapping).xlsx', sheet_name='(Data)Biodesel'):
+def get_missing_months_from_excel(filename='../results/(Terstruktur)Data Scrapping.xlsx', sheet_name='(Data)Biodesel'):
     try:
         df = pd.read_excel(filename, sheet_name=sheet_name, engine="openpyxl")
         if df.empty or 'Bulan HIP' not in df.columns:
@@ -98,7 +98,7 @@ def extract_pdf_url_from_html(html_content):
         return match.group(1)
     return None
 
-def scrape_biodiesel_articles_api(excel_filename='../results/Terstruktur(Data Scrapping).xlsx', sheet_name='(Data)Biodesel'):
+def scrape_biodiesel_articles_api(excel_filename='../results/(Terstruktur)Data Scrapping.xlsx', sheet_name='(Data)Biodesel'):
     missing_months = get_missing_months_from_excel(excel_filename, sheet_name)
     if missing_months == 0:
         print("Tidak ada artikel baru yang perlu diambil")
@@ -268,7 +268,7 @@ def parse_all_pdfs(pdf_links):
                 print(f"Gagal menghapus {pdf_file}: {e}")
     return excel_data
 
-def save_to_excel(data, filename='../results/Terstruktur(Data Scrapping).xlsx', sheet_name='(Data)Biodesel'):
+def save_to_excel(data, filename='../results/(Terstruktur)Data Scrapping.xlsx', sheet_name='(Data)Biodesel'):
     if not data:
         print("Tidak ada data baru untuk disimpan")
         return None
