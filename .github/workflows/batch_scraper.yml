@@ -16,6 +16,7 @@ on:
 jobs:
   scrape-news:
     runs-on: ubuntu-latest
+    timeout-minutes: 360  # 6 hours max
     
     steps:
       - name: 📥 Checkout Repository
@@ -26,11 +27,29 @@ jobs:
         with:
           python-version: '3.11'
           cache: 'pip'
+          cache-dependency-path: 'requirements.txt'
+      
+      - name: 🌐 Setup Chrome & ChromeDriver
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
       
       - name: 📦 Install Dependencies
         run: |
+          echo "📦 Installing Python packages..."
           pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install --no-cache-dir -r requirements.txt
+          
+          echo "✅ Installed packages:"
+          pip list | grep -E "gspread|google-auth|pandas|selenium|beautifulsoup4|requests"
+      
+      - name: 🔧 Verify Chrome Installation
+        run: |
+          echo "🌐 Chrome version:"
+          google-chrome --version
+          
+          echo "🔧 ChromeDriver version:"
+          chromedriver --version || echo "ChromeDriver will be auto-downloaded by webdriver-manager"
       
       - name: 🚀 Run Batch Scraper
         env:
@@ -42,31 +61,63 @@ jobs:
           echo "🤖 Starting batch scraper..."
           echo "📅 Start Date: $START_DATE"
           echo "📅 End Date: $END_DATE"
-          echo "📊 Spreadsheet: $SPREADSHEET_ID"
+          echo "📊 Spreadsheet: ${SPREADSHEET_ID:0:20}..."
           echo ""
-          python scrapper/main_scrapper/batch_runner.py
+          
+          # Run scraper with output logging
+          python scrapper/main_scrapper/batch_runner.py 2>&1 | tee batch_scraper.log
       
-      - name: 📊 Upload Logs
+      - name: 📊 Upload Logs & Backups
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: scraper-logs-${{ github.run_number }}
+          name: scraper-results-${{ github.run_number }}
           path: |
-            batch_scraper_*.log
+            batch_scraper*.log
             backup_*.xlsx
+            *.log
           retention-days: 7
+          if-no-files-found: warn
       
-      - name: 💬 Notify Complete
+      - name: 💬 Success Summary
         if: success()
         run: |
-          echo "✅ ✅ ✅ Batch scraping completed successfully! ✅ ✅ ✅"
           echo ""
-          echo "📊 Check your Google Sheet for updated data"
-          echo "📅 All dates from ${{ github.event.inputs.start_date }} to ${{ github.event.inputs.end_date }} processed"
+          echo "════════════════════════════════════════════════════════════════"
+          echo "✅ ✅ ✅ BATCH SCRAPING COMPLETED SUCCESSFULLY! ✅ ✅ ✅"
+          echo "════════════════════════════════════════════════════════════════"
+          echo ""
+          echo "📊 Your Google Sheet has been updated!"
+          echo "📅 Date range: ${{ github.event.inputs.start_date }} to ${{ github.event.inputs.end_date }}"
+          echo "🔗 Check your sheet: https://docs.google.com/spreadsheets/d/${{ secrets.SPREADSHEET_ID }}"
+          echo ""
+          echo "📝 View detailed logs in the Artifacts section above"
+          echo "════════════════════════════════════════════════════════════════"
       
-      - name: ❌ Notify Failure
+      - name: ❌ Failure Summary
         if: failure()
         run: |
-          echo "❌ Batch scraping failed!"
-          echo "📋 Check the Actions tab for error details"
-          echo "💾 Backup files saved in Artifacts"
+          echo ""
+          echo "════════════════════════════════════════════════════════════════"
+          echo "❌ BATCH SCRAPING FAILED"
+          echo "════════════════════════════════════════════════════════════════"
+          echo ""
+          echo "🔍 Troubleshooting steps:"
+          echo "   1. Check the error messages in the log above"
+          echo "   2. Download artifacts to see detailed logs"
+          echo "   3. Common issues:"
+          echo "      • Missing GOOGLE_CREDENTIALS secret"
+          echo "      • Missing SPREADSHEET_ID secret"
+          echo "      • Invalid date format"
+          echo "      • Network timeout (try smaller date range)"
+          echo ""
+          echo "💾 Backup files (if any) are saved in Artifacts"
+          echo "📋 Any successfully scraped data is already in Google Sheets"
+          echo "════════════════════════════════════════════════════════════════"
+      
+      - name: 🧹 Cleanup
+        if: always()
+        run: |
+          echo "🧹 Cleaning up temporary files..."
+          rm -f *.log 2>/dev/null || true
+          echo "✅ Cleanup complete"
