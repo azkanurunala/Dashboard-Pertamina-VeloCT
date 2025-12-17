@@ -65,7 +65,7 @@ jobs:
           echo ""
           
           # Run scraper with output logging
-          python scrapper/main_scrapper/batch_runner.py 2>&1 | tee batch_scraper.log
+          python src/main/batch_runner.py 2>&1 | tee batch_scraper.log
       
       - name: 📊 Upload Logs & Backups
         if: always()
