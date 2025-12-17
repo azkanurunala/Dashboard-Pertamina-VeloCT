@@ -1,0 +1,72 @@
+name: 🤖 Batch Scraper (Tanggal 02-17)
+
+on:
+  # Manual trigger via GitHub UI
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: 'Tanggal mulai (YYYY-MM-DD)'
+        required: true
+        default: '2025-12-02'
+      end_date:
+        description: 'Tanggal akhir (YYYY-MM-DD)'
+        required: true
+        default: '2025-12-17'
+
+jobs:
+  scrape-news:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: 📦 Install Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: 🚀 Run Batch Scraper
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          START_DATE: ${{ github.event.inputs.start_date }}
+          END_DATE: ${{ github.event.inputs.end_date }}
+        run: |
+          echo "🤖 Starting batch scraper..."
+          echo "📅 Start Date: $START_DATE"
+          echo "📅 End Date: $END_DATE"
+          echo "📊 Spreadsheet: $SPREADSHEET_ID"
+          echo ""
+          python scrapper/main_scrapper/batch_runner.py
+      
+      - name: 📊 Upload Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scraper-logs-${{ github.run_number }}
+          path: |
+            batch_scraper_*.log
+            backup_*.xlsx
+          retention-days: 7
+      
+      - name: 💬 Notify Complete
+        if: success()
+        run: |
+          echo "✅ ✅ ✅ Batch scraping completed successfully! ✅ ✅ ✅"
+          echo ""
+          echo "📊 Check your Google Sheet for updated data"
+          echo "📅 All dates from ${{ github.event.inputs.start_date }} to ${{ github.event.inputs.end_date }} processed"
+      
+      - name: ❌ Notify Failure
+        if: failure()
+        run: |
+          echo "❌ Batch scraping failed!"
+          echo "📋 Check the Actions tab for error details"
+          echo "💾 Backup files saved in Artifacts"
