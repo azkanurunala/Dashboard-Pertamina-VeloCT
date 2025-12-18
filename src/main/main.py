@@ -1,6 +1,6 @@
 import pandas as pd
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import sys
 import os
 import re
@@ -9,27 +9,10 @@ from google.oauth2.service_account import Credentials
 from dotenv import load_dotenv
 import json
 
-# ============================================================================
-# GOOGLE SHEETS AUTHENTICATION
-# ============================================================================
-
 def get_gspread_client():
-    """
-    Connect to Google Sheets using Service Account
-    
-    Setup:
-    1. Enable Google Sheets API di Google Cloud Console
-    2. Create Service Account
-    3. Download JSON credentials
-    4. Share your Google Sheet with service account email
-    """
-    
-    # Check if credentials in env (for GitHub Actions)
     creds_json = os.getenv('GOOGLE_CREDENTIALS')
-    
     if creds_json:
-        # From GitHub Secrets (JSON string)
-        print("📋 Using GOOGLE_CREDENTIALS from environment")
+        print("Using GOOGLE_CREDENTIALS from environment")
         creds_dict = json.loads(creds_json)
         credentials = Credentials.from_service_account_info(
             creds_dict,
@@ -39,7 +22,6 @@ def get_gspread_client():
             ]
         )
     else:
-        # From local file - check multiple possible locations
         possible_paths = [
             'credentials.json',
             os.path.join(os.path.dirname(__file__), 'credentials.json'),
@@ -57,9 +39,7 @@ def get_gspread_client():
                 "\n❌ No credentials.json found!\n"
                 "\n📝 Make sure credentials.json is in one of:\n"
                 "   - Project root folder\n"
-                "   - scrapper/main_scrapper/ folder\n"
-                "\n   Download from: https://console.cloud.google.com\n"
-                "   Service Account → Keys → Add Key → JSON\n"
+                "   - src/main/ folder\n"
             )
         
         print(f"📋 Using credentials from: {creds_file}")
@@ -114,17 +94,13 @@ def read_worksheet_gsheet(worksheet):
 def write_worksheet_gsheet(worksheet, df):
     """Write data to Google Sheets worksheet"""
     try:
-        # Clear existing data
         worksheet.clear()
         
-        # Prepare data
         headers = df.columns.tolist()
         values = [headers] + df.values.tolist()
         
-        # Convert all to strings and handle NaN
         values = [[str(cell) if pd.notna(cell) else "" for cell in row] for row in values]
         
-        # Write to sheet
         worksheet.update('A1', values)
         
         print(f"✅ Successfully wrote {len(df)} rows")
@@ -145,7 +121,24 @@ def get_or_create_worksheet(spreadsheet, sheet_name):
         return worksheet
 
 # ============================================================================
-# SCRAPING LOGIC (SAMA SEPERTI SEBELUMNYA)
+# DATE RANGE GENERATOR
+# ============================================================================
+
+def generate_date_range(start_date, end_date):
+    """Generate list of dates between start and end"""
+    start = datetime.strptime(start_date, '%Y-%m-%d')
+    end = datetime.strptime(end_date, '%Y-%m-%d')
+    
+    dates = []
+    current = start
+    while current <= end:
+        dates.append(current.strftime('%Y-%m-%d'))
+        current += timedelta(days=1)
+    
+    return dates
+
+# ============================================================================
+# SCRAPING LOGIC
 # ============================================================================
 
 sinonim_dict = {
@@ -173,17 +166,17 @@ sinonim_dict = {
 sumber_dict = {
     "indeks risiko geopolitik": [scrape_cnn_international, scrape_cnbc_international],
     "indeks volatilitas": [scrape_cnn_international, scrape_cnbc_international],
-    "kurs": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
-    "ihsg": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
-    "inflasi": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
-    "bi rate": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
-    "jibor": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
-    "indeks sales retail": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
-    "indeks kepercayaan konsumen": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
-    "indeks kinerja manufaktur": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
-    "indeks kinerja jasa": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
-    "neraca perdagangan": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
-    "pertumbuhan domestik bruto": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    "kurs": [main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    "ihsg": [main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    "inflasi": [main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    "bi rate": [main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    "jibor": [main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    "indeks sales retail": [main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    "indeks kepercayaan konsumen": [main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    "indeks kinerja manufaktur": [main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    "indeks kinerja jasa": [main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    "neraca perdagangan": [main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    "pertumbuhan domestik bruto": [main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
     "bioenergi": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
     "harga minyak" : [scrape_kontan_bbm, main_bisnis_indonesia, scrape_oilprice, main_bloomberg_technoz], 
     "volume minyak" : [scrape_kontan_bbm, main_bisnis_indonesia, scrape_oilprice, main_bloomberg_technoz], 
@@ -226,7 +219,7 @@ def standardize_format(df):
 def scrape_keyword(keyword, tanggal_filter):
     hasil_final = pd.DataFrame()
     semua_keyword = [keyword] + sinonim_dict.get(keyword, [])
-    sumber = sumber_dict.get(keyword, [main_kompas, main_bisnis_indonesia, scrape_tempo, scrape_kontan])
+    sumber = sumber_dict.get(keyword, [main_kompas, main_bisnis_indonesia, scrape_tempo])
     
     for kata in semua_keyword:
         print(f"\n📌 Scraping keyword: '{kata}'")
@@ -280,34 +273,40 @@ sheet_to_keyword = {
 }
 
 # ============================================================================
-# MAIN FUNCTION
+# MAIN FUNCTION WITH DATE RANGE
 # ============================================================================
 
 def main():
     print("\n" + "=" * 80)
-    print("🚀 NEWS SCRAPER TO GOOGLE SHEETS")
+    print("🚀 NEWS SCRAPER TO GOOGLE SHEETS (DATE RANGE)")
     print("=" * 80)
     
     # Load environment
     load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
     
-    # Configuration
-    tanggal_filter = os.getenv('TANGGAL_FILTER', '2025-12-01')
+    # Configuration - support single date or range
+    start_date = os.getenv('START_DATE')
+    end_date = os.getenv('END_DATE')
+    single_date = os.getenv('TANGGAL_FILTER')
     spreadsheet_id = os.getenv('SPREADSHEET_ID')
     
-    print(f"\n📊 Configuration:")
+    # Determine date range
+    if start_date and end_date:
+        date_list = generate_date_range(start_date, end_date)
+        print(f"\n📅 Date Range Mode: {start_date} to {end_date}")
+    elif single_date:
+        date_list = [single_date]
+        print(f"\n📅 Single Date Mode: {single_date}")
+    else:
+        date_list = [datetime.now().strftime('%Y-%m-%d')]
+        print(f"\n📅 Default Mode: Today ({date_list[0]})")
+    
     print(f"   Spreadsheet ID: {spreadsheet_id[:20]}..." if spreadsheet_id else "   ❌ SPREADSHEET_ID not found!")
-    print(f"   Date Filter: {tanggal_filter}")
+    print(f"   Total dates to process: {len(date_list)}")
     print(f"   Start Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     if not spreadsheet_id:
         print("\n❌ ERROR: SPREADSHEET_ID not found in .env!")
-        print("\n📝 To get SPREADSHEET_ID:")
-        print("   1. Open your Google Sheet")
-        print("   2. Look at the URL:")
-        print("      https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit")
-        print("   3. Copy the SPREADSHEET_ID part")
-        print("   4. Add to .env: SPREADSHEET_ID=<paste_here>")
         return
     
     # Connect to Google Sheets
@@ -318,10 +317,6 @@ def main():
         print(f"✅ Connected to: {spreadsheet.title}")
     except Exception as e:
         print(f"\n❌ ERROR: {str(e)}")
-        print("\n💡 Common issues:")
-        print("   - Credentials not found or invalid")
-        print("   - Sheet not shared with service account email")
-        print("   - Wrong SPREADSHEET_ID")
         return
     
     # Sheet names
@@ -346,75 +341,105 @@ def main():
         "(News)Volume Produk Kilang"
     ]
     
-    # Process each sheet
-    total = len(sheet_names)
-    success_count = 0
+    # Statistics
+    total_sheets = len(sheet_names)
+    total_dates = len(date_list)
+    total_tasks = total_sheets * total_dates
+    completed_tasks = 0
+    failed_tasks = 0
+    total_articles = 0
+    start_time = datetime.now()
     
-    for idx, sheet_name in enumerate(sheet_names, 1):
-        keyword_asli = sheet_to_keyword.get(sheet_name)
-        if not keyword_asli:
-            print(f"\n⚠️  Keyword not found for '{sheet_name}'. Skipping.")
-            continue
+    # Process each date
+    for date_idx, tanggal in enumerate(date_list, 1):
+        print(f"\n" + "=" * 80)
+        print(f"📅 DATE {date_idx}/{total_dates}: {tanggal}")
+        print(f"=" * 80)
         
-        print(f"\n{'='*80}")
-        print(f"📄 SHEET {idx}/{total}: {sheet_name}")
-        print(f"🔑 Keyword: {keyword_asli.upper()}")
-        print(f"{'='*80}")
-        
-        # Scrape data
-        hasil_df = scrape_keyword(keyword_asli, tanggal_filter)
-        print(f"\n📊 Scraping result: {len(hasil_df)} new articles")
-        
-        try:
-            # Get or create worksheet
-            worksheet = get_or_create_worksheet(spreadsheet, sheet_name)
+        # Process each sheet
+        for sheet_idx, sheet_name in enumerate(sheet_names, 1):
+            keyword_asli = sheet_to_keyword.get(sheet_name)
+            if not keyword_asli:
+                print(f"\n⚠️  Keyword not found for '{sheet_name}'. Skipping.")
+                continue
             
-            # Read existing data
-            print(f"📖 Reading existing data...")
-            existing_df = read_worksheet_gsheet(worksheet)
+            print(f"\n[{date_idx}/{total_dates}] [{sheet_idx}/{total_sheets}] {sheet_name}")
+            print(f"🔑 Keyword: {keyword_asli.upper()}")
+            print(f"📅 Date: {tanggal}")
             
-            if not existing_df.empty:
-                combined_df = pd.concat([existing_df, hasil_df], ignore_index=True)
-                combined_df = combined_df.drop_duplicates(subset=['url'], keep='first')
-                print(f"✅ Combined data: {len(combined_df)} total rows")
-            else:
-                combined_df = hasil_df
-                print(f"📝 New worksheet, no existing data")
-            
-            # Write to Google Sheets
-            print(f"💾 Writing data to Google Sheets...")
-            success = write_worksheet_gsheet(worksheet, combined_df)
-            
-            if success:
-                print(f"✅ SUCCESS! {len(combined_df)} articles saved")
-                success_count += 1
-            else:
-                raise Exception("Write failed")
+            try:
+                # Scrape data for this date
+                hasil_df = scrape_keyword(keyword_asli, tanggal)
+                articles_found = len(hasil_df)
+                print(f"\n📊 Found: {articles_found} articles")
                 
-        except Exception as e:
-            print(f"❌ Error processing sheet: {e}")
-            # Save backup locally
-            local_filename = f"backup_{sheet_name}.xlsx"
-            combined_df.to_excel(local_filename, index=False)
-            print(f"💾 Backup saved: {local_filename}")
+                # Get or create worksheet
+                worksheet = get_or_create_worksheet(spreadsheet, sheet_name)
+                
+                # Read existing data
+                existing_df = read_worksheet_gsheet(worksheet)
+                
+                if not existing_df.empty:
+                    combined_df = pd.concat([existing_df, hasil_df], ignore_index=True)
+                    combined_df = combined_df.drop_duplicates(subset=['url'], keep='first')
+                    new_articles = len(combined_df) - len(existing_df)
+                    print(f"✅ Combined: {len(combined_df)} total ({new_articles} new)")
+                else:
+                    combined_df = hasil_df
+                    new_articles = articles_found
+                    print(f"📝 New worksheet: {len(combined_df)} articles")
+                
+                # Write to Google Sheets
+                success = write_worksheet_gsheet(worksheet, combined_df)
+                
+                if success:
+                    completed_tasks += 1
+                    total_articles += new_articles
+                    print(f"✅ SUCCESS!")
+                else:
+                    raise Exception("Write failed")
+                    
+            except Exception as e:
+                failed_tasks += 1
+                print(f"❌ Error: {e}")
+                # Save backup
+                backup_filename = f"backup_{sheet_name}_{tanggal}.xlsx"
+                if 'combined_df' in locals() and not combined_df.empty:
+                    combined_df.to_excel(backup_filename, index=False)
+                    print(f"💾 Backup saved: {backup_filename}")
+            
+            # Progress
+            progress = ((date_idx - 1) * total_sheets + sheet_idx) / total_tasks * 100
+            print(f"\n📈 Overall Progress: {progress:.1f}% ({completed_tasks}/{total_tasks} tasks)")
+            
+            # Rate limiting
+            time.sleep(3)
         
-        # Rate limiting - Google Sheets has quotas
-        if idx < total:
-            print(f"\n⏳ Waiting 5 seconds before next sheet...")
-            time.sleep(5)
+        # Delay between dates
+        if date_idx < total_dates:
+            print(f"\n⏳ Waiting 10 seconds before next date...")
+            time.sleep(10)
     
-    print(f"\n{'='*80}")
+    # Final summary
+    end_time = datetime.now()
+    duration = end_time - start_time
+    
+    print(f"\n" + "=" * 80)
     print(f"🎉 SCRAPING COMPLETE!")
-    print(f"{'='*80}")
-    print(f"   Total sheets: {total}")
-    print(f"   Successful: {success_count}")
-    print(f"   Failed: {total - success_count}")
-    print(f"   End time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"=" * 80)
+    print(f"   Dates processed: {total_dates}")
+    print(f"   Sheets processed: {total_sheets}")
+    print(f"   Total tasks: {total_tasks}")
+    print(f"   Successful: {completed_tasks}/{total_tasks} ({completed_tasks/total_tasks*100:.1f}%)")
+    print(f"   Failed: {failed_tasks}/{total_tasks}")
+    print(f"   New articles added: {total_articles}")
+    print(f"   Duration: {duration}")
+    print(f"   Start: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"   End: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"\n💡 Next steps:")
     print(f"   1. Open your Google Sheet to verify data")
-    print(f"   2. Copy to Excel locally if needed")
-    print(f"   3. Setup GitHub Actions for automation")
-    print(f"{'='*80}\n")
+    print(f"   2. Check for any backup files if there were errors")
+    print(f"=" * 80 + "\n")
 
 if __name__ == "__main__":
     main()
