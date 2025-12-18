@@ -39,18 +39,15 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
-    - name: Create .env file
-      run: |
-        echo "SPREADSHEET_ID=${{ secrets.SPREADSHEET_ID }}" >> .env
-        echo 'GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS }}' >> .env
-        echo "TANGGAL_FILTER=${{ github.event.inputs.date || '2024-12-17' }}" >> .env
-    
     - name: Test Kontan Scraper
+      env:
+        GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+        TANGGAL_FILTER: ${{ github.event.inputs.date || '2024-12-17' }}
+        PYTHONUNBUFFERED: 1
       run: |
         cd src/main
         python test_kontan.py
-      env:
-        PYTHONUNBUFFERED: 1
       timeout-minutes: 30
     
     - name: Upload backup if exists
