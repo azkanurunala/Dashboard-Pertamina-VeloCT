@@ -3,9 +3,22 @@ import requests
 import pandas as pd
 from bs4 import BeautifulSoup
 from datetime import datetime, date
-from openpyxl import load_workbook
+from io import BytesIO
+import os
+import sys
+from dotenv import load_dotenv
 
-EXCEL_PATH = "../results/(Terstruktur)Data Scrapping.xlsx"
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from helpers.onedrive_helper import (
+    get_access_token,
+    download_excel_from_onedrive,
+    upload_excel_to_onedrive,
+    read_excel_sheet_from_onedrive
+)
+
+load_dotenv()
+
+EXCEL_PATH = os.getenv("ONEDRIVE_FILE_PATH_STRUCTURE", "/(News)Scrapping/(Terstruktur)Data Scrapping.xlsx")
 SHEET_NAME = "(Data)CPO"
 
 def get_max_pagination(base_url):
@@ -125,9 +138,10 @@ def scrape_articles_until_last_date(last_date):
     print(f"\nTotal artikel baru ditemukan: {len(new_articles)}")
     return new_articles
 
-def get_last_upload_date():
+def get_last_upload_date(access_token):
     try:
-        df = pd.read_excel(EXCEL_PATH, sheet_name=SHEET_NAME)
+        print("Membaca data dari OneDrive...")
+        df = read_excel_sheet_from_onedrive(access_token, EXCEL_PATH, SHEET_NAME)
         
         if df.empty or "Upload_Dates" not in df.columns:
             print("Sheet kosong atau kolom Upload_Dates tidak ada")
@@ -144,9 +158,6 @@ def get_last_upload_date():
         print(f"Upload_Dates terakhir: {last_date_str}")
         return last_date_str
         
-    except FileNotFoundError:
-        print("File Excel tidak ditemukan")
-        return None
     except Exception as e:
         print(f"Error membaca Excel: {e}")
         return None
@@ -256,54 +267,73 @@ def scrape_harga_multi(url, article_title=None):
                             return harga_list
                         except:
                             continue
-    
     if not harga_list:
         print("Tidak ditemukan harga")
     return harga_list
-
-def update_excel_with_new_data(new_data_list):
+def update_excel_with_new_data(new_data_list, access_token):
+    print("Membaca data existing dari OneDrive...")
     try:
-        df_old = pd.read_excel(EXCEL_PATH, sheet_name=SHEET_NAME)
-        print(f"Data lama: {len(df_old)} baris")
+        df_old = read_excel_sheet_from_onedrive(access_token, EXCEL_PATH, SHEET_NAME)
+        if not df_old.empty:
+            print(f"Data lama: {len(df_old)} baris")
+        else:
+            df_old = pd.DataFrame(columns=["Upload_Dates", "Dates", "PX_LAST"])
+            print("Sheet kosong, akan membuat baru")
     except:
         df_old = pd.DataFrame(columns=["Upload_Dates", "Dates", "PX_LAST"])
-        print("File baru akan dibuat")
-    
+        print("Sheet tidak ditemukan, akan membuat baru")
     df_new = pd.DataFrame(new_data_list)
-    
     df_final = pd.concat([df_old, df_new], ignore_index=True)
-    
     df_final["Upload_Dates"] = pd.to_datetime(df_final["Upload_Dates"], errors='coerce')
     df_final["Dates"] = pd.to_datetime(df_final["Dates"], errors='coerce')
-    
     df_final.drop_duplicates(subset=["Dates"], keep="last", inplace=True)
-    
     df_final["Upload_Dates"] = df_final["Upload_Dates"].apply(
         lambda x: x.date() if pd.notna(x) and hasattr(x, 'date') else None
     )
     df_final["Dates"] = df_final["Dates"].apply(
         lambda x: x.date() if pd.notna(x) and hasattr(x, 'date') else None
     )
-    
     df_final.sort_values("Dates", ascending=True, inplace=True)
-    
+    print("Uploading ke OneDrive...")
     try:
-        book = load_workbook(EXCEL_PATH)
-        with pd.ExcelWriter(EXCEL_PATH, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-            writer._book = book
-            df_final.to_excel(writer, index=False, sheet_name=SHEET_NAME)
-    except FileNotFoundError:
-        with pd.ExcelWriter(EXCEL_PATH, engine='openpyxl') as writer:
-            df_final.to_excel(writer, index=False, sheet_name=SHEET_NAME)
-    
-    print(f"\nData tersimpan: {len(df_final)} baris total")
-    print(f"Data baru ditambahkan: {len(new_data_list)} baris")
+        excel_buffer = download_excel_from_onedrive(access_token, EXCEL_PATH)  
+        if excel_buffer:
+            output_buffer = BytesIO()
+            with pd.ExcelFile(excel_buffer) as xls:
+                with pd.ExcelWriter(output_buffer, engine='openpyxl') as writer:
+                    for sheet in xls.sheet_names:
+                        if sheet == SHEET_NAME:
+                            df_final.to_excel(writer, index=False, sheet_name=SHEET_NAME)
+                        else:
+                            df_temp = pd.read_excel(xls, sheet_name=sheet)
+                            df_temp.to_excel(writer, index=False, sheet_name=sheet)
+        else:
+            output_buffer = BytesIO()
+            with pd.ExcelWriter(output_buffer, engine='openpyxl') as writer:
+                df_final.to_excel(writer, index=False, sheet_name=SHEET_NAME)
+        upload_excel_to_onedrive(access_token, EXCEL_PATH, output_buffer)
+        print(f"\nData berhasil disimpan ke OneDrive: {EXCEL_PATH}")
+        print(f"  Sheet: {SHEET_NAME}")
+        print(f"  Total rows: {len(df_final)}")
+        print(f"  Data baru ditambahkan: {len(new_data_list)} baris")
+    except Exception as e:
+        print(f"\n✗ Error uploading to OneDrive: {e}")
+        import traceback
+        traceback.print_exc()
 
 def main_scraper_cpo():
     print("\n" + "="*60)
     print("GAPKI CPO PRICE SCRAPER")
+    print("STORAGE MODE: OneDrive")
     print("="*60 + "\n")
-    last_date = get_last_upload_date()
+    print("Autentikasi ke OneDrive...")
+    try:
+        access_token = get_access_token()
+        print("✓ Autentikasi berhasil\n")
+    except Exception as e:
+        print(f"✗ Autentikasi gagal: {e}")
+        return
+    last_date = get_last_upload_date(access_token)
     if not last_date:
         print("Tidak bisa melanjutkan tanpa tanggal terakhir")
         return
@@ -322,24 +352,21 @@ def main_scraper_cpo():
             continue
         if len(harga_list) > 1:
             print(f"Ditemukan {len(harga_list)} harga berbeda")
-
         for harga_data in harga_list:
             if harga_data["parsed_date"]:
                 dates = harga_data["parsed_date"]
             else:
                 dates = article["upload_date"]
-            
             all_data.append({
                 "Upload_Dates": article["upload_date"],
                 "Dates": dates,
                 "PX_LAST": harga_data["harga"]
             })
-    
     if all_data:
         print(f"\n{'='*60}")
         print(f"Menyimpan {len(all_data)} data ke Excel...")
         print(f"{'='*60}")
-        update_excel_with_new_data(all_data)
+        update_excel_with_new_data(all_data, access_token)
         print("\nSELESAI! Data berhasil diupdate")
     else:
         print("\nTidak ada data untuk disimpan")
