@@ -10,17 +10,17 @@ from code_scrapping.scrapping_cpo import main_scraper_cpo
 
 def run_daily_scraping():
     try:
-        print(">>> STEP 1: Menjalankan News Scraping")
-        print("-" * 70)
-        try:
-            main_news_scraping()
-            print("\nNews Scraping selesai")
-        except Exception as e:
-            print(f"\n✗ ERROR pada News Scraping: {e}")
-            import traceback
-            traceback.print_exc()
+        # print(">>> STEP 1: Menjalankan News Scraping")
+        # print("-" * 70)
+        # try:
+        #     main_news_scraping()
+        #     print("\nNews Scraping selesai")
+        # except Exception as e:
+        #     print(f"\n✗ ERROR pada News Scraping: {e}")
+        #     import traceback
+        #     traceback.print_exc()
         print("\nIstirahat 60 detik sebelum melanjutkan ke CPO scraping...")
-        time.sleep(60)
+        # time.sleep(60)
         # ===== STEP 2: CPO Price Scraping =====
         print("\n>>> STEP 2: Menjalankan CPO Price Scraping")
         print("-" * 70)
