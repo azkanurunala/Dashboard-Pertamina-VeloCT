@@ -1,4 +1,5 @@
 import os
+import time
 import pandas as pd
 import google.generativeai as genai
 from dotenv import load_dotenv
@@ -10,53 +11,45 @@ EXCEL_DATA_PATH = "../results/Terstruktur(Data Scrapping).xlsx"
 OUTPUT_PATH = "../results/(News)Sentiment.xlsx"
 
 TOPICS = {
-    "Harga Minyak": {
-        "target_sheets": ["(News)Harga Minyak"],
-        "output_sheet": "(Summary)Harga Minyak",
+   
+    "Indeks Volatilitas": {
+        "target_sheets": ["(News)indeks volatilitas"],
+        "output_sheet": "(Summary)Idx Volatilitas",
         "has_data_sentiment": False,
         "role_prompt" : "industri minyak dan gas",
         "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
                             "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
-                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan Gunakan satuan dan "
-                            "waktu secara konsisten (USD/bbl, mb/d, kuartal, tahun). Dan exclude kasus-kasus hukum!"
+                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
     },
-    "Volume Minyak": {
-        "target_sheets": ["(News)Volume Minyak"],
-        "output_sheet": "(Summary)Volume Minyak",
+    
+    "Nilai Tukar Rupiah": {
+        "target_sheets": ["(News)Kurs"],
+        "output_sheet": "(Summary)Nilai Tukar Rupiah",
         "has_data_sentiment": False,
         "role_prompt" : "industri minyak dan gas",
         "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
                             "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
-                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan Gunakan satuan dan "
-                            "waktu secara konsisten (USD/bbl, mb/d, kuartal, tahun). Dan exclude kasus-kasus hukum!"
+                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
     },
-    "Harga Produk Kilang": {
-        "target_sheets": ["(News)Harga Produk Kilang"],
-        "output_sheet": "(Summary)Harga Produk Kilang",
+    
+    "IHSG": {
+        "target_sheets": ["(News)IHSG"],
+        "output_sheet": "(Summary)IHSG",
         "has_data_sentiment": False,
         "role_prompt" : "industri minyak dan gas",
         "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
                             "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
-                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan Gunakan satuan dan "
-                            "waktu secara konsisten (USD/bbl, mb/d, kuartal, tahun). Dan exclude kasus-kasus hukum!"
+                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
     },
-    "Volume Produk Kilang": {
-        "target_sheets": ["(News)Volume Produk Kilang"],
-        "output_sheet": "(Summary)Volume Produk Kilang",
+    
+    "JIBOR": {
+        "target_sheets": ["(News)JIBOR"],
+        "output_sheet": "(Summary)JIBOR",
         "has_data_sentiment": False,
         "role_prompt" : "industri minyak dan gas",
         "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
                             "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
-                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan Gunakan satuan dan "
-                            "waktu secara konsisten (USD/bbl, mb/d, kuartal, tahun). Dan exclude kasus-kasus hukum!"
-    },
-    "Bioenergi": {
-        "target_sheets": ["(News)Bioenergi"],
-        "output_sheet": "(Summary)Bioenergi",
-        "has_data_sentiment": True,
-        "role_prompt" : "bioenergi",
-        "spesific_prompt" : "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst."
-                            "Serta hasil summary fokus pada movement data saja, serta exclude kasus-kasus hukum!"
+                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
     }
 }
 
@@ -285,7 +278,7 @@ def process_topic(model, topic_name, config):
         start_date = last_date + pd.Timedelta(days=1)
     else:
         start_date = datetime(2025, 1, 1)
-    end_date = pd.to_datetime("2025-11-28")
+    end_date = pd.to_datetime("2025-12-17")
     print(f"Akan proses berita dari {start_date.date()} sampai {end_date.date()}")
     all_news_list = collect_news_from_sheets(EXCEL_SCRAP_PATH, target_sheets, start_date, end_date)
     if not all_news_list:
@@ -335,6 +328,8 @@ def main():
     for topic_name, config in TOPICS.items():
         try:
             process_topic(model, topic_name, config)
+            #print("⏸️ Istirahat 1 menit sebelum lanjut ke topik berikutnya...")
+            #time.sleep(60)
         except Exception as e:
             print(f"❌ Error saat memproses {topic_name}: {e}")
             continue
