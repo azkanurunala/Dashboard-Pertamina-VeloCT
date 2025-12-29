@@ -140,13 +140,20 @@ TOPICS = {
     #     "spesific_prompt" : "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst."
     #                         "Serta hasil summary fokus pada movement data saja, serta exclude kasus-kasus hukum!"
     # },
-    "Bioetanol": {
-        "target_sheets": ["(News)Bioetanol"],
-        "output_sheet": "(Summary)Bioetanol",
-        "has_data_sentiment": True,
-        "role_prompt" : "bioetanol",
-        "spesific_prompt" : "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst."
-                            "Serta hasil summary fokus pada movement data saja, serta exclude kasus-kasus hukum!"
+    # "Bioetanol": {
+    #     "target_sheets": ["(News)Bioetanol"],
+    #     "output_sheet": "(Summary)Bioetanol",
+    #     "has_data_sentiment": True,
+    #     "role_prompt" : "bioetanol",
+    #     "spesific_prompt" : "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst."
+    #                         "Serta hasil summary fokus pada movement data saja, serta exclude kasus-kasus hukum!"
+    # },
+    "RUPTL": {
+        "target_sheets": ["(News)RUPTL"],
+        "output_sheet": "(Summary)RUPTL",
+        "has_data_sentiment": False,
+        "role_prompt" : "analis energi dan ketenagalistrikan Indonesia",
+        "spesific_prompt" : "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst. serta exclude kasus-kasus hukum!"
     }
 }
 
@@ -434,7 +441,10 @@ def process_topic(model, topic_name, config):
         start_date = last_date + pd.Timedelta(days=1)
     else:
         start_date = datetime(2025, 1, 1)
-    end_date = pd.to_datetime("2025-12-14")
+    # end_date = pd.to_datetime("2025-12-14")
+
+    today = pd.to_datetime(datetime.now().date())
+    end_date = min(start_date + pd.Timedelta(days=6), today)
     
     print(f"Akan proses berita dari {start_date.date()} sampai {end_date.date()}")
     all_news_list = collect_news_from_sheets(EXCEL_SCRAP_PATH, target_sheets, start_date, end_date)
