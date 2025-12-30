@@ -206,8 +206,8 @@ def main():
         print(f"Authentication failed: {e}")
         return
     
-    tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-    # tanggal_filter = "2025-12-29"  # Uncomment for testing
+    # tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    tanggal_filter = "2025-12-24"  # Uncomment for testing
     print(f"\nTanggal filter: {tanggal_filter}")
     
     sheet_names = [
