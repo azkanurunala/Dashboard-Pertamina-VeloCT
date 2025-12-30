@@ -3,13 +3,10 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 from bs4 import BeautifulSoup
 import pandas as pd
-import time
+import json
 import re
-import gzip
-import io
-import os
 
-# ======== Fungsi : Menemukan Artikel Yang Sesuai Dengan Tanggal Dan Keyword ========
+
 def parse_oilprice_xml(keyword=None, date_filter=None):
     url = "https://oilprice.com/googlenews.xml"
     print(f"[INFO] Fetching OilPrice.com news XML: {url}")
@@ -68,93 +65,79 @@ def parse_oilprice_xml(keyword=None, date_filter=None):
     except Exception as e:
         print(f"[ERROR] Failed to parse XML: {e}")
         return []
-    
-# ======== Fungsi : Mengambil Konten Artikel ========
+
+
 def fetch_article_content(url):
-    """Fetch full article content from OilPrice.com URL."""
     headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/121.0.0.0 Safari/537.36"
-        )
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
     }
+    
     try:
         r = requests.get(url, headers=headers, timeout=15)
         r.raise_for_status()
+        
         soup = BeautifulSoup(r.content, "html.parser")
-        for bad in soup(["script", "style", "figure", "iframe", "noscript", "aside"]):
-            bad.decompose()
+        
+        json_ld_scripts = soup.find_all('script', {'type': 'application/ld+json'})
+        
+        for script in json_ld_scripts:
+            try:
+                data = json.loads(script.string)
+                
+                if isinstance(data, dict) and data.get('@type') == 'NewsArticle':
+                    article_body = data.get('articleBody', '')
+                    
+                    if article_body:
+                        article_body = article_body.replace('&nbsp;', ' ')
+                        article_body = article_body.replace('&rsquo;', "'")
+                        article_body = article_body.replace('&ldquo;', '"')
+                        article_body = article_body.replace('&rdquo;', '"')
+                        article_body = re.sub(r'\s+', ' ', article_body)
+                        article_body = article_body.strip()
+                        
+                        print(f"[SUCCESS] Extracted {len(article_body)} characters")
+                        return article_body
+            except json.JSONDecodeError:
+                continue
+        
+        print(f"[WARN] No JSON-LD found, trying HTML parsing...")
+        
         article_body = soup.select_one("div#article-content.wysiwyg.clear")
         if not article_body:
-            print(f"[WARN] Could not find article content in {url}")
+            print(f"[WARN] No article content found")
             return "N/A"
-        found_more_top_reads = False
-        elements_to_remove = []
-        for elem in article_body.find_all(['p', 'ul', 'li', 'strong']):
-            text = elem.get_text(strip=True)
-            if 'More Top Reads' in text:
-                found_more_top_reads = True
-                elements_to_remove.append(elem)
-                if elem.parent and elem.parent.name == 'p':
-                    elements_to_remove.append(elem.parent)
-                continue
-            if found_more_top_reads and elem.name in ['ul', 'li']:
-                elements_to_remove.append(elem)
-                continue
-            if any(phrase in text for phrase in [
-                'Related:',
-                'for Oilprice.com',
-                'Download The Free Oilprice App',
-                'Back to homepage'
-            ]):
-                elements_to_remove.append(elem)
-                if elem.parent and elem.parent.name in ['p', 'ul']:
-                    elements_to_remove.append(elem.parent)
-        for elem in set(elements_to_remove):
-            elem.decompose()
+        
         content_parts = []
-        for elem in article_body.find_all(['p', 'li']):
+        for elem in article_body.find_all(['p']):
             text = elem.get_text(strip=True)
-            if not text or len(text) < 10:
-                continue
-            if any(phrase in text.lower() for phrase in [
-                'subscribe',
-                'newsletter',
-                'advertisement',
-                'click here',
-                'more top reads',
-                'related:'
-            ]):
-                continue
-            links = elem.find_all('a')
-            if links and len(text) < 100:
-                link_text_length = sum(len(link.get_text(strip=True)) for link in links)
-                if link_text_length / len(text) > 0.8:
-                    continue
-            content_parts.append(text)
-        if not content_parts:
-            print(f"[WARN] No content found in {url}")
-            return "N/A"
-        content = "\n\n".join(content_parts)
-        return content
+            if text and len(text) > 10:
+                content_parts.append(text)
+        
+        if content_parts:
+            content = "\n\n".join(content_parts)
+            print(f"[SUCCESS] Extracted {len(content)} characters from HTML")
+            return content
+        
+        return "N/A"
+        
     except Exception as e:
-        print(f"[ERROR] Failed to fetch content {url}: {e}")
+        print(f"[ERROR] Failed to fetch content: {e}")
         return "N/A"
 
-# ======== Fungsi : Main Scrapping ========   
+
 def scrape_oilprice(keyword=None, date_filter=None):
     articles = parse_oilprice_xml(keyword, date_filter)
     if not articles:
         print("[INFO] No articles found.")
         return []
+    
     for i, article in enumerate(articles, 1):
-        print(f"[INFO] ({i}/{len(articles)}) Fetching content: {article['Link']}")
+        print(f"\n[{i}/{len(articles)}] {article['Judul'][:60]}...")
         article['Konten'] = fetch_article_content(article['Link'])
-        time.sleep(1.0)
+    
     return articles
 
-# ======== Fungsi : Menyimpan Ke Excel ========    
+
 def reformat(data):
     if not data:
         print("[WARN] No data to save.")
@@ -162,24 +145,66 @@ def reformat(data):
     df = pd.DataFrame(data)
     df = df.rename(
         columns={
-            'Judul' : 'title', 
-            'Tanggal' : 'date', 
-            'Link' : 'url', 
-            'Konten' : 'content'
+            'Judul': 'title', 
+            'Tanggal': 'date', 
+            'Link': 'url', 
+            'Konten': 'content'
         }
     )
     return df
 
-# ======== Fungsi : Main ========   
-def main_oilprice(keyword=None, tanggal=None):
+
+def save_to_excel(df, filename='oilprice_results.xlsx'):
+    try:
+        df.to_excel(filename, index=False, engine='openpyxl')
+        print(f"\n✅ Data berhasil disimpan ke: {filename}")
+        print(f"   Total rows: {len(df)}")
+        print(f"   Columns: {', '.join(df.columns.tolist())}")
+        return True
+    except Exception as e:
+        print(f"\n❌ Gagal menyimpan ke Excel: {e}")
+        return False
+
+
+def main_oilprice(keyword=None, tanggal=None, save_excel=True):
     print(f"\n{'='*60}")
-    print(f"OilPrice.com News Scraper")
+    print(f"OilPrice.com News Scraper (JSON-LD Method)")
     print(f"{'='*60}\n")
+    
     data = scrape_oilprice(keyword, tanggal)
     if not data:  
         print("[INFO] No articles to save.")
         return None
+    
     df = reformat(data)
-    return df if not df.empty else None
-if __name__ == '__main__':
-    main_oilprice(keyword="Oil Price", date_filter="2025-11-17")
+    
+    if df is None or df.empty:
+        print("[WARN] No data to return")
+        return None
+    
+    print(f"\n{'='*60}")
+    print(f"[SUCCESS] Scraped {len(df)} articles")
+    print(f"{'='*60}")
+    
+    print("\nPreview:")
+    print(df[['title', 'date']].to_string(index=False))
+    
+    if save_excel:
+        filename = f"oilprice_{keyword.replace(' ', '_')}_{tanggal}.xlsx" if keyword and tanggal else "oilprice_results.xlsx"
+        save_to_excel(df, filename)
+    
+    return df
+
+
+# if __name__ == '__main__':
+#     # result = main_oilprice(
+#     #     keyword="Oil Price", 
+#     #     tanggal="2025-12-29",
+#     #     save_excel=True
+#     # )
+    
+#     # if result is not None:
+#     #     print(f"\n{'='*60}")
+#     #     print("Content Preview (first article):")
+#     #     print(f"{'='*60}")
+#     #     print(result.iloc[0]['content'][:500] + "...")

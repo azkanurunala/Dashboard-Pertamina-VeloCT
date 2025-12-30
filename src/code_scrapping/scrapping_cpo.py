@@ -43,23 +43,44 @@ def write_cpo_sheet_to_onedrive(access_token, file_path, sheet_name, df):
     excel_buffer = download_excel_from_onedrive(access_token, file_path)
     
     from io import BytesIO
+    from openpyxl import load_workbook
+    
     output_buffer = BytesIO()
     
     if excel_buffer is None:
         print("File baru, hanya ada 1 sheet")
-        with pd.ExcelWriter(output_buffer, engine='openpyxl') as writer:
+        with pd.ExcelWriter(output_buffer, engine='openpyxl', mode='w') as writer:
             df.to_excel(writer, sheet_name=sheet_name, index=False)
     else:
-        from openpyxl import load_workbook
-        wb = load_workbook(excel_buffer)
+        print("File existing, mode update")
         
-        with pd.ExcelWriter(output_buffer, engine='openpyxl') as writer:
-            writer.book = wb
+        try:
+            wb = load_workbook(excel_buffer)
             
-            if sheet_name in wb.sheetnames:
-                del wb[sheet_name]
+            visible_sheets = [s for s in wb.worksheets if s.sheet_state == 'visible']
+            if len(visible_sheets) == 0:
+                print("Fixing hidden sheets...")
+                wb.worksheets[0].sheet_state = 'visible'
+                wb.active = 0
             
-            df.to_excel(writer, sheet_name=sheet_name, index=False)
+            for sheet in wb.worksheets:
+                if sheet.sheet_state != 'visible':
+                    sheet.sheet_state = 'visible'
+            
+            temp_buffer = BytesIO()
+            wb.save(temp_buffer)
+            wb.close()
+            temp_buffer.seek(0)
+            
+            with pd.ExcelWriter(temp_buffer, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                df.to_excel(writer, sheet_name=sheet_name, index=False)
+            
+            output_buffer = temp_buffer
+            
+        except Exception as e:
+            print(f"Error saat update: {e}, fallback ke create new")
+            with pd.ExcelWriter(output_buffer, engine='openpyxl', mode='w') as writer:
+                df.to_excel(writer, sheet_name=sheet_name, index=False)
     
     output_buffer.seek(0)
     

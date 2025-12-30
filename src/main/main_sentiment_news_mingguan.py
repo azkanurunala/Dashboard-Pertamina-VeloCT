@@ -136,7 +136,7 @@ TOPICS = {
     #     "target_sheets": ["(News)Biodiesel"],
     #     "output_sheet": "(Summary)Biodiesel",
     #     "has_data_sentiment": True,
-    #     "role_prompt" : "biodiesel",
+    #     "role_prompt" : "analis bioenergi",
     #     "spesific_prompt" : "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst."
     #                         "Serta hasil summary fokus pada movement data saja, serta exclude kasus-kasus hukum!"
     # },
@@ -144,7 +144,7 @@ TOPICS = {
     #     "target_sheets": ["(News)Bioetanol"],
     #     "output_sheet": "(Summary)Bioetanol",
     #     "has_data_sentiment": True,
-    #     "role_prompt" : "bioetanol",
+    #     "role_prompt" : "analis bioenergi",
     #     "spesific_prompt" : "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst."
     #                         "Serta hasil summary fokus pada movement data saja, serta exclude kasus-kasus hukum!"
     # },
