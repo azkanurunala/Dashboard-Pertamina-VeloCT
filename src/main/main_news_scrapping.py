@@ -31,10 +31,8 @@ from code_scrapping.bps import main_bps
 
 load_dotenv()
 
-# Google Sheets credentials
 ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_FILE_PATH", "/results/(News)Scrapping.xlsx")
 
-# === SINONIM KEYWORD ===
 sinonim_dict = {
     "indeks risiko geopolitik": ["tekanan geopolitik", "geopolitical risk", "geopolitical pressure"],
     "indeks volatilitas": ["volatility index"],
@@ -62,7 +60,6 @@ sinonim_dict = {
     "volume produk kilang pertamina": ["bbm", "volume kilang pertamina", "volume kilang", "refinery", "volume pertamina"]
 }
 
-# === PEMETAAN SUMBER PER KEYWORD ===
 sumber_dict = {
     "indeks risiko geopolitik": [scrape_cnn_international, scrape_cnbc_international],
     "indeks volatilitas": [scrape_cnn_international, scrape_cnbc_international],
@@ -136,7 +133,6 @@ def standardize_format(df):
             df[col] = "N/A"
     
     def clean_date(date_str):
-        """Extract YYYY-MM-DD from various date formats"""
         if pd.isna(date_str) or date_str == "N/A" or date_str == "-":
             return "N/A"
         date_str = str(date_str).strip()
@@ -212,8 +208,8 @@ def main():
         print(f"Authentication failed: {e}")
         return
     
-    # tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-    tanggal_filter = "2025-12-24"
+    # tanggal_filter = "2025-12-24"
+    tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     print(f"\nTanggal filter: {tanggal_filter}")
     
     sheet_names = [
@@ -251,14 +247,25 @@ def main():
             all_sheets[sheet_name] = pd.DataFrame()
     else:
         print("File ditemukan, membaca semua sheets...")
+        
+        excel_buffer.seek(0)
+        
+        excel_file = pd.ExcelFile(excel_buffer)
+        
         for sheet_name in sheet_names:
             try:
-                df = pd.read_excel(excel_buffer, sheet_name=sheet_name)
-                all_sheets[sheet_name] = df
-                print(f"  Sheet '{sheet_name}': {len(df)} baris")
+                if sheet_name in excel_file.sheet_names:
+                    df = pd.read_excel(excel_file, sheet_name=sheet_name)
+                    all_sheets[sheet_name] = df
+                    print(f"  Sheet '{sheet_name}': {len(df)} baris")
+                else:
+                    print(f"  Sheet '{sheet_name}': tidak ada, akan dibuat baru")
+                    all_sheets[sheet_name] = pd.DataFrame()
             except Exception as e:
-                print(f"  Sheet '{sheet_name}': tidak ada, akan dibuat baru")
+                print(f"  Sheet '{sheet_name}': error - {e}, akan dibuat baru")
                 all_sheets[sheet_name] = pd.DataFrame()
+        
+        excel_file.close()
     
     print("\n" + "="*60)
     print("MULAI SCRAPING")
@@ -309,4 +316,4 @@ def main():
         raise
 
 if __name__ == "__main__":
-    main()
+    main() 
