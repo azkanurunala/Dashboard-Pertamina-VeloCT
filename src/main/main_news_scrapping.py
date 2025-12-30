@@ -12,7 +12,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from helpers.onedrive_helper import (
     get_access_token,
     read_excel_sheet_from_onedrive,
-    write_multiple_sheets_to_onedrive
+    write_multiple_sheets_to_onedrive, 
+    download_excel_from_onedrive 
 )
 
 from code_scrapping.bisnis_indonesia import main_bisnis_indonesia
@@ -167,6 +168,11 @@ def scrape_keyword(keyword, tanggal_filter):
         
         for scrape_func in sumber:
             nama_sumber = scrape_func.__name__.replace("scrape_", "").replace("main_", "").upper()
+            source_mapping = {
+                "KONTAN_BBM": "KONTAN",
+                "KONTAN_BIODIESEL": "KONTAN"
+            }
+            nama_sumber = source_mapping.get(nama_sumber, nama_sumber)
             print(f"Scraping dari {nama_sumber}...")
             
             try:
@@ -207,7 +213,7 @@ def main():
         return
     
     # tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-    tanggal_filter = "2025-12-24"  # Uncomment for testing
+    tanggal_filter = "2025-12-24"
     print(f"\nTanggal filter: {tanggal_filter}")
     
     sheet_names = [
@@ -235,10 +241,24 @@ def main():
     
     print(f"\nLoading existing data from OneDrive...")
     print(f"File: {ONEDRIVE_FILE_PATH}")
+
+    excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
     
     all_sheets = {}
-    for sheet_name in sheet_names:
-        all_sheets[sheet_name] = read_excel_sheet_from_onedrive(access_token, ONEDRIVE_FILE_PATH, sheet_name)
+    if excel_buffer is None:
+        print("File tidak ditemukan, akan membuat file baru")
+        for sheet_name in sheet_names:
+            all_sheets[sheet_name] = pd.DataFrame()
+    else:
+        print("File ditemukan, membaca semua sheets...")
+        for sheet_name in sheet_names:
+            try:
+                df = pd.read_excel(excel_buffer, sheet_name=sheet_name)
+                all_sheets[sheet_name] = df
+                print(f"  Sheet '{sheet_name}': {len(df)} baris")
+            except Exception as e:
+                print(f"  Sheet '{sheet_name}': tidak ada, akan dibuat baru")
+                all_sheets[sheet_name] = pd.DataFrame()
     
     print("\n" + "="*60)
     print("MULAI SCRAPING")
@@ -287,7 +307,6 @@ def main():
     except Exception as e:
         print(f"\nError saat menyimpan: {e}")
         raise
-
 
 if __name__ == "__main__":
     main()
