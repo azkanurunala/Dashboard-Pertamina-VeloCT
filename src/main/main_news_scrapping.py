@@ -4,14 +4,17 @@ from datetime import datetime, timedelta
 import sys
 import os
 import re
-import json
 from dotenv import load_dotenv
-import gspread
-from google.oauth2.service_account import Credentials
+
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Import scraping functions
+from helpers.onedrive_helper import (
+    get_access_token,
+    read_excel_sheet_from_onedrive,
+    write_multiple_sheets_to_onedrive
+)
+
 from code_scrapping.bisnis_indonesia import main_bisnis_indonesia
 from code_scrapping.kompas import main_kompas
 from code_scrapping.tempo import scrape_tempo
@@ -28,8 +31,7 @@ from code_scrapping.bps import main_bps
 load_dotenv()
 
 # Google Sheets credentials
-GOOGLE_CREDENTIALS = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
-SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
+ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_FILE_PATH", "/results/(News)Scrapping.xlsx")
 
 # === SINONIM KEYWORD ===
 sinonim_dict = {
@@ -105,49 +107,6 @@ sheet_to_keyword = {
     "(News)Harga Produk Kilang": "harga produk kilang pertamina",
     "(News)Volume Produk Kilang": "volume produk kilang pertamina"
 }
-
-
-def get_google_sheets_client():
-    """Initialize and return Google Sheets client"""
-    scopes = [
-        'https://www.googleapis.com/auth/spreadsheets',
-        'https://www.googleapis.com/auth/drive'
-    ]
-    creds = Credentials.from_service_account_info(GOOGLE_CREDENTIALS, scopes=scopes)
-    client = gspread.authorize(creds)
-    return client
-
-
-def read_sheet_data(worksheet):
-    """Read data from a worksheet and return as DataFrame"""
-    try:
-        data = worksheet.get_all_values()
-        if len(data) > 1:  # Has headers and data
-            df = pd.DataFrame(data[1:], columns=data[0])
-            return df
-        else:
-            return pd.DataFrame()
-    except Exception as e:
-        print(f"Error reading sheet: {e}")
-        return pd.DataFrame()
-
-
-def write_sheet_data(worksheet, df):
-    """Write DataFrame to worksheet"""
-    try:
-        # Clear existing content
-        worksheet.clear()
-        
-        # Convert DataFrame to list of lists
-        data = [df.columns.tolist()] + df.fillna('').astype(str).values.tolist()
-        
-        # Update worksheet
-        worksheet.update(data, value_input_option='RAW')
-        print(f"Successfully wrote {len(df)} rows to sheet")
-    except Exception as e:
-        print(f"Error writing to sheet: {e}")
-        raise
-
 
 def standardize_format(df):
     if df is None or df.empty:
@@ -235,15 +194,21 @@ def scrape_keyword(keyword, tanggal_filter):
 
 
 def main():
-    print("Memilih mode penyimpanan...")
+    print("\n" + "="*60)
+    print("NEWS SCRAPING TO ONEDRIVE")
+    print("="*60)
     
-    # Toggle mode: True = Google Sheets, False = Local Excel
-    use_google_sheets = True
-    # UNCOMMENT KODE DIBAWAH KALO MAU KESIMPEN DI LOCAL
-    # use_google_sheets = False
+    print("\nAuthenticating to Microsoft Graph API...")
+    try:
+        access_token = get_access_token()
+        print("Authentication successful")
+    except Exception as e:
+        print(f"Authentication failed: {e}")
+        return
     
-    # tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-    tanggal_filter = "2025-12-29"  # Uncomment for testing
+    tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    # tanggal_filter = "2025-12-29"  # Uncomment for testing
+    print(f"\nTanggal filter: {tanggal_filter}")
     
     sheet_names = [
         "(News)indeks risiko geopolitik",
@@ -268,91 +233,60 @@ def main():
         "(News)Volume Produk Kilang"
     ]
     
+    print(f"\nLoading existing data from OneDrive...")
+    print(f"File: {ONEDRIVE_FILE_PATH}")
+    
     all_sheets = {}
+    for sheet_name in sheet_names:
+        all_sheets[sheet_name] = read_excel_sheet_from_onedrive(access_token, ONEDRIVE_FILE_PATH, sheet_name)
     
-    if use_google_sheets:
-        print("Menghubungkan ke Google Sheets...")
-        # Initialize Google Sheets client
-        client = get_google_sheets_client()
-        spreadsheet = client.open_by_key(SPREADSHEET_ID)
-        
-        # Load existing data from Google Sheets
-        print("\nMemuat existing sheets dari Google Sheets...")
-        for sheet_name in sheet_names:
-            try:
-                worksheet = spreadsheet.worksheet(sheet_name)
-                all_sheets[sheet_name] = read_sheet_data(worksheet)
-                print(f"Sheet '{sheet_name}': {len(all_sheets[sheet_name])} baris")
-            except gspread.exceptions.WorksheetNotFound:
-                # Create new worksheet if it doesn't exist
-                worksheet = spreadsheet.add_worksheet(title=sheet_name, rows=1000, cols=10)
-                all_sheets[sheet_name] = pd.DataFrame()
-                print(f"Sheet '{sheet_name}': dibuat baru")
-            except Exception as e:
-                print(f"Error loading sheet '{sheet_name}': {e}")
-                all_sheets[sheet_name] = pd.DataFrame()
+    print("\n" + "="*60)
+    print("MULAI SCRAPING")
+    print("="*60)
     
-    # else:
-    #     # ===== MODE LOCAL =====
-    #     filename = f"news_scraping_{datetime.now().strftime('%Y%m%d')}.xlsx"
-    #     print(f"\nMode LOCAL: Akan menyimpan ke file {filename}")
-        
-    #     # Load existing sheets dari file lokal
-    #     if os.path.exists(filename):
-    #         print("File lokal ditemukan, memuat data existing...")
-    #         for sheet_name in sheet_names:
-    #             try:
-    #                 all_sheets[sheet_name] = pd.read_excel(filename, sheet_name=sheet_name)
-    #                 print(f"Sheet '{sheet_name}': {len(all_sheets[sheet_name])} baris")
-    #             except:
-    #                 all_sheets[sheet_name] = pd.DataFrame()
-    #                 print(f"Sheet '{sheet_name}': buat baru")
-    #     else:
-    #         print("File lokal tidak ada, akan membuat file baru")
-    #         for sheet_name in sheet_names:
-    #             all_sheets[sheet_name] = pd.DataFrame()
-    
-    # Scrape and update each sheet
     for sheet_name in sheet_names:
         keyword_asli = sheet_to_keyword.get(sheet_name)
         if not keyword_asli:
             print(f"Keyword untuk sheet '{sheet_name}' tidak ditemukan di mapping. Lewati.")
             continue
         
-        print(f"\n{'='*50}")
-        print(f"MULAI SCRAPING UNTUK: {sheet_name.upper()}")
-        print(f"Keyword: {keyword_asli.upper()}")
-        print(f"{'='*50}")
+        print(f"\n{'-'*60}")
+        print(f"{sheet_name}")
+        print(f"Keyword: {keyword_asli}")
+        print(f"{'-'*60}")
         
         hasil_df = scrape_keyword(keyword_asli, tanggal_filter)
         
         if sheet_name in all_sheets and not all_sheets[sheet_name].empty:
             combined_df = pd.concat([all_sheets[sheet_name], hasil_df], ignore_index=True)
-            print(f"\nData existing: {len(all_sheets[sheet_name])} baris")
-            print(f"Data baru: {len(hasil_df)} baris")
+            print(f"\n  Data existing: {len(all_sheets[sheet_name])} baris")
+            print(f"  Data baru: {len(hasil_df)} baris")
         else:
             combined_df = hasil_df
-            print(f"\nData baru: {len(hasil_df)} baris")
+            print(f"\n  Data baru: {len(hasil_df)} baris")
         
         all_sheets[sheet_name] = combined_df
-        print(f"Total berita untuk '{sheet_name}': {len(combined_df)} baris")
+        print(f"  Total: {len(combined_df)} baris")
         
-        # Write to Google Sheets
-        try:
-            worksheet = spreadsheet.worksheet(sheet_name)
-            write_sheet_data(worksheet, combined_df)
-            print(f"✓ Data berhasil disimpan ke sheet '{sheet_name}'")
-        except Exception as e:
-            print(f"✗ Error menyimpan ke sheet '{sheet_name}': {e}")
-        
-        print("Istirahat 1 menit sebelum lanjut...\n")
+        print("\nIstirahat 60 detik...")
         time.sleep(60)
     
-    print("\n" + "="*50)
-    print("SELESAI!")
-    print(f"Total sheets diproses: {len(sheet_names)}")
-    print(f"Spreadsheet ID: {SPREADSHEET_ID}")
-    print("="*50)
+    print("\n" + "="*60)
+    print("MENYIMPAN KE ONEDRIVE")
+    print("="*60)
+    
+    try:
+        write_multiple_sheets_to_onedrive(access_token, ONEDRIVE_FILE_PATH, all_sheets)
+        
+        print("\n" + "="*60)
+        print("SELESAI!")
+        print(f"File: {ONEDRIVE_FILE_PATH}")
+        print(f"Total sheets: {len(sheet_names)}")
+        print("="*60 + "\n")
+        
+    except Exception as e:
+        print(f"\nError saat menyimpan: {e}")
+        raise
 
 
 if __name__ == "__main__":
