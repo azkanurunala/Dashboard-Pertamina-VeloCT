@@ -6,78 +6,66 @@ from datetime import datetime
 import os
 import sys
 from dotenv import load_dotenv
-import gspread
-from google.oauth2.service_account import Credentials
-import json
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from helpers.onedrive_helper import (
+    get_access_token,
+    download_excel_from_onedrive,
+    upload_excel_to_onedrive
+)
+
 load_dotenv()
 
-# Google Sheets Configuration
-GOOGLE_CREDENTIALS = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
-SPREADSHEET_ID = os.getenv("SPREADSHEET_ID_STRUCTURE")
+ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_DATA_PATH", "/results/(Terstruktur)Data Scrapping.xlsx")
 SHEET_NAME = "(Data)CPO"
 
 
-def get_google_sheets_client():
-    """Initialize and return Google Sheets client"""
+def read_cpo_sheet_from_onedrive(access_token, file_path, sheet_name):
+    excel_buffer = download_excel_from_onedrive(access_token, file_path)
+    
+    if excel_buffer is None:
+        print(f"! File tidak ditemukan, akan membuat baru")
+        return pd.DataFrame(columns=["Upload_Dates", "Dates", "PX_LAST"])
+    
     try:
-        scopes = [
-            'https://www.googleapis.com/auth/spreadsheets',
-            'https://www.googleapis.com/auth/drive'
-        ]
-        creds = Credentials.from_service_account_info(GOOGLE_CREDENTIALS, scopes=scopes)
-        client = gspread.authorize(creds)
-        return client
+        df = pd.read_excel(excel_buffer, sheet_name=sheet_name)
+        print(f"Berhasil baca sheet '{sheet_name}', rows={len(df)}")
+        return df
     except Exception as e:
-        print(f"✗ Error authorizing Google Sheets: {e}")
-        raise
+        print(f"! Sheet '{sheet_name}' tidak ditemukan, akan membuat baru")
+        return pd.DataFrame(columns=["Upload_Dates", "Dates", "PX_LAST"])
 
 
-def quick_read_sheet(spreadsheet_id, sheet_name):
-    """Read data from Google Sheet and return as DataFrame"""
-    try:
-        client = get_google_sheets_client()
-        spreadsheet = client.open_by_key(spreadsheet_id)
-        worksheet = spreadsheet.worksheet(sheet_name)
+def write_cpo_sheet_to_onedrive(access_token, file_path, sheet_name, df):
+    print(f"\nMenyiapkan file Excel...")
+    
+    excel_buffer = download_excel_from_onedrive(access_token, file_path)
+    
+    from io import BytesIO
+    output_buffer = BytesIO()
+    
+    if excel_buffer is None:
+        print("File baru, hanya ada 1 sheet")
+        with pd.ExcelWriter(output_buffer, engine='openpyxl') as writer:
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+    else:
+        from openpyxl import load_workbook
+        wb = load_workbook(excel_buffer)
         
-        data = worksheet.get_all_values()
-        if len(data) > 1:
-            df = pd.DataFrame(data[1:], columns=data[0])
-            return df
-        elif len(data) == 1:
-            return pd.DataFrame(columns=data[0])
-        else:
-            return pd.DataFrame()
-    except gspread.exceptions.WorksheetNotFound:
-        print(f"! Sheet '{sheet_name}' tidak ditemukan")
-        return pd.DataFrame()
-    except Exception as e:
-        print(f"✗ Error reading sheet: {e}")
-        raise
-
-
-def quick_write_sheet(spreadsheet_id, sheet_name, df):
-    """Write DataFrame to Google Sheet"""
-    try:
-        client = get_google_sheets_client()
-        spreadsheet = client.open_by_key(spreadsheet_id)
-        
-        try:
-            worksheet = spreadsheet.worksheet(sheet_name)
-        except gspread.exceptions.WorksheetNotFound:
-            print(f"! Creating new sheet '{sheet_name}'...")
-            worksheet = spreadsheet.add_worksheet(title=sheet_name, rows=1000, cols=10)
-        
-        # Clear and write
-        worksheet.clear()
-        data = [df.columns.tolist()] + df.fillna('').astype(str).values.tolist()
-        worksheet.update(data, value_input_option='RAW')
-        return True
-    except Exception as e:
-        print(f"✗ Error writing to sheet: {e}")
-        return False
+        with pd.ExcelWriter(output_buffer, engine='openpyxl') as writer:
+            writer.book = wb
+            
+            if sheet_name in wb.sheetnames:
+                del wb[sheet_name]
+            
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+    
+    output_buffer.seek(0)
+    
+    print(f"Uploading ke OneDrive: {file_path}")
+    upload_excel_to_onedrive(access_token, file_path, output_buffer)
+    print("Upload selesai!")
 
 
 def get_max_pagination(base_url):
@@ -212,35 +200,35 @@ def scrape_articles_until_last_date(last_date):
             article_date = article["upload_date"]
             if article_date > last_date:
                 new_articles.append(article)
-                print(f"  ✓ {article_date} - {article['title'][:50]}...")
+                print(f"  {article_date} - {article['title'][:50]}...")
             else:
                 print(f"  ! Artikel {article_date} sudah lebih lama dari {last_date}, berhenti")
                 should_stop = True
                 break
     
-    print(f"\n✓ Total artikel baru ditemukan: {len(new_articles)}")
+    print(f"\nTotal artikel baru ditemukan: {len(new_articles)}")
     return new_articles
 
 
-def get_last_upload_date():
+def get_last_upload_date(access_token):
     try:
         print("\n" + "="*60)
-        print("STEP 1: Membaca data existing dari Google Sheets")
+        print("STEP 1: Membaca data existing dari OneDrive")
         print("="*60)
-        print(f"Spreadsheet ID: {SPREADSHEET_ID}")
-        print(f"Sheet Name: {SHEET_NAME}")
+        print(f"File: {ONEDRIVE_FILE_PATH}")
+        print(f"Sheet: {SHEET_NAME}")
         
-        df = quick_read_sheet(SPREADSHEET_ID, SHEET_NAME)
+        df = read_cpo_sheet_from_onedrive(access_token, ONEDRIVE_FILE_PATH, SHEET_NAME)
         
         if df.empty:
             print("! Sheet kosong atau tidak ada data")
             return None
         
-        print(f"✓ Berhasil membaca {len(df)} baris")
+        print(f"Berhasil membaca {len(df)} baris")
         print(f"  Kolom: {df.columns.tolist()}")
         
         if "Upload_Dates" not in df.columns:
-            print("✗ Kolom 'Upload_Dates' tidak ditemukan!")
+            print("Kolom 'Upload_Dates' tidak ditemukan!")
             print(f"  Kolom yang tersedia: {df.columns.tolist()}")
             return None
         
@@ -253,13 +241,13 @@ def get_last_upload_date():
         
         last_date = df_valid["Upload_Dates"].max()
         last_date_str = last_date.strftime("%Y-%m-%d")
-        print(f"✓ Upload_Dates terakhir: {last_date_str}")
+        print(f"Upload_Dates terakhir: {last_date_str}")
         print(f"  Total baris dengan tanggal valid: {len(df_valid)}")
         
         return last_date_str
         
     except Exception as e:
-        print(f"✗ Error membaca sheet: {type(e).__name__}")
+        print(f"Error membaca sheet: {type(e).__name__}")
         print(f"  Message: {str(e)}")
         import traceback
         traceback.print_exc()
@@ -320,7 +308,7 @@ def scrape_harga_multi(url, article_title=None):
         resp = requests.get(url, headers=headers, timeout=15)
         resp.raise_for_status()
     except Exception as e:
-        print(f"  ✗ Error mengakses artikel: {e}")
+        print(f"  Error mengakses artikel: {e}")
         return []
     
     soup = BeautifulSoup(resp.text, "lxml")
@@ -353,7 +341,7 @@ def scrape_harga_multi(url, article_title=None):
                                 "date_str": date_str,
                                 "parsed_date": parsed_date
                             })
-                            print(f"    Harga: {harga} | Tanggal: ({date_str}) → {parsed_date}")
+                            print(f"    Harga: {harga} | Tanggal: ({date_str}) -> {parsed_date}")
                         except Exception as e:
                             continue
                     
@@ -380,69 +368,66 @@ def scrape_harga_multi(url, article_title=None):
     return harga_list
 
 
-def update_gsheet_with_new_data(new_data_list):
+def update_onedrive_with_new_data(access_token, new_data_list):
     print("\n" + "="*60)
-    print("STEP 3: Menyimpan data ke Google Sheets")
+    print("STEP 3: Menyimpan data ke OneDrive")
     print("="*60)
     
-    try:
-        df_old = quick_read_sheet(SPREADSHEET_ID, SHEET_NAME)
-        if not df_old.empty:
-            print(f"✓ Data lama: {len(df_old)} baris")
-        else:
-            df_old = pd.DataFrame(columns=["Upload_Dates", "Dates", "PX_LAST"])
-            print("! Sheet kosong, akan membuat baru")
-    except:
+    df_old = read_cpo_sheet_from_onedrive(access_token, ONEDRIVE_FILE_PATH, SHEET_NAME)
+    
+    if not df_old.empty:
+        print(f"Data lama: {len(df_old)} baris")
+    else:
         df_old = pd.DataFrame(columns=["Upload_Dates", "Dates", "PX_LAST"])
-        print("! Sheet tidak ditemukan, akan membuat baru")
+        print("! Sheet kosong, akan membuat baru")
     
     df_new = pd.DataFrame(new_data_list)
-    print(f"✓ Data baru: {len(df_new)} baris")
+    print(f"Data baru: {len(df_new)} baris")
     
     df_final = pd.concat([df_old, df_new], ignore_index=True)
     
-    # Clean and deduplicate
     df_final["Upload_Dates"] = pd.to_datetime(df_final["Upload_Dates"], errors='coerce')
     df_final["Dates"] = pd.to_datetime(df_final["Dates"], errors='coerce')
     df_final.drop_duplicates(subset=["Dates"], keep="last", inplace=True)
     
-    # Format dates
     df_final["Upload_Dates"] = df_final["Upload_Dates"].dt.date
     df_final["Dates"] = df_final["Dates"].dt.date
     
     df_final.sort_values("Dates", ascending=True, inplace=True)
     
-    print(f"✓ Data setelah deduplikasi: {len(df_final)} baris")
-    print("Uploading ke Google Sheets...")
+    print(f"Data setelah deduplikasi: {len(df_final)} baris")
     
-    success = quick_write_sheet(SPREADSHEET_ID, SHEET_NAME, df_final)
+    write_cpo_sheet_to_onedrive(access_token, ONEDRIVE_FILE_PATH, SHEET_NAME, df_final)
     
-    if success:
-        print(f"\n{'='*60}")
-        print("✓ DATA BERHASIL DISIMPAN KE GOOGLE SHEETS")
-        print(f"{'='*60}")
-        print(f"  Sheet: {SHEET_NAME}")
-        print(f"  Total rows: {len(df_final)}")
-        print(f"  Data baru ditambahkan: {len(new_data_list)} baris")
-    else:
-        print("\n✗ GAGAL MENYIMPAN DATA")
+    print(f"\n{'='*60}")
+    print("DATA BERHASIL DISIMPAN KE ONEDRIVE")
+    print(f"{'='*60}")
+    print(f"  File: {ONEDRIVE_FILE_PATH}")
+    print(f"  Sheet: {SHEET_NAME}")
+    print(f"  Total rows: {len(df_final)}")
+    print(f"  Data baru ditambahkan: {len(new_data_list)} baris")
 
 
 def main_scraper_cpo():
     print("\n" + "="*60)
     print("GAPKI CPO PRICE SCRAPER")
-    print("STORAGE MODE: Google Sheets")
+    print("STORAGE MODE: OneDrive")
     print("="*60)
     
-    # Debug: Check environment variables
-    print(f"\nDEBUG - Environment Variables:")
-    print(f"  SPREADSHEET_ID: {SPREADSHEET_ID[:20] if SPREADSHEET_ID else 'NOT SET'}...")
-    print(f"  SHEET_NAME: {SHEET_NAME}")
-    print(f"  GOOGLE_CREDENTIALS loaded: {'Yes' if GOOGLE_CREDENTIALS else 'No'}")
+    print(f"\nFile: {ONEDRIVE_FILE_PATH}")
+    print(f"Sheet: {SHEET_NAME}")
     
-    last_date = get_last_upload_date()
+    print("\nAuthenticating to Microsoft Graph API...")
+    try:
+        access_token = get_access_token()
+        print("Authentication successful")
+    except Exception as e:
+        print(f"Authentication failed: {e}")
+        return
+    
+    last_date = get_last_upload_date(access_token)
     if not last_date:
-        print("\n✗ Tidak bisa melanjutkan tanpa tanggal terakhir")
+        print("\nTidak bisa melanjutkan tanpa tanggal terakhir")
         print("  Pastikan sheet sudah ada dan memiliki data dengan kolom 'Upload_Dates'")
         return
     
@@ -471,7 +456,7 @@ def main_scraper_cpo():
             continue
         
         if len(harga_list) > 1:
-            print(f"  ✓ Ditemukan {len(harga_list)} harga berbeda")
+            print(f"  Ditemukan {len(harga_list)} harga berbeda")
         
         for harga_data in harga_list:
             if harga_data["parsed_date"]:
@@ -486,9 +471,9 @@ def main_scraper_cpo():
             })
     
     if all_data:
-        update_gsheet_with_new_data(all_data)
+        update_onedrive_with_new_data(access_token, all_data)
         print("\n" + "="*60)
-        print("✓ SELESAI! Data berhasil diupdate")
+        print("SELESAI! Data berhasil diupdate")
         print("="*60)
     else:
         print("\n! Tidak ada data untuk disimpan")

@@ -152,7 +152,7 @@ TOPICS = {
         "target_sheets": ["(News)RUPTL"],
         "output_sheet": "(Summary)RUPTL",
         "has_data_sentiment": False,
-        "role_prompt" : "analis energi dan ketenagalistrikan Indonesia",
+        "role_prompt" : "analis ketenagalistrikan Indonesia",
         "spesific_prompt" : "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst. serta exclude kasus-kasus hukum!"
     }
 }
