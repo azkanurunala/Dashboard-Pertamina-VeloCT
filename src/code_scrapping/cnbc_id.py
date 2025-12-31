@@ -144,32 +144,53 @@ def scrape_cnbc_article_content(url: str, headers: dict) -> str:
         r.raise_for_status()
         soup = BeautifulSoup(r.text, "html.parser")
 
-        content_div = soup.find("div", class_="detail_text") or soup.find("div", class_="detail-text")
+        content_div = soup.find("div", class_="detail-text")
         if not content_div:
+            content_div = soup.find("div", class_="detail_text")
+        
+        if not content_div:
+            print(f"Tidak menemukan div konten")
             return ""
 
-        for unwanted in content_div.find_all(["script", "style", "iframe", "figure"]):
+        for unwanted in content_div.find_all(["script", "style", "iframe", "figure", "table"]):
             unwanted.decompose()
 
         for div in content_div.find_all("div"):
             class_str = " ".join(div.get("class", []))
-            if any(x in class_str for x in ["ads", "related", "sisip", "baca"]):
+            if any(x in class_str for x in ["ads", "related", "sisip", "baca", "lihatjg", "linksisip"]):
                 div.decompose()
 
         all_text_lines = []
+        
         for p in content_div.find_all("p"):
             text = p.get_text(strip=True)
-            if text and "Baca Juga" not in text and len(text) > 20:
+            if text and len(text) > 15:
+                if text.startswith("Jakarta, CNBC Indonesia"):
+                    text = text.replace("Jakarta, CNBC Indonesia - ", "")
+                    text = text.replace("Jakarta, CNBC Indonesia-", "")
+                
+                if text.startswith("(") and text.endswith(")") and len(text) < 20:
+                    continue
+                
                 all_text_lines.append(text)
 
         for ol in content_div.find_all(["ol", "ul"]):
             for li in ol.find_all("li", recursive=False):
                 text = li.get_text(strip=True)
-                if text and len(text) > 20:
+                if text and len(text) > 15:
                     all_text_lines.append(text)
 
-        return "\n\n".join(all_text_lines)
-    except:
+        result = "\n\n".join(all_text_lines)
+        
+        if not result:
+            print(f"Konten kosong setelah parsing")
+        else:
+            print(f"Konten diambil: {len(result)} karakter")
+        
+        return result
+        
+    except Exception as e:
+        print(f"Error scraping konten: {e}")
         return ""
 
 def scrape_cnbc_all(query: str, headers: dict, filter_date: str = None):
@@ -299,3 +320,15 @@ def main_cnbc(keyword: str, tanggal: str = None):
     print(df[['title', 'date']].head())
 
     return df
+
+if __name__ == "__main__":
+    df = main_cnbc(keyword="kurs", tanggal="2025-12-21")
+    if df is not None and len(df) > 0:
+        output_file = f"cnbc_scraping_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        df.to_excel(output_file, index=False, engine='openpyxl')
+        print(f"\nData berhasil disimpan ke: {output_file}")
+        print(f"Total artikel: {len(df)}")
+        print("\nPreview data:")
+        print(df[['title', 'date']].to_string())
+    else:
+        print("\nTidak ada data untuk disimpan")
