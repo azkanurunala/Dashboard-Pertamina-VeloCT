@@ -19,12 +19,12 @@ from helpers.onedrive_helper import (
 from code_scrapping.bisnis_indonesia import main_bisnis_indonesia
 from code_scrapping.kompas import main_kompas
 from code_scrapping.tempo import scrape_tempo
-from code_scrapping.cnn import scrape_cnn_international
+from code_scrapping.cnn import main_google_news_cnn
 from code_scrapping.kontan_bbm import scrape_kontan_bbm
 from code_scrapping.kontan_biodiesel import scrape_kontan_biodiesel
 from code_scrapping.kontan import scrape_kontan
 from code_scrapping.cnbc_id import main_cnbc
-from code_scrapping.cnbc import scrape_cnbc_international
+from code_scrapping.cnbc import main_google_news_cnbc
 from code_scrapping.oilprice import scrape_oilprice
 from code_scrapping.bloomberg_technoz import main_bloomberg_technoz
 from code_scrapping.bps import main_bps
@@ -61,8 +61,8 @@ sinonim_dict = {
 }
 
 sumber_dict = {
-    "indeks risiko geopolitik": [scrape_cnn_international, scrape_cnbc_international],
-    "indeks volatilitas": [scrape_cnn_international, scrape_cnbc_international],
+    "indeks risiko geopolitik": [main_google_news_cnn, main_google_news_cnbc, main_bloomberg_technoz],
+    "indeks volatilitas": [main_google_news_cnn, main_google_news_cnn, main_bloomberg_technoz],
     "kurs": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
     "ihsg": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
     "inflasi": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bps],
