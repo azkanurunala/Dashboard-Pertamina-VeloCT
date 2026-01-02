@@ -155,10 +155,10 @@ def scrape_cnn_international(keyword, tanggal=None):
         })
 
     print(f"\nMemfilter artikel berdasarkan keyword: {keyword}")
-    keyword_lower = keyword.lower()
+    keyword_pattern = r'\b' + re.escape(keyword.strip().lower()) + r'\b'
     hasil_bersih = [
         h for h in hasil_dengan_konten
-        if keyword_lower in h['title'].lower() or keyword_lower in h['content'].lower()
+        if re.search(keyword_pattern, h['title'].lower()) or re.search(keyword_pattern, h['content'].lower())
     ]
 
     print(f"Ditemukan {len(hasil_bersih)} artikel yang sesuai dengan keyword '{keyword}'")

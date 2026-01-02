@@ -28,6 +28,7 @@ from code_scrapping.cnbc import main_google_news_cnbc
 from code_scrapping.oilprice import scrape_oilprice
 from code_scrapping.bloomberg_technoz import main_bloomberg_technoz
 from code_scrapping.bps import main_bps
+from code_scrapping.scrape_sandp_news import scrape_news_sap
 
 load_dotenv()
 
@@ -57,7 +58,8 @@ sinonim_dict = {
     "harga minyak": ["oil price", "minyak mentah","crude oil"],
     "volume minyak": ["volume bbm", "oil volume", "minyak mentah", "volume minyak"],
     "harga produk kilang pertamina": ["bbm","harga kilang pertamina", "kilang pertamina", "kilang", "refinery", "harga pertamina"],
-    "volume produk kilang pertamina": ["bbm", "volume kilang pertamina", "volume kilang", "refinery", "volume pertamina"]
+    "volume produk kilang pertamina": ["bbm", "volume kilang pertamina", "volume kilang", "refinery", "volume pertamina"], 
+    "SAF" : ["UCO ", "sustainable aviation fuel ", "used cooking oil ", "CORSIA ", "SAFCo ", "biorefinery ", "minyak jelantah ", "bioavtur "]
 }
 
 sumber_dict = {
@@ -80,7 +82,8 @@ sumber_dict = {
     "harga minyak": [scrape_kontan_bbm, main_bisnis_indonesia, scrape_oilprice, main_bloomberg_technoz],
     "volume minyak": [scrape_kontan_bbm, main_bisnis_indonesia, scrape_oilprice, main_bloomberg_technoz],
     "harga produk kilang pertamina": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    "volume produk kilang pertamina": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz]
+    "volume produk kilang pertamina": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz], 
+    "SAF" : [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz, scrape_news_sap, main_google_news_cnbc, main_google_news_cnn]
 }
 
 sheet_to_keyword = {
@@ -103,7 +106,9 @@ sheet_to_keyword = {
     "(News)Harga Minyak": "harga minyak",
     "(News)Volume Minyak": "volume minyak",
     "(News)Harga Produk Kilang": "harga produk kilang pertamina",
-    "(News)Volume Produk Kilang": "volume produk kilang pertamina"
+    "(News)Volume Produk Kilang": "volume produk kilang pertamina", 
+    "(News)SAF" : "SAF"
+    
 }
 
 def standardize_format(df):
@@ -166,7 +171,10 @@ def scrape_keyword(keyword, tanggal_filter):
             nama_sumber = scrape_func.__name__.replace("scrape_", "").replace("main_", "").upper()
             source_mapping = {
                 "KONTAN_BBM": "KONTAN",
-                "KONTAN_BIODIESEL": "KONTAN"
+                "KONTAN_BIODIESEL": "KONTAN",
+                "GOOGLE_NEWS_CNN": "CNN",
+                "GOOGLE_NEWS_CNBC": "CNBC",
+                "NEWS_SAP": "S&P"
             }
             nama_sumber = source_mapping.get(nama_sumber, nama_sumber)
             print(f"Scraping dari {nama_sumber}...")
@@ -208,8 +216,8 @@ def main():
         print(f"Authentication failed: {e}")
         return
     
-    # tanggal_filter = "2025-12-24"
-    tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    tanggal_filter = "2025-12-3"
+    # tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     print(f"\nTanggal filter: {tanggal_filter}")
     
     sheet_names = [
@@ -232,7 +240,8 @@ def main():
         "(News)Harga Minyak",
         "(News)Volume Minyak",
         "(News)Harga Produk Kilang",
-        "(News)Volume Produk Kilang"
+        "(News)Volume Produk Kilang", 
+        "(News)SAF"
     ]
     
     print(f"\nLoading existing data from OneDrive...")
@@ -262,7 +271,7 @@ def main():
                     print(f"  Sheet '{sheet_name}': tidak ada, akan dibuat baru")
                     all_sheets[sheet_name] = pd.DataFrame()
             except Exception as e:
-                print(f"  Sheet '{sheet_name}': error - {e}, akan dibuat baru")
+                print(f"  Sheet '{sheet_name}': error - {e}, akan dibat baru")
                 all_sheets[sheet_name] = pd.DataFrame()
         
         excel_file.close()
@@ -296,7 +305,7 @@ def main():
         print(f"  Total: {len(combined_df)} baris")
         
         print("\nIstirahat 60 detik...")
-        time.sleep(60)
+        # time.sleep(60)
     
     print("\n" + "="*60)
     print("MENYIMPAN KE ONEDRIVE")
