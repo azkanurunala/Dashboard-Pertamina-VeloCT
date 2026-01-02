@@ -114,9 +114,11 @@ def get_kompas_news_by_keyword(keyword):
         return []
     print(f"\n[INFO] Found {len(article_sitemaps)} article sitemap(s).")
     print("[INFO] Starting keyword search...\n")
+    
     results = []
-    keyword_lower = keyword.lower()
+    keyword_pattern = r'\b' + re.escape(keyword.strip().lower()) + r'\b'  # ✅ TAMBAH BARIS INI
     ns = {'sm': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
+    
     for idx, sitemap_url in enumerate(article_sitemaps, 1):
         print(f"[INFO] ({idx}/{len(article_sitemaps)}) Processing: {sitemap_url}")
         try:
@@ -131,7 +133,10 @@ def get_kompas_news_by_keyword(keyword):
                 title = info.get('title') or ""
                 keywords = info.get('keywords') or ""
                 link = info.get('link') or ""
-                if (keyword_lower in title.lower()) or (keyword_lower in keywords.lower()):
+                
+                # ✅ GANTI BARIS INI
+                if (re.search(keyword_pattern, title.lower()) or 
+                    re.search(keyword_pattern, keywords.lower())):
                     results.append({
                         'Judul': title if title else link,
                         'Link': link,

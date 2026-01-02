@@ -80,16 +80,17 @@ def scrape_cnbc_international(keyword, tanggal=None, ambil_konten=True):
             'url': info['url']
         })
     hasil = []
+    keyword_pattern = r'\b' + re.escape(keyword.strip().lower()) + r'\b'
+    
     for berita in semua_berita:
         if ambil_konten:
             berita['content'] = ambil_konten_artikel(berita['url'])
             time.sleep(0.5)
         else:
             berita['content'] = 'N/A'
-        keyword_lower = keyword.lower()
-        if (keyword_lower in berita['title'].lower() or
-            keyword_lower in berita['url'].lower() or
-            (ambil_konten and keyword_lower in berita['content'].lower())):
+        if (re.search(keyword_pattern, berita['title'].lower()) or
+            re.search(keyword_pattern, berita['url'].lower()) or
+            (ambil_konten and re.search(keyword_pattern, berita['content'].lower()))):
             hasil.append(berita)
     return hasil
 
@@ -120,7 +121,7 @@ def main_google_news_cnbc(keyword, tanggal=None):
     return unique_articles
 
 if __name__ == '__main__':
-    keyword = "geopolitical risks"
+    keyword = "SAF"
     print(f"Scraping CNBC (Google News + Sitemap) - keyword: {keyword}\n")
     hasil = main_google_news_cnbc(keyword=keyword, tanggal=None)
     print(f"\nTotal: {len(hasil)} berita")
