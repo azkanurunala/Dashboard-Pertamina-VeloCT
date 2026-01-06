@@ -120,13 +120,8 @@ def get_historical_data(access_token, symbols, start_date, end_date, fields=None
                     mod_date = data_point.get('modDate', '')
                     if assess_date and 'T' in assess_date:
                         assess_date = assess_date.split('T')[0]
-                    if mod_date and 'T' in mod_date:
-                        mod_date = mod_date.split('T')[0]
                     flat_data.append({
                         'symbol': symbol,
-                        'uom': uom,
-                        'currency': currency,
-                        'description': description,
                         'assessDate': assess_date,
                         'value': data_point.get('value', ''),
                         'modDate': mod_date
@@ -138,12 +133,6 @@ def get_historical_data(access_token, symbols, start_date, end_date, fields=None
         if 'value' in df.columns:
             df['value'] = pd.to_numeric(df['value'], errors='coerce')
         print(f"Berhasil mengambil {len(df)} baris data")
-        print("\nVerifikasi kolom reference data:")
-        print(f"  - UOM unik: {df['uom'].unique()}")
-        print(f"  - Currency unik: {df['currency'].unique()}")
-        print(f"  - Description unik: {df['description'].nunique()} deskripsi")
-        print(f"\nSample data pertama:")
-        print(df[['symbol', 'uom', 'currency', 'description']].head(3))
         return df
     except requests.exceptions.RequestException as e:
         print(f"Error saat mengambil data: {e}")
@@ -181,12 +170,7 @@ def get_current_data(access_token, symbols, fields=None):
             print(f"Total symbols ditemukan: {len(results)}")
             for item in results:
                 symbol = item.get('symbol', '')
-                reference_data = item.get('referenceData', {})
-                currency = reference_data.get('currency', '')
-                description = reference_data.get('description', '')
-                uom = reference_data.get('uom', '')
                 data_list = item.get('data', [])
-
                 for data_point in data_list:
                     assess_date = data_point.get('assessDate', '')
                     mod_date = data_point.get('modDate', '')
@@ -194,9 +178,6 @@ def get_current_data(access_token, symbols, fields=None):
                         assess_date = assess_date.split('T')[0]
                     flat_data.append({
                         'symbol': symbol,
-                        'uom': uom,
-                        'currency': currency,
-                        'description': description,
                         'assessDate': assess_date,
                         'value': data_point.get('value', ''),
                         'modDate': mod_date
@@ -220,6 +201,81 @@ def get_current_data(access_token, symbols, fields=None):
         if hasattr(e, 'response') and e.response is not None:
             print(f"Response: {e.response.text}")
         return None
+    
+def pivot_data_to_columns(df):
+    symbol_map = {
+        'UCFCC00': 'UCO',
+        'SFSMR00': 'SAF'
+    }
+    df['suffix'] = df['symbol'].map(symbol_map)
+    df_value = df.pivot_table(
+        index='assessDate',
+        columns='suffix',
+        values='value',
+        aggfunc='first'
+    ).reset_index()
+    df_value.columns = ['assessDate'] + [f'value_{col}' for col in df_value.columns if col != 'assessDate']
+    df_moddate = df.pivot_table(
+        index='assessDate',
+        columns='suffix',
+        values='modDate',
+        aggfunc='first'
+    ).reset_index()
+    df_moddate.columns = ['assessDate'] + [f'modDate_{col}' for col in df_moddate.columns if col != 'assessDate']
+    df_final = df_value.merge(df_moddate, on='assessDate', how='outer')
+    column_order = ['assessDate', 'value_UCO', 'value_SAF', 'modDate_UCO', 'modDate_SAF']
+    for col in column_order:
+        if col not in df_final.columns:
+            df_final[col] = None
+    return df_final[column_order].sort_values('assessDate')
+
+def merge_with_existing_data(df_old, df_new):
+    if df_old.empty:
+        return df_new
+    if df_new.empty:
+        return df_old
+    for col in ['assessDate', 'value_UCO', 'value_SAF', 'modDate_UCO', 'modDate_SAF']:
+        if col not in df_old.columns:
+            df_old[col] = None
+        if col not in df_new.columns:
+            df_new[col] = None
+    df_merged = df_old.merge(
+        df_new,
+        on='assessDate',
+        how='outer',
+        suffixes=('_old', '_new')
+    )
+    for symbol in ['UCO', 'SAF']:
+        value_col = f'value_{symbol}'
+        moddate_col = f'modDate_{symbol}'
+        if f'{value_col}_new' in df_merged.columns and f'{value_col}_old' in df_merged.columns:
+            df_merged[value_col] = df_merged[f'{value_col}_new'].fillna(df_merged[f'{value_col}_old'])
+        elif f'{value_col}_new' in df_merged.columns:
+            df_merged[value_col] = df_merged[f'{value_col}_new']
+        elif f'{value_col}_old' in df_merged.columns:
+            df_merged[value_col] = df_merged[f'{value_col}_old']
+        if f'{moddate_col}_new' in df_merged.columns and f'{moddate_col}_old' in df_merged.columns:
+            df_merged[moddate_col] = df_merged[f'{moddate_col}_new'].fillna(df_merged[f'{moddate_col}_old'])
+        elif f'{moddate_col}_new' in df_merged.columns:
+            df_merged[moddate_col] = df_merged[f'{moddate_col}_new']
+        elif f'{moddate_col}_old' in df_merged.columns:
+            df_merged[moddate_col] = df_merged[f'{moddate_col}_old']
+    cols_to_drop = [col for col in df_merged.columns if col.endswith('_old') or col.endswith('_new')]
+    df_merged = df_merged.drop(columns=cols_to_drop)
+    column_order = ['assessDate', 'value_UCO', 'value_SAF', 'modDate_UCO', 'modDate_SAF']
+    df_merged = df_merged[column_order]
+    print(f"Data sebelum deduplikasi: {len(df_merged)} baris")
+    df_merged = df_merged.drop_duplicates(
+        subset=['assessDate', 'value_UCO', 'value_SAF'], 
+        keep='last'
+    )
+    print(f"Data setelah deduplikasi (keep yang baru): {len(df_merged)} baris")
+    df_merged = df_merged.sort_values('assessDate', ascending=True).reset_index(drop=True)
+    print(f"\n[MERGE] Data berhasil di-merge:")
+    print(f"  Data lama: {len(df_old)} rows")
+    print(f"  Data baru: {len(df_new)} rows")
+    print(f"  Data final: {len(df_merged)} rows")
+    return df_merged
 
 def scrape_spglobal_current(symbols=None, fields=None):
     if symbols is None:
@@ -254,17 +310,7 @@ def read_sap_sheet_from_onedrive(access_token, file_path, sheet_name):
 def write_sap_sheet_to_onedrive(access_token, file_path, sheet_name, df_new):
     print(f"\nMenyiapkan file Excel untuk OneDrive...")
     df_old = read_sap_sheet_from_onedrive(access_token, file_path, sheet_name)
-    if not df_old.empty:
-        print(f"Data lama: {len(df_old)} baris")
-    else:
-        print("Sheet kosong, akan membuat baru")
-    print(f"Data baru: {len(df_new)} baris")
-    df_final = pd.concat([df_old, df_new], ignore_index=True)
-    if 'symbol' in df_final.columns and 'assessDate' in df_final.columns:
-        df_final.drop_duplicates(subset=['symbol', 'assessDate'], keep='last', inplace=True)
-        print(f"Data setelah deduplikasi (keep yang baru): {len(df_final)} baris")
-    if 'assessDate' in df_final.columns:
-        df_final.sort_values('assessDate', ascending=True, inplace=True)
+    df_final = merge_with_existing_data(df_old, df_new)
     excel_buffer = download_excel_from_onedrive(access_token, file_path)
     output_buffer = BytesIO()
     if excel_buffer is None:
@@ -299,16 +345,17 @@ def write_sap_sheet_to_onedrive(access_token, file_path, sheet_name, df_new):
     upload_excel_to_onedrive(access_token, file_path, output_buffer)
     print("Upload selesai!")
 
-
 def main_daily():
     symbols = ["SFSMR00", "UCFCC00"]
     fields = ["UOM", "Currency", "description"]
+    
     try:
         onedrive_access_token = get_access_token()
         print("OneDrive authentication successful")
     except Exception as e:
         print(f"OneDrive authentication failed: {e}")
         exit(1)
+    
     print("\nLoading S&P Global API tokens...")
     spglobal_access_token, spglobal_refresh_token = load_tokens()
     if not spglobal_access_token or not spglobal_refresh_token:
@@ -326,35 +373,34 @@ def main_daily():
         else:
             print("Gagal refresh token untuk current data")
             exit(1)
-    if df_current is not None:
-        print(f"\n[CURRENT] Data berhasil diambil!")
-        print(f"[CURRENT] Total data: {len(df_current)} baris")
-    else:
+    if df_current is None:
         print("\n[CURRENT] Gagal mengambil data current")
         exit(1)
+    print(f"\n[CURRENT] Data berhasil diambil!")
+    print(f"[CURRENT] Total data: {len(df_current)} baris")
+    df_pivoted = pivot_data_to_columns(df_current)
     print("\n" + "=" * 60)
     print("MENYIMPAN KE ONEDRIVE")
     print("=" * 60)
-    write_sap_sheet_to_onedrive(onedrive_access_token, ONEDRIVE_FILE_PATH, SHEET_NAME, df_current)
+    write_sap_sheet_to_onedrive(onedrive_access_token, ONEDRIVE_FILE_PATH, SHEET_NAME, df_pivoted)
     print("\n" + "=" * 60)
     print("DATA BERHASIL DISIMPAN KE ONEDRIVE")
     print("=" * 60)
     print(f"  File: {ONEDRIVE_FILE_PATH}")
     print(f"  Sheet: {SHEET_NAME}")
-    print(f"  Total rows: {len(df_current)}")
+    print(f"  Format: assessDate | value_UCO | value_SAF | modDate_UCO | modDate_SAF")
+    print(f"  Total rows: {len(df_pivoted)}")
     print("\n" + "=" * 60)
     print("SELESAI")
     print("=" * 60)
-
 
 def main_weekly():
     symbols = ["SFSMR00", "UCFCC00"]
     fields = ["UOM", "Currency", "description"]
     today = datetime.now()
-    yesterday = today - timedelta(days=1)
-    week_ago = yesterday - timedelta(days=7)
-    start_date = week_ago.strftime("%Y-%m-%d")
-    end_date = yesterday.strftime("%Y-%m-%d")
+    week_ago = today - timedelta(days=7)
+    start_date = "2024-01-01"
+    end_date = datetime.today().strftime("%Y-%m-%d")
     try:
         onedrive_access_token = get_access_token()
         print("OneDrive authentication successful")
@@ -369,6 +415,7 @@ def main_weekly():
     print("\n" + "=" * 60)
     print("SCRAPING HISTORICAL DATA (WEEKLY)")
     print("=" * 60)
+    print(f"Period: {start_date} to {end_date}")
     df_historical = get_historical_data(spglobal_access_token, symbols, start_date, end_date, fields)
     if df_historical is None:
         print("Mencoba refresh token...")
@@ -378,22 +425,26 @@ def main_weekly():
         else:
             print("Gagal refresh token untuk historical data")
             exit(1)
-    if df_historical is not None:
-        print(f"\n[HISTORICAL] Data berhasil diambil!")
-        print(f"[HISTORICAL] Total data: {len(df_historical)} baris")
-    else:
+    if df_historical is None:
         print("\n[HISTORICAL] Gagal mengambil data historical")
         exit(1)
+    print(f"\n[HISTORICAL] Data berhasil diambil!")
+    print(f"[HISTORICAL] Total data: {len(df_historical)} baris")
+    df_pivoted = pivot_data_to_columns(df_historical)
     print("\n" + "=" * 60)
     print("MENYIMPAN KE ONEDRIVE")
     print("=" * 60)
-    write_sap_sheet_to_onedrive(onedrive_access_token, ONEDRIVE_FILE_PATH, SHEET_NAME, df_historical)
+    write_sap_sheet_to_onedrive(onedrive_access_token, ONEDRIVE_FILE_PATH, SHEET_NAME, df_pivoted)
     print("\n" + "=" * 60)
     print("DATA BERHASIL DISIMPAN KE ONEDRIVE")
     print("=" * 60)
     print(f"  File: {ONEDRIVE_FILE_PATH}")
     print(f"  Sheet: {SHEET_NAME}")
-    print(f"  Total rows: {len(df_historical)}")
+    print(f"  Format: assessDate | value_UCO | value_SAF | modDate_UCO | modDate_SAF")
+    print(f"  Total rows: {len(df_pivoted)}") 
     print("\n" + "=" * 60)
     print("SELESAI")
     print("=" * 60)
+
+if __name__ == "__main__":
+    main_daily()
