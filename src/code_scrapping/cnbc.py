@@ -121,7 +121,7 @@ def main_google_news_cnbc(keyword, tanggal=None):
     return unique_articles
 
 if __name__ == '__main__':
-    keyword = "SAF"
+    keyword = "geopolitical risks"
     print(f"Scraping CNBC (Google News + Sitemap) - keyword: {keyword}\n")
     hasil = main_google_news_cnbc(keyword=keyword, tanggal=None)
     print(f"\nTotal: {len(hasil)} berita")
@@ -132,5 +132,3 @@ if __name__ == '__main__':
         print(f"Saved: {filename}")
     else:
         print("Tidak ada berita")
-
-
