@@ -21,7 +21,7 @@ load_dotenv()
 ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_DATA_PATH", "/results/(Terstruktur)Data Scrapping.xlsx")
 SHEET_NAME = "(Data)SAF"
 
-def load_tokens(token_file_path="../../token.json"):
+def load_tokens(token_file_path="../token.json"):
     try:
         with open(token_file_path, 'r') as f:
             token_data = json.load(f)
