@@ -22,16 +22,6 @@ ONEDRIVE_SCRAP_PATH = os.getenv("ONEDRIVE_FILE_PATH", "/results/(News)Scrapping.
 ONEDRIVE_SENTIMENT_PATH = "/results/(News)Sentiment.xlsx"
 
 TOPICS = {
-   
-    "Indeks Volatilitas": {
-        "target_sheets": ["(News)indeks volatilitas"],
-        "output_sheet": "(Summary)Idx Volatilitas",
-        "role_prompt" : "industri minyak dan gas",
-        "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
-                            "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
-                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
-    },
-
     "Nilai Tukar Rupiah": {
         "target_sheets": ["(News)Kurs"],
         "output_sheet": "(Summary)Nilai Tukar Rupiah",
@@ -62,12 +52,10 @@ TOPICS = {
 
 def process_topic(model, topic_name, config, existing_df, access_token):
     print(f"\n{'='*60}")
-    print(f"🔄 Memproses topik: {topic_name}")
+    print(f"Memproses topik: {topic_name}")
     print(f"{'='*60}")
     target_sheets = config["target_sheets"]
     output_sheet = config["output_sheet"]
-
-    # Get last date from existing_df instead of file
     last_date = None
     if not existing_df.empty and "Tanggal akhir" in existing_df.columns:
         try:
@@ -82,29 +70,21 @@ def process_topic(model, topic_name, config, existing_df, access_token):
     end_date = start_date
 
     print(f"Akan proses berita dari {start_date.date()} sampai {end_date.date()}")
-
-    # Download scrapping data from OneDrive
     print(f"Mengambil data scrapping dari OneDrive: {ONEDRIVE_SCRAP_PATH}")
     excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_SCRAP_PATH)
-
     if excel_buffer is None:
-        print(f"⚠️ File scrapping tidak ditemukan di OneDrive")
+        print(f"File scrapping tidak ditemukan di OneDrive")
         return None
-
-    # Collect news from the downloaded data
     all_news_list = []
     excel_file = pd.ExcelFile(excel_buffer)
 
     for sheet in target_sheets:
         if sheet in excel_file.sheet_names:
             df_news = pd.read_excel(excel_file, sheet_name=sheet)
-            # Filter by date
             if not df_news.empty and "date" in df_news.columns:
                 df_news["date"] = pd.to_datetime(df_news["date"], errors='coerce')
                 mask = (df_news["date"] >= start_date) & (df_news["date"] <= end_date)
                 filtered_news = df_news[mask]
-
-                # Collect content
                 for _, row in filtered_news.iterrows():
                     if pd.notna(row.get("content")):
                         all_news_list.append(str(row["content"]))
@@ -112,7 +92,7 @@ def process_topic(model, topic_name, config, existing_df, access_token):
     excel_file.close()
 
     if not all_news_list:
-        print(f"⚠️ Tidak ada berita baru untuk {topic_name}")
+        print(f"Tidak ada berita baru untuk {topic_name}")
         return None
 
     print(f"Total berita ditemukan: {len(all_news_list)}")
@@ -151,8 +131,6 @@ def main():
 
     print("\nSetting up Gemini model...")
     model = setup_gemini()
-
-    # Load existing sentiment data from OneDrive
     print(f"\nLoading existing sentiment data from OneDrive...")
     print(f"File: {ONEDRIVE_SENTIMENT_PATH}")
 
@@ -214,19 +192,17 @@ def main():
             else:
                 print(f"  Tidak ada data baru")
 
-            print("\n⏸️ Istirahat 1 menit sebelum lanjut ke topik berikutnya...")
+            print("\nIstirahat 1 menit sebelum lanjut ke topik berikutnya...")
             time.sleep(60)
         except Exception as e:
-            print(f"❌ Error saat memproses {topic_name}: {e}")
+            print(f"Error saat memproses {topic_name}: {e}")
             continue
 
     print("\n" + "="*60)
     print("MENYIMPAN KE ONEDRIVE")
     print("="*60)
-
     try:
         write_multiple_sheets_to_onedrive(access_token, ONEDRIVE_SENTIMENT_PATH, all_sheets)
-
         print("\n" + "="*60)
         print("SELESAI!")
         print(f"File: {ONEDRIVE_SENTIMENT_PATH}")
