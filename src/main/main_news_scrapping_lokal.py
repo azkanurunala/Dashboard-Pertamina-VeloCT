@@ -72,8 +72,8 @@ sumber_dict = {
     "jibor": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
     "indeks sales retail": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
     "indeks kepercayaan konsumen": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
-    "indeks kinerja manufaktur": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
-    "indeks kinerja jasa": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    "indeks kinerja manufaktur": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, scrape_news_sap],
+    "indeks kinerja jasa": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, scrape_news_sap],
     "neraca perdagangan": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bps],
     "pertumbuhan domestik bruto": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bps],
     "biodiesel": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
@@ -216,8 +216,8 @@ def main():
         print(f"Authentication failed: {e}")
         return
     
-    tanggal_filter = "2025-12-3"
-    # tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    # tanggal_filter = "2025-12-3"
+    tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     print(f"\nTanggal filter: {tanggal_filter}")
     
     sheet_names = [
@@ -305,7 +305,7 @@ def main():
         print(f"  Total: {len(combined_df)} baris")
         
         print("\nIstirahat 60 detik...")
-        # time.sleep(60)
+        time.sleep(60)
     
     print("\n" + "="*60)
     print("MENYIMPAN KE ONEDRIVE")
