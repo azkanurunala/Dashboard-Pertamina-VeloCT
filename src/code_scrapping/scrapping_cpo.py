@@ -6,6 +6,8 @@ from datetime import datetime
 import os
 import sys
 from dotenv import load_dotenv
+from io import BytesIO
+from openpyxl import load_workbook
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -36,58 +38,53 @@ def read_cpo_sheet_from_onedrive(access_token, file_path, sheet_name):
         print(f"! Sheet '{sheet_name}' tidak ditemukan, akan membuat baru")
         return pd.DataFrame(columns=["Upload_Dates", "Dates", "PX_LAST"])
 
-
 def write_cpo_sheet_to_onedrive(access_token, file_path, sheet_name, df):
     print(f"\nMenyiapkan file Excel...")
-    
     excel_buffer = download_excel_from_onedrive(access_token, file_path)
-    
-    from io import BytesIO
-    from openpyxl import load_workbook
-    
     output_buffer = BytesIO()
-    
-    if excel_buffer is None:
-        print("File baru, hanya ada 1 sheet")
-        with pd.ExcelWriter(output_buffer, engine='openpyxl', mode='w') as writer:
-            df.to_excel(writer, sheet_name=sheet_name, index=False)
-    else:
-        print("File existing, mode update")
-        
-        try:
+    try:
+        if excel_buffer is None:
+            print("File baru, hanya ada 1 sheet")
+            with pd.ExcelWriter(output_buffer, engine='openpyxl', mode='w') as writer:
+                df.to_excel(writer, sheet_name=sheet_name, index=False)
+        else:
+            print("File existing, preserve semua sheet...")
+            excel_buffer.seek(0) 
             wb = load_workbook(excel_buffer)
-            
+            print(f"Sheet yang ada saat ini: {wb.sheetnames}")
             visible_sheets = [s for s in wb.worksheets if s.sheet_state == 'visible']
             if len(visible_sheets) == 0:
                 print("Fixing hidden sheets...")
                 wb.worksheets[0].sheet_state = 'visible'
                 wb.active = 0
-            
             for sheet in wb.worksheets:
                 if sheet.sheet_state != 'visible':
                     sheet.sheet_state = 'visible'
-            
-            temp_buffer = BytesIO()
-            wb.save(temp_buffer)
+            if sheet_name in wb.sheetnames:
+                print(f"Menghapus sheet '{sheet_name}' yang lama...")
+                del wb[sheet_name]
+            ws = wb.create_sheet(sheet_name)
+            for col_idx, col_name in enumerate(df.columns, 1):
+                ws.cell(row=1, column=col_idx, value=col_name)
+            for row_idx, row_data in enumerate(df.values, 2):
+                for col_idx, value in enumerate(row_data, 1):
+                    ws.cell(row=row_idx, column=col_idx, value=value)
+            print(f"Sheet yang akan disimpan: {wb.sheetnames}")
+            wb.save(output_buffer)
             wb.close()
-            temp_buffer.seek(0)
-            
-            with pd.ExcelWriter(temp_buffer, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-                df.to_excel(writer, sheet_name=sheet_name, index=False)
-            
-            output_buffer = temp_buffer
-            
-        except Exception as e:
-            print(f"Error saat update: {e}, fallback ke create new")
-            with pd.ExcelWriter(output_buffer, engine='openpyxl', mode='w') as writer:
-                df.to_excel(writer, sheet_name=sheet_name, index=False)
-    
-    output_buffer.seek(0)
-    
-    print(f"Uploading ke OneDrive: {file_path}")
-    upload_excel_to_onedrive(access_token, file_path, output_buffer)
-    print("Upload selesai!")
-
+        output_buffer.seek(0)
+        verify_wb = load_workbook(output_buffer)
+        print(f"Verifikasi - Sheet di buffer: {verify_wb.sheetnames}")
+        verify_wb.close()
+        output_buffer.seek(0)
+        print(f"Uploading ke OneDrive: {file_path}")
+        upload_excel_to_onedrive(access_token, file_path, output_buffer)
+        print("Upload selesai!")
+    except Exception as e:
+        print(f"Error saat menyimpan: {e}")
+        import traceback
+        traceback.print_exc()
+        raise 
 
 def get_max_pagination(base_url):
     headers = {

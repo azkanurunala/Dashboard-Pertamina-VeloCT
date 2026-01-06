@@ -289,6 +289,11 @@ def save_to_excel(access_token, data, sheet_name='(Data)Biodesel'):
     if not data:
         print("Tidak ada data baru untuk disimpan")
         return None
+    
+    print("\n" + "="*60)
+    print("Menyimpan data ke OneDrive")
+    print("="*60)
+    
     new_df = pd.DataFrame(data)
     new_df['HIP Biodiesel IDR/L'] = (
         new_df['HIP Biodiesel IDR/L']
@@ -297,14 +302,20 @@ def save_to_excel(access_token, data, sheet_name='(Data)Biodesel'):
         .astype(int)
     )
     new_df['Date'] = pd.to_datetime(new_df['Date'], errors='coerce')
+    
+    print(f"Data baru: {len(new_df)} baris")
+    
+    # Baca data existing dari OneDrive
     excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
+    
     if excel_buffer is None:
-        print("File tidak ditemukan, akan membuat file baru")
+        print("File tidak ada di OneDrive, akan membuat baru")
         combined_df = new_df
     else:
         try:
             existing_df = pd.read_excel(excel_buffer, sheet_name=sheet_name, engine='openpyxl')
             existing_df['Date'] = pd.to_datetime(existing_df['Date'], errors='coerce')
+            print(f"Data lama: {len(existing_df)} baris")
             combined_df = pd.concat([existing_df, new_df], ignore_index=True)
         except ValueError:
             print(f"Sheet '{sheet_name}' tidak ditemukan, membuat sheet baru")
@@ -313,43 +324,82 @@ def save_to_excel(access_token, data, sheet_name='(Data)Biodesel'):
             print(f"Error membaca sheet existing: {e}")
             combined_df = new_df
     
+    # Deduplikasi dan sorting
     combined_df = combined_df.drop_duplicates(subset=['Bulan HIP'], keep='last')
     combined_df = combined_df.sort_values(by='Date', ascending=True)
     combined_df['Date'] = combined_df['Date'].dt.strftime('%Y-%m-%d')
-
+    
+    print(f"Data setelah deduplikasi: {len(combined_df)} baris")
+    
+    # Siapkan buffer untuk upload
+    from io import BytesIO
+    from openpyxl import load_workbook, Workbook
+    
     output_buffer = BytesIO()
-    if excel_buffer is not None:    
-        print("Memperbarui file Excel di OneDrive...")
-        with pd.ExcelWriter(output_buffer, engine='openpyxl', mode='w') as writer:
-            combined_df.to_excel(writer, sheet_name=sheet_name, index=False)
-    else: 
-        print("Update file Excel existing...")
-        try:
+    
+    try:
+        if excel_buffer is None:
+            # File benar-benar tidak ada, buat baru
+            print("Membuat file Excel baru...")
+            with pd.ExcelWriter(output_buffer, engine='openpyxl', mode='w') as writer:
+                combined_df.to_excel(writer, sheet_name=sheet_name, index=False)
+        else:
+            # File sudah ada - PRESERVE semua sheet
+            print("File existing ditemukan, preserve semua sheet...")
+            
+            # Load workbook existing
+            excel_buffer.seek(0)  # Reset pointer
             wb = load_workbook(excel_buffer)
+            
+            print(f"Sheet yang ada saat ini: {wb.sheetnames}")
+            
+            # Fix hidden sheets
             visible_sheets = [s for s in wb.worksheets if s.sheet_state == 'visible']
             if len(visible_sheets) == 0:
                 print("Fixing hidden sheets...")
                 wb.worksheets[0].sheet_state = 'visible'
                 wb.active = 0
+            
             for sheet in wb.worksheets:
                 if sheet.sheet_state != 'visible':
                     sheet.sheet_state = 'visible'
-            temp_buffer = BytesIO()
-            wb.save(temp_buffer)
+            
+            # Hapus sheet target jika sudah ada (akan dibuat ulang)
+            if sheet_name in wb.sheetnames:
+                print(f"Menghapus sheet '{sheet_name}' yang lama...")
+                del wb[sheet_name]
+            
+            # Buat sheet baru dengan data
+            ws = wb.create_sheet(sheet_name)
+            
+            # Tulis header
+            for col_idx, col_name in enumerate(combined_df.columns, 1):
+                ws.cell(row=1, column=col_idx, value=col_name)
+            
+            # Tulis data
+            for row_idx, row_data in enumerate(combined_df.values, 2):
+                for col_idx, value in enumerate(row_data, 1):
+                    ws.cell(row=row_idx, column=col_idx, value=value)
+            
+            print(f"Sheet yang akan disimpan: {wb.sheetnames}")
+            
+            # Save ke buffer
+            wb.save(output_buffer)
             wb.close()
-            temp_buffer.seek(0)
-            with pd.ExcelWriter(temp_buffer, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-                combined_df.to_excel(writer, sheet_name=sheet_name, index=False)
-            output_buffer = temp_buffer
-        except Exception as e:
-            print(f"Error saat update: {e}, fallback ke create new")
-            with pd.ExcelWriter(output_buffer, engine='openpyxl', mode='w') as writer:
-                combined_df.to_excel(writer, sheet_name=sheet_name, index=False)
-    output_buffer.seek(0)
-    print(f"Uploading ke OneDrive: {ONEDRIVE_FILE_PATH}")
-    try:
+        
+        output_buffer.seek(0)
+        
+        # Verifikasi sheet sebelum upload
+        verify_wb = load_workbook(output_buffer)
+        print(f"Verifikasi - Sheet di buffer: {verify_wb.sheetnames}")
+        verify_wb.close()
+        output_buffer.seek(0)
+        
+        # Upload ke OneDrive
+        print(f"\nUploading ke OneDrive: {ONEDRIVE_FILE_PATH}")
         upload_excel_to_onedrive(access_token, ONEDRIVE_FILE_PATH, output_buffer)
         print("Upload selesai!")
+        
         print("\n" + "="*60)
         print("DATA BERHASIL DISIMPAN KE ONEDRIVE")
         print("="*60)
@@ -357,10 +407,14 @@ def save_to_excel(access_token, data, sheet_name='(Data)Biodesel'):
         print(f"  Sheet: {sheet_name}")
         print(f"  Total rows: {len(combined_df)} (sorted ascending by Date)")
         print(f"  Data baru ditambahkan: {len(new_df)} baris")
+        
         return combined_df
+        
     except Exception as e:
-        print(f"Error uploading to OneDrive: {e}")
-        return None     
+        print(f"Error saat menyimpan: {e}")
+        import traceback
+        traceback.print_exc()
+        return None   
 
 def main_biodiesel_esdm():
     print("="*60)
