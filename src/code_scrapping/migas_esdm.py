@@ -9,6 +9,23 @@ from PIL import Image
 import easyocr
 import io
 import numpy as np
+from io import BytesIO
+from openpyxl import load_workbook
+from dotenv import load_dotenv
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from helpers.onedrive_helper import (
+    get_access_token,
+    download_excel_from_onedrive,
+    upload_excel_to_onedrive
+)
+
+load_dotenv()
+
+ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_DATA_PATH", "/results/(Terstruktur)Data Scrapping.xlsx")
+SHEET_NAME = "(Data)Harga Minyak"
 
 _MONTH_TO_NUMBER = {
     'januari': 1, 'februari': 2, 'maret': 3, 'april': 4, 'mei': 5, 'juni': 6,
@@ -21,12 +38,14 @@ _PRICE_PATTERN = r"US\$[\s]*([\d.,]+)"
 _DATE_PATTERN = rf"Ditetapkan\s+di\s+Jakarta.*?\s+(\d{{1,2}})\s+({_MONTH_PATTERN})\s+(\d{{4}}).*?(?:MENTERI\s+ENERGI|BAHLIL|ttd)"
 
 # ============================== FUNGSI: Baca Excel ==============================
-def read_last_entry_from_excel(excel_path: str, sheet_name: str):
-    if not os.path.exists(excel_path):
-        print("File Excel belum ada, semua PDF akan diunduh.")
-        return None, None
+def read_last_entry_from_excel(access_token, sheet_name):
     try:
-        df = pd.read_excel(excel_path, sheet_name=sheet_name, engine='openpyxl')
+        excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
+        if excel_buffer is None:
+            print(f"File Excel tidak ditemukan di OneDrive: {ONEDRIVE_FILE_PATH}")
+            return None, None
+        excel_buffer.seek(0)
+        df = pd.read_excel(excel_buffer, sheet_name=sheet_name, engine='openpyxl')
         if df.empty or "Bulan" not in df.columns or "Tahun" not in df.columns:
             print("Sheet kosong atau format salah. Semua PDF akan diunduh.")
             return None, None
@@ -205,15 +224,90 @@ def extract_icp_from_all_pdfs(folder: str = "../results/hasil-migas-esdm-pdf"):
             print(f"{file}: Tidak ditemukan harga ICP")
     return pd.DataFrame(results)
 
+# ============================== FUNGSI: Simpan ke OneDrive ==============================
+def save_to_onedrive(access_token, df: pd.DataFrame, sheet_name: str):
+    print("Menyimpan hasil ke OneDrive...")
+    if df.empty:
+        print("DataFrame kosong, tidak ada yang disimpan")
+        return
+    excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
+    if excel_buffer is None:
+        print("File tidak ada di OneDrive, akan membuat baru")
+        df_combined = df
+    else:
+        try:
+            excel_buffer.seek(0)
+            existing_df = pd.read_excel(excel_buffer, sheet_name=sheet_name, engine='openpyxl')
+            df_combined = pd.concat([existing_df, df], ignore_index=True)
+            df_combined.drop_duplicates(subset=["Tahun", "Bulan"], keep="last", inplace=True)
+            df_combined["Bulan_Lower"] = df_combined["Bulan"].astype(str).str.lower()
+            df_combined["Bulan_Angka"] = df_combined["Bulan_Lower"].map(_MONTH_TO_NUMBER)
+            df_combined = df_combined.sort_values(["Tahun", "Bulan_Angka"])
+            df_combined = df_combined.drop(columns=["Bulan_Lower", "Bulan_Angka"])
+            print(f"Merged with existing data. Total rows: {len(df_combined)}")
+        except ValueError:
+            print(f"Sheet '{sheet_name}' tidak ditemukan, membuat sheet baru")
+            df_combined = df
+        except Exception as e:
+            print(f"Error membaca file Excel lama dari OneDrive: {e}")
+            df_combined = df
+    output_buffer = BytesIO()
+    try:
+        if excel_buffer is None:
+            with pd.ExcelWriter(output_buffer, engine='openpyxl', mode='w') as writer:
+                df_combined.to_excel(writer, sheet_name=sheet_name, index=False)
+        else:
+            excel_buffer.seek(0)
+            wb = load_workbook(excel_buffer)
+            visible_sheets = [s for s in wb.worksheets if s.sheet_state == 'visible']
+            if len(visible_sheets) == 0:
+                wb.worksheets[0].sheet_state = 'visible'
+                wb.active = 0
+            for sheet in wb.worksheets:
+                if sheet.sheet_state != 'visible':
+                    sheet.sheet_state = 'visible'
+            if sheet_name in wb.sheetnames:
+                del wb[sheet_name]
+            ws = wb.create_sheet(sheet_name)
+            for col_idx, col_name in enumerate(df_combined.columns, 1):
+                ws.cell(row=1, column=col_idx, value=col_name)
+            for row_idx, row_data in enumerate(df_combined.values, 2):
+                for col_idx, value in enumerate(row_data, 1):
+                    ws.cell(row=row_idx, column=col_idx, value=value)
+            wb.save(output_buffer)
+            wb.close()
+        output_buffer.seek(0)
+        verify_wb = load_workbook(output_buffer)
+        print(f"Verifikasi - Sheet di buffer: {verify_wb.sheetnames}")
+        verify_wb.close()
+        output_buffer.seek(0)
+        print(f"\nUploading ke OneDrive: {ONEDRIVE_FILE_PATH}")
+        upload_excel_to_onedrive(access_token, ONEDRIVE_FILE_PATH, output_buffer)
+        print("Upload selesai!")
+        print(f"Saved to OneDrive: {ONEDRIVE_FILE_PATH}")
+        print(f"Sheet: {sheet_name}")
+        print(f"Total records: {len(df_combined)}")
+    except Exception as e:
+        print(f"Error saving to OneDrive: {e}")
+        import traceback
+        traceback.print_exc()
+
 # ============================== MAIN ==============================
 def main_price_esdm():
-    EXCEL_PATH = "../results/(Terstruktur)Data Scrapping.xlsx"
-    SHEET_NAME = "(Data)Harga Minyak"
     URL = "https://www.migas.esdm.go.id/post/read/harga-minyak-mentah"
     print("="*80)
-    print("SCRAPER ICP MIGAS ESDM")
+    print("SCRAPER ICP MIGAS ESDM (OneDrive)")
     print("="*80)
-    last_year, last_month = read_last_entry_from_excel(EXCEL_PATH, SHEET_NAME)
+    print(f"OneDrive file: {ONEDRIVE_FILE_PATH}")
+    print(f"Sheet: {SHEET_NAME}")
+    print("\nAuthenticating to Microsoft Graph API...")
+    try:
+        access_token = get_access_token()
+        print("Authentication successful")
+    except Exception as e:
+        print(f"Authentication failed: {e}")
+        return
+    last_year, last_month = read_last_entry_from_excel(access_token, SHEET_NAME)
     html = fetch_html_from_website(URL)
     if not html:
         return
@@ -224,39 +318,11 @@ def main_price_esdm():
     download_pdfs(pdf_links)
     df = extract_icp_from_all_pdfs("../results/hasil-migas-esdm-pdf")
     if not df.empty:
-        print("\nHasil Akhir:")
-        print(df)
-        if os.path.exists(EXCEL_PATH):
-            try:
-                df_old = pd.read_excel(EXCEL_PATH, sheet_name=SHEET_NAME, engine='openpyxl')
-                df_combined = pd.concat([df_old, df], ignore_index=True)
-                df_combined.drop_duplicates(subset=["Tahun", "Bulan"], keep="last", inplace=True)
-            except ValueError:
-                print(f"Sheet '{SHEET_NAME}' tidak ditemukan, membuat sheet baru")
-                df_combined = df
-            except Exception as e:
-                print(f"Gagal membaca file Excel lama: {e}")
-                df_combined = df
-        else:
-            df_combined = df
-        df_combined["Bulan_Lower"] = df_combined["Bulan"].astype(str).str.lower()
-        df_combined["Bulan_Angka"] = df_combined["Bulan_Lower"].map(_MONTH_TO_NUMBER)
-        df_combined = df_combined.sort_values(["Tahun", "Bulan_Angka"])
-        df_combined = df_combined.drop(columns=["Bulan_Lower", "Bulan_Angka"])
-        df_combined = df_combined.reset_index(drop=True)
-        try:
-            if os.path.exists(EXCEL_PATH):
-                with pd.ExcelWriter(EXCEL_PATH, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-                    df_combined.to_excel(writer, sheet_name=SHEET_NAME, index=False)
-            else:
-                with pd.ExcelWriter(EXCEL_PATH, engine='openpyxl', mode='w') as writer:
-                    df_combined.to_excel(writer, sheet_name=SHEET_NAME, index=False) 
-            print(f"\nData berhasil diperbarui di: {EXCEL_PATH}")
-            print(f"Sheet: {SHEET_NAME}")
-            print(f"Total rows: {len(df_combined)}")
-        except Exception as e:
-            print(f"Error menyimpan ke Excel: {e}")
+        print("\nHasil Akhir (preview):")
+        print(df.head().to_string(index=False))
+        save_to_onedrive(access_token, df, SHEET_NAME)
     else:
         print("Tidak ada data yang berhasil diekstrak.")
+
 if __name__ == "__main__":
     main_price_esdm()
