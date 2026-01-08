@@ -7,7 +7,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from main.main_news_scrapping_internasional import main as main_news_scraping
 from main.main_sentiment_news_internasional_harian import main as main_sentiment_news
-from code_scrapping.scrape_sandp_data import main_daily
+from code_scrapping.scrape_sandp_data import main_saf_daily
 
 def run_daily_scraping():
     try:
@@ -29,7 +29,7 @@ def run_daily_scraping():
         print("\n>>> STEP 2: Menjalankan Data Terstruktur S&P Global")
         print("-" * 70)
         try:
-            main_daily()
+            main_saf_daily()
             print("\nS&P Global Scraping selesai")
         except Exception as e:
             print(f"\n✗ ERROR pada S&P Global Scraping: {e}")
@@ -51,7 +51,7 @@ def run_daily_scraping():
             traceback.print_exc()
 
     except Exception as e:
-        print(f"\n✗ ERROR FATAL SAAT SCRAPING: {e}")
+        print(f"\nERROR FATAL SAAT SCRAPING: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)  
