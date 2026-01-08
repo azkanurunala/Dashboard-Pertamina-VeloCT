@@ -25,7 +25,7 @@ TOPICS = {
     "Nilai Tukar Rupiah": {
         "target_sheets": ["(News)Kurs"],
         "output_sheet": "(Summary)Nilai Tukar Rupiah",
-        "role_prompt" : "industri minyak dan gas",
+        "role_prompt" : "Ekonom",
         "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
                             "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
                             "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
@@ -34,7 +34,7 @@ TOPICS = {
     "IHSG": {
         "target_sheets": ["(News)IHSG"],
         "output_sheet": "(Summary)IHSG",
-        "role_prompt" : "industri minyak dan gas",
+        "role_prompt" : "Ekonom",
         "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
                             "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
                             "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
@@ -43,7 +43,7 @@ TOPICS = {
     "JIBOR": {
         "target_sheets": ["(News)JIBOR"],
         "output_sheet": "(Summary)JIBOR",
-        "role_prompt" : "industri minyak dan gas",
+        "role_prompt" : "Ekonom",
         "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
                             "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
                             "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"

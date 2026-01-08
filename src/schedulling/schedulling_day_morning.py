@@ -5,9 +5,9 @@ import os
 
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from main.main_news_scrapping import main as main_news_scraping
+from main.main_news_scrapping_lokal import main as main_news_scraping
 from code_scrapping.scrapping_cpo import main_scraper_cpo
-from main.main_sentiment_news_harian import main as main_sentiment_news
+from main.main_sentiment_news_lokal_harian import main as main_sentiment_news
 
 def run_daily_scraping():
     try:
@@ -46,12 +46,12 @@ def run_daily_scraping():
             main_sentiment_news()
             print("\nNews Sentiment Summarization selesai")
         except Exception as e:
-            print(f"\n✗ ERROR pada News Sentiment Summarization: {e}")
+            print(f"\nERROR pada News Sentiment Summarization: {e}")
             import traceback
             traceback.print_exc()
 
     except Exception as e:
-        print(f"\n✗ ERROR FATAL SAAT SCRAPING: {e}")
+        print(f"\nERROR FATAL SAAT SCRAPING: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)  

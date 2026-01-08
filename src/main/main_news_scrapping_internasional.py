@@ -26,8 +26,8 @@ load_dotenv()
 ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_FILE_PATH", "/results/(News)Scrapping.xlsx")
 
 sinonim_dict = {
-    "indeks risiko geopolitik": ["tekanan geopolitik", "geopolitical risk", "geopolitical pressure"],
-    "indeks volatilitas": ["volatility index"],
+    "indeks risiko geopolitik": ["tekanan geopolitik", "geopolitical risk", "geopolitical pressure", "geopolitik", "geopolitics"],
+    "volatilitas": ["volatilitality"],
     "indeks kinerja manufaktur": ["purchasing manufaktur index"],
     "indeks kinerja jasa": ["purchasing services index"],
     "harga minyak": ["oil price", "minyak mentah","crude oil"],

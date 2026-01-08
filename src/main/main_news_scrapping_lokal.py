@@ -37,11 +37,11 @@ ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_FILE_PATH", "/results/(News)Scrapping.x
 sinonim_dict = {
     "indeks risiko geopolitik": ["tekanan geopolitik", "geopolitical risk", "geopolitical pressure"],
     "indeks volatilitas": ["volatility index"],
-    "kurs": ["nilai tukar rupiah"],
+    "kurs": ["nilai tukar rupiah", "dxy", "dollar"],
     "ihsg": ["pasar saham"],
     "inflasi": ["inflation"],
     "bi rate": ["suku bunga", "bunga bi"],
-    "jibor": ["jakarta interbank offered rate"],
+    "indonia": [],
     "indeks sales retail": ["indeks penjualan ritel", "indeks penjualan retail", "indeks retail", "indeks ritel"],
     "indeks kepercayaan konsumen": ["indeks kepercayaan pelanggan"],
     "indeks kinerja manufaktur": ["purchasing manufaktur index"],
