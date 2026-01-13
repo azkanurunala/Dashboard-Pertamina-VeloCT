@@ -28,7 +28,7 @@ TOPICS = {
     #     "target_sheets": ["(News)indeks risiko geopolitik"],
     #     "output_sheet": "(Summary)Idx Risiko Geopolitik",
     #     "has_data_sentiment": False,
-    #     "role_prompt" : "Makroekonomi",
+    #     "role_prompt" : "Ekonom",
     #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
     #                         "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
     #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
@@ -38,7 +38,7 @@ TOPICS = {
     #     "target_sheets": ["(News)Inflasi"],
     #     "output_sheet": "(Summary)Inflasi",
     #     "has_data_sentiment": False,
-    #     "role_prompt" : "industri minyak dan gas",
+    #     "role_prompt" : "Ekonom",
     #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
     #                         "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
     #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
@@ -48,7 +48,7 @@ TOPICS = {
     #     "target_sheets": ["(News)BI Rate"],
     #     "output_sheet": "(Summary)BI-Rate",
     #     "has_data_sentiment": False,
-    #     "role_prompt" : "industri minyak dan gas",
+    #     "role_prompt" : "Ekonom",
     #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
     #                         "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
     #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
@@ -58,7 +58,7 @@ TOPICS = {
     #     "target_sheets": ["(News)indeks sales retail"],
     #     "output_sheet": "(Summary)Idx Penjualan Retail",
     #     "has_data_sentiment": False,
-    #     "role_prompt" : "industri minyak dan gas",
+    #     "role_prompt" : "Ekonom",
     #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
     #                         "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
     #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
@@ -68,7 +68,7 @@ TOPICS = {
     #     "target_sheets": ["(News)indeks kepercayaan knsmn"],
     #     "output_sheet": "(Summary)Idx Keyakinan Konsumen",
     #     "has_data_sentiment": False,
-    #     "role_prompt" : "industri minyak dan gas",
+    #     "role_prompt" : "Ekonom",
     #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
     #                         "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
     #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
@@ -78,7 +78,7 @@ TOPICS = {
     #     "target_sheets": ["(News)indeks kinerja manufaktur"],
     #     "output_sheet": "(Summary)Idx PMI",
     #     "has_data_sentiment": False,
-    #     "role_prompt" : "industri minyak dan gas",
+    #     "role_prompt" : "Ekonom",
     #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
     #                         "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
     #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
@@ -88,7 +88,7 @@ TOPICS = {
     #     "target_sheets": ["(News)neraca perdagangan"],
     #     "output_sheet": "(Summary)Neraca Perdagangan",
     #     "has_data_sentiment": False,
-    #     "role_prompt" : "industri minyak dan gas",
+    #     "role_prompt" : "Ekonom",
     #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
     #                         "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
     #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
@@ -98,7 +98,7 @@ TOPICS = {
     #     "target_sheets": ["(News)PDB"],
     #     "output_sheet": "(Summary)PDB",
     #     "has_data_sentiment": False,
-    #     "role_prompt" : "industri minyak dan gas",
+    #     "role_prompt" : "Ekonom",
     #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
     #                         "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
     #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan Gunakan satuan dan "
