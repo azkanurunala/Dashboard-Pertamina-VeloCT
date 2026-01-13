@@ -6,6 +6,8 @@ import sys
 from io import BytesIO
 from openpyxl import load_workbook
 from dotenv import load_dotenv
+from bs4 import BeautifulSoup
+import re 
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -21,6 +23,7 @@ _API_KEY = "kODFA7mKVrNKWrGyFiIk5fIdlC1AKGXzba5lJxzY"
 _BASE_API_URL = "https://api.eia.gov/v2/steo/data/"
 ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_DATA_PATH", "/results/(Terstruktur)Data Scrapping.xlsx")
 _SHEET_NAME = "(Data)eia"
+_STEO_URL = "https://www.eia.gov/outlooks/steo/data/browser/"
 
 _MONTH_TO_NUMBER = {
     'januari': 1, 'februari': 2, 'maret': 3, 'april': 4,
@@ -41,6 +44,58 @@ _SERIES_IDS = {
     'PATC_WORLD': 'World Total Consumption',
     'PATC_OECD': 'OECD Consumption'
 }
+
+def get_eia_release_dates():
+    try:
+        response = requests.get(_STEO_URL, timeout=10)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
+        pub_title_div = soup.find('div', class_='pub_title')
+        if not pub_title_div:
+            return {'success': False, 'error': 'Could not find pub_title div'}
+        p_tag = pub_title_div.find('p')
+        if not p_tag:
+            return {'success': False, 'error': 'Could not find paragraph tag'}
+        text = p_tag.get_text()
+        release_match = re.search(r'Release Date:\s*(\w+)\s+(\d+),\s+(\d+)', text)
+        if not release_match:
+            return {'success': False, 'error': 'Could not parse Release Date'}
+        next_match = re.search(r'Next Release Date:\s*(\w+)\s+(\d+),\s+(\d+)', text)
+        if not next_match:
+            return {'success': False, 'error': 'Could not parse Next Release Date'}
+        month_map = {
+            'January': 1, 'February': 2, 'March': 3, 'April': 4,
+            'May': 5, 'June': 6, 'July': 7, 'August': 8,
+            'September': 9, 'October': 10, 'November': 11, 'December': 12
+        }
+        release_month_name = release_match.group(1)
+        release_day = int(release_match.group(2))
+        release_year = int(release_match.group(3))
+        release_month = month_map.get(release_month_name)
+        if not release_month:
+            return {'success': False, 'error': f'Unknown month: {release_month_name}'}
+        release_date = datetime(release_year, release_month, release_day)
+        release_date_str = f"{release_month_name} {release_day}, {release_year}"
+        next_month_name = next_match.group(1)
+        next_day = int(next_match.group(2))
+        next_year = int(next_match.group(3))
+        next_month = month_map.get(next_month_name)
+        if not next_month:
+            return {'success': False, 'error': f'Unknown month: {next_month_name}'}
+        next_release_date = datetime(next_year, next_month, next_day)
+        next_release_date_str = f"{next_month_name} {next_day}, {next_year}"
+        return {
+            'success': True,
+            'release_date': release_date,
+            'release_date_str': release_date_str,
+            'next_release_date': next_release_date,
+            'next_release_date_str': next_release_date_str
+        }    
+    except requests.exceptions.RequestException as e:
+        return {'success': False, 'error': f'Network error: {e}'}
+    except Exception as e:
+        return {'success': False, 'error': f'Unexpected error: {e}'}
+
 
 def read_last_entry_from_excel(access_token, sheet_name):
     try:
@@ -81,14 +136,16 @@ def get_migas_eia_needed_data(access_token):
     if last_read_year is None or last_read_month is None:
         print(" No existing data found. Will fetch all available data.")
         return None
-    while True:
-        if year < last_read_year or (year == last_read_year and month <= last_read_month):
-            break
-        needed_data.append((year, month))
-        month -= 1
-        if month == 0:
-            month = 12
-            year -= 1
+    next_month = last_read_month + 1
+    next_year = last_read_year
+    if next_month > 12:
+        next_month = 1
+        next_year += 1
+    if next_year > year or (next_year == year and next_month > month):
+        print(f"Data already up to date. Last data: {_NUMBER_TO_MONTH[last_read_month]} {last_read_year}")
+        return []
+    needed_data.append((next_year, next_month))
+    print(f"Will fetch 1 new month: {_NUMBER_TO_MONTH[next_month]} {next_year}")
     return needed_data
 
 def get_start_end_from_needed_data(needed_data):
@@ -105,11 +162,10 @@ def get_start_end_from_needed_data(needed_data):
         return start_str, end_str
     if not needed_data:
         return None, None
-    min_year, min_month = min(needed_data)
-    max_year, max_month = max(needed_data)
-    start_str = f"{min_year}-{min_month:02d}"
-    end_str = f"{max_year}-{max_month:02d}"
-    return start_str, end_str
+    year, month = needed_data[0]
+    date_str = f"{year}-{month:02d}"
+    print(f"Fetching data for: {date_str}")
+    return date_str, date_str
 
 def fetch_eia_data(series_id, start, end):
     params = {
@@ -135,8 +191,49 @@ def fetch_eia_data(series_id, start, end):
     except requests.exceptions.RequestException as e:
         print(f"Error fetching {series_id}: {e}")
         return []
+    
+def should_run_scraping(access_token):
+    print("Checking if scraping is needed...")
+    release_info = get_eia_release_dates()
+    if not release_info['success']:
+        print(f"Warning: Could not get release dates from website: {release_info.get('error')}")
+        print("Will proceed with scraping anyway...")
+        return True, None
+    print(f"Current Release Date from website: {release_info['release_date_str']}")
+    print(f"Current Next Release Date from website: {release_info['next_release_date_str']}")
+    try:
+        excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
+        if excel_buffer is None:
+            print("No existing file. Will run scraping.")
+            return True, release_info
+        df = pd.read_excel(excel_buffer, sheet_name=_SHEET_NAME, engine='openpyxl')
+        if df.empty or 'Next Release Date' not in df.columns:
+            print("No Next Release Date found in Excel. Will run scraping.")
+            return True, release_info
+        last_next_release_str = df['Next Release Date'].iloc[-1]
+        if pd.isna(last_next_release_str):
+            print("Next Release Date is empty. Will run scraping.")
+            return True, release_info
+        last_next_release = pd.to_datetime(last_next_release_str).replace(tzinfo=None)
+        print(f"Last Next Release Date from Excel: {last_next_release.strftime('%B %d, %Y')}")
+        today = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+        if today > last_next_release:
+            print(f"Today ({today.strftime('%Y-%m-%d')}) >= Next Release Date ({last_next_release.strftime('%Y-%m-%d')})")
+            print("New data should be available. Will run scraping.")
+            return True, release_info
+        else:
+            print(f"Today ({today.strftime('%Y-%m-%d')}) < Next Release Date ({last_next_release.strftime('%Y-%m-%d')})")
+            print("No new data yet. Skipping scraping.")
+            return False, release_info      
+    except ValueError:
+        print(f"Sheet '{_SHEET_NAME}' not found. Will run scraping.")
+        return True, release_info
+    except Exception as e:
+        print(f"Error checking Next Release Date: {e}")
+        print("Will proceed with scraping anyway...")
+        return True, release_info
 
-def transform_data_to_excel_format(all_data):
+def transform_data_to_excel_format(all_data, release_info=None):
     period_data = {}
     for series_id, records in all_data.items():
         for record in records:
@@ -149,6 +246,9 @@ def transform_data_to_excel_format(all_data):
                     period_data[period][series_id] = round(float(value), 2)
                 except (ValueError, TypeError):
                     period_data[period][series_id] = None
+    next_release_str = None
+    if release_info and release_info['success']:
+        next_release_str = release_info['next_release_date_str']
     rows = []
     for period in sorted(period_data.keys()):
         year, month = period.split('-')
@@ -179,6 +279,7 @@ def transform_data_to_excel_format(all_data):
         row = {
             'Bulan': _NUMBER_TO_MONTH.get(month, f'Month-{month}'),
             'Tahun': year,
+            'Next Release Date': next_release_str,
             'World Total Production': world_total_prod,
             'OPEC': opec,
             'Non-OPEC': non_opec,
@@ -274,61 +375,57 @@ def main_eia():
     print("STORAGE MODE: OneDrive")
     print("=" * 80)
     print()
-    
     print(f"File: {ONEDRIVE_FILE_PATH}")
     print(f"Sheet: {_SHEET_NAME}")
     print("\nAuthenticating to Microsoft Graph API...")
-    
     try:
         access_token = get_access_token()
         print("Authentication successful")
     except Exception as e:
         print(f"Authentication failed: {e}")
         return
-    
+    print()
+    should_run, release_info = should_run_scraping(access_token)
+    if not should_run:
+        print("\n" + "=" * 80)
+        print("SKIPPED: No update needed yet.")
+        print("=" * 80)
+        return
     print()
     print("Step 1: Checking what data needs to be downloaded...")
     needed_data = get_migas_eia_needed_data(access_token)
-    
     if needed_data is not None and len(needed_data) == 0:
         print("All data is up to date!")
         return
-    
     if needed_data is None:
         print("Will download ALL available data from EIA STEO")
     else:
         print(f"Need to download data for {len(needed_data)} months")
         print(f"Periods: {needed_data[0]} to {needed_data[-1]}")
     print()
-    
     start, end = get_start_end_from_needed_data(needed_data)
     print(f"Step 2: Date range: {start} to {end}")
     print()
-    
     print("Step 3: Fetching data from EIA API...")
     all_data = {}
     for series_id in _SERIES_IDS.keys():
         records = fetch_eia_data(series_id, start, end)
         if records:
             all_data[series_id] = records
-    
     if not all_data:
         print("\nNo data fetched. Please check your API key and internet connection.")
         return
     print()
-    
     print("Step 4: Transforming data to Excel format...")
-    df = transform_data_to_excel_format(all_data)
+    df = transform_data_to_excel_format(all_data, release_info)
     if df.empty:
         print("No valid data to save.")
         return
-    
     print(f"Transformed {len(df)} rows")
     print()
     print("Preview of data:")
     print(df.head(10).to_string(index=False))
     print()
-    
     print("Step 5: Saving to OneDrive...")
     save_to_excel(access_token, df, _SHEET_NAME)
     print()
