@@ -1,3 +1,4 @@
+from email.mime import text
 import os
 import re
 import requests
@@ -162,6 +163,7 @@ def extract_icp_from_pdf(filepath: str, start_page: int = 2, end_page: int = 7):
         find_month = None
         find_price = None
         find_date = None
+        find_brent = None
         for i in range(start_idx, end_idx):
             page = pdf[i]
             pix = page.get_pixmap(dpi=300)
@@ -169,13 +171,22 @@ def extract_icp_from_pdf(filepath: str, start_page: int = 2, end_page: int = 7):
             results = reader.readtext(np.array(img), detail=0)
             text = " ".join(results)
             text = clean_ocr_text(text)
+            # print(f"\n--- Halaman {i+1} ---")
+            # print(text)
             if not find_date:
                 tanggal_match = re.search(_DATE_PATTERN, text, re.IGNORECASE | re.DOTALL)
                 if tanggal_match:
                     day = tanggal_match.group(1)
                     month_nama = tanggal_match.group(2).capitalize()
                     find_date = f"{day} {month_nama}"
-    
+            if not find_brent:
+                text_upper = text.upper()
+                pattern_slc = r"(?:S\s*L\s*C|SLC)\s+(\d{1,3}[.,]\d{2})"
+                match_brent = re.search(pattern_slc, text_upper)
+                if match_brent:
+                    brent_str = match_brent.group(1).replace(",", ".")
+                    find_brent = float(brent_str)
+                    print(f"Dated Brent: US${find_brent}")
             if (not find_price or not find_month) and re.search(_KEYWORD_PATTERN, text, re.IGNORECASE):
                 sentences = re.split(r'[.!?]\s+', text)
                 for sentence in sentences:
@@ -193,12 +204,12 @@ def extract_icp_from_pdf(filepath: str, start_page: int = 2, end_page: int = 7):
                         )
                         find_price = float(clean_price)
                         break 
-            if find_month and find_price and find_date:
+            if find_month and find_price and find_date and find_brent:
                 break 
-        return find_month, find_price, find_date
+        return find_month, find_price, find_date, find_brent
     except Exception as e:
         print(f"Error membaca {os.path.basename(filepath)}: {e}")
-        return None, None, None
+        return None, None, None, None
 
 def extract_icp_from_all_pdfs(folder: str = "../results/hasil-migas-esdm-pdf"):
     results = []
@@ -206,7 +217,7 @@ def extract_icp_from_all_pdfs(folder: str = "../results/hasil-migas-esdm-pdf"):
     print(f"\nMengekstrak {len(pdf_files)} file PDF...\n")
     for file in sorted(pdf_files):
         filepath = os.path.join(folder, file)
-        bulan, harga, tanggal = extract_icp_from_pdf(filepath)
+        bulan, harga, tanggal, harga_brent = extract_icp_from_pdf(filepath)
         if bulan and harga:
             match = re.match(r"(\d{4})_", file)
             tahun = int(match.group(1)) if match else None
@@ -214,6 +225,7 @@ def extract_icp_from_all_pdfs(folder: str = "../results/hasil-migas-esdm-pdf"):
                 "Tahun": tahun, 
                 "Bulan": bulan, 
                 "Harga": f"{harga}",
+                "Harga_Brent": f"{harga_brent}" if harga_brent else None,
                 "Tanggal": tanggal 
             })
             try:
