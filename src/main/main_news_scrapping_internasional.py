@@ -26,34 +26,39 @@ load_dotenv()
 ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_FILE_PATH", "/results/(News)Scrapping.xlsx")
 
 sinonim_dict = {
-    "indeks risiko geopolitik": ["tekanan geopolitik", "geopolitical risk", "geopolitical pressure", "geopolitik", "geopolitics"],
-    "volatilitas": ["volatilitality"],
-    "indeks kinerja manufaktur": ["purchasing manufaktur index"],
-    "indeks kinerja jasa": ["purchasing services index"],
-    "harga minyak": ["oil price", "minyak mentah","crude oil"],
-    "volume minyak": ["volume bbm", "oil volume", "minyak mentah", "volume minyak"],
-    "SAF" : ["UCO ", "sustainable aviation fuel ", "used cooking oil ", "CORSIA ", "SAFCo ", "biorefinery ", "minyak jelantah ", "bioavtur "]
+    # "indeks risiko geopolitik": ["tekanan geopolitik", "geopolitical risk", "geopolitical pressure", "geopolitik", "geopolitics"],
+    # "volatilitas": ["volatilitality"],
+    # "indeks kinerja manufaktur": ["purchasing manufaktur index"],
+    # "indeks kinerja jasa": ["purchasing services index"],
+    # "harga minyak": ["oil price", "minyak mentah","crude oil"],
+    # "volume minyak": ["volume bbm", "oil volume", "minyak mentah", "volume minyak"],
+    # "SAF" : ["UCO ", "sustainable aviation fuel ", "used cooking oil ", "CORSIA ", "SAFCo ", "biorefinery ", "minyak jelantah ", "bioavtur "], 
+    "RON 92" : ["pertamax ", "RON 95 ", "RON 97 ", "Singapore Residual FO 0.5% ", "Fuel Oil 0.5% ", "Jet Fuel ", "Avtur", "Kerosene ", "GO50", "GO2500"], 
+    "Petro" : ["chemical ", "petrochemical ", "aromatic ", "olefin ", "polymer ", "LPG ", "Paraxylene ", "Propylene ", "Benzene ", "Green Coke " ]
 }
 
 sumber_dict = {
-    "indeks risiko geopolitik": [main_google_news_cnn, main_google_news_cnbc],
-    "indeks volatilitas": [main_google_news_cnn, main_google_news_cnbc],
-    "indeks kinerja manufaktur": [scrape_news_sap],
-    "indeks kinerja jasa": [scrape_news_sap],
-    "harga minyak": [scrape_oilprice],
-    "volume minyak": [scrape_oilprice], 
-    "SAF" : [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn]
+    # "indeks risiko geopolitik": [main_google_news_cnn, main_google_news_cnbc],
+    # "indeks volatilitas": [main_google_news_cnn, main_google_news_cnbc],
+    # "indeks kinerja manufaktur": [scrape_news_sap],
+    # "indeks kinerja jasa": [scrape_news_sap],
+    # "harga minyak": [scrape_oilprice],
+    # "volume minyak": [scrape_oilprice], 
+    # "SAF" : [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn],
+    "RON 92" : [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn],
+
+
 }
 
 sheet_to_keyword = {
-    "(News)indeks risiko geopolitik": "indeks risiko geopolitik",
-    "(News)indeks volatilitas": "indeks volatilitas",
-    "(News)indeks kinerja manufaktur": "indeks kinerja manufaktur",
-    "(News)indeks kinerja jasa": "indeks kinerja jasa",  
-    "(News)Harga Minyak": "harga minyak",
-    "(News)Volume Minyak": "volume minyak",
-    "(News)SAF" : "SAF"
-    
+    # "(News)indeks risiko geopolitik": "indeks risiko geopolitik",
+    # "(News)indeks volatilitas": "indeks volatilitas",
+    # "(News)indeks kinerja manufaktur": "indeks kinerja manufaktur",
+    # "(News)indeks kinerja jasa": "indeks kinerja jasa",  
+    # "(News)Harga Minyak": "harga minyak",
+    # "(News)Volume Minyak": "volume minyak",
+    # "(News)SAF" : "SAF",
+    "(News)BBM" : "RON 92"
 }
 
 def standardize_format(df):
@@ -161,18 +166,19 @@ def main():
         print(f"Authentication failed: {e}")
         return
     
-    # tanggal_filter = "2025-12-3"
-    tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    tanggal_filter = "2025-12-18"
+    # tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     print(f"\nTanggal filter: {tanggal_filter}")
     
     sheet_names = [
-        "(News)indeks risiko geopolitik",
-        "(News)indeks volatilitas",
-        "(News)indeks kinerja manufaktur",
-        "(News)indeks kinerja jasa",
-        "(News)Harga Minyak",
-        "(News)Volume Minyak",
-        "(News)SAF"
+        # "(News)indeks risiko geopolitik",
+        # "(News)indeks volatilitas",
+        # "(News)indeks kinerja manufaktur",
+        # "(News)indeks kinerja jasa",
+        # "(News)Harga Minyak",
+        # "(News)Volume Minyak",
+        # "(News)SAF", 
+        "(News)BBM"
     ]
     
     print(f"\nLoading existing data from OneDrive...")
@@ -236,7 +242,7 @@ def main():
         print(f"  Total: {len(combined_df)} baris")
         
         print("\nIstirahat 60 detik...")
-        time.sleep(60)
+        # time.sleep(60)
     
     print("\n" + "="*60)
     print("MENYIMPAN KE ONEDRIVE")
