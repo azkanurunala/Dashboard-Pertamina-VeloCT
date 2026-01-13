@@ -19,9 +19,10 @@ load_dotenv()
 
 ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_DATA_PATH", "/results/(Terstruktur)Data Scrapping.xlsx")
 SHEET_NAME_SAF = "(Data)SAF"
-SHEET_NAME_BBM = "(Data)BBM"
+SHEET_NAME_BBM = "(Data)Crackspeed_BBM"
+SHEET_NAME_NON_BBM = "(Data)Crackspeed_NonBBM"
 
-def load_tokens(token_file_path="../token.json"):
+def load_tokens(token_file_path="../../token.json"):
     try:
         with open(token_file_path, 'r') as f:
             token_data = json.load(f)
@@ -36,7 +37,7 @@ def load_tokens(token_file_path="../token.json"):
         print(f"Error membaca JSON dari {token_file_path}")
         return None, None
 
-def save_tokens(token_data, token_file_path="../token.json"):
+def save_tokens(token_data, token_file_path="../../token.json"):
     try:
         with open(token_file_path, 'w') as f:
             json.dump(token_data, f, indent=2)
@@ -46,7 +47,7 @@ def save_tokens(token_data, token_file_path="../token.json"):
         print(f"Error menyimpan token: {e}")
         return False
 
-def refresh_access_token(refresh_token, token_file_path="../token.json"):
+def refresh_access_token(refresh_token, token_file_path="../../token.json"):
     url = "https://api.ci.spglobal.com/auth/api/refresh"
     payload = {
         "refresh_token": refresh_token
@@ -113,7 +114,7 @@ def get_historical_data(access_token, symbols, start_date, end_date, fields=None
                 data_list = item.get('data', [])
                 for data_point in data_list:
                     bate = data_point.get('bate', '')
-                    if bate != 'c':
+                    if bate != 'c' and symbol not in ['PTAAF10', 'PTAAM10']:
                         continue
                     assess_date = data_point.get('assessDate', '')
                     mod_date = data_point.get('modDate', '')
@@ -172,7 +173,7 @@ def get_current_data(access_token, symbols, fields=None):
                 data_list = item.get('data', [])
                 for data_point in data_list:
                     bate = data_point.get('bate', '')
-                    if bate != 'c':
+                    if bate != 'c' and symbol not in ['PTAAF10', 'PTAAM10']:
                         continue
                     assess_date = data_point.get('assessDate', '')
                     mod_date = data_point.get('modDate', '')
@@ -239,7 +240,8 @@ def pivot_data_to_columns_bbm(df):
         'AMFSA00': 'FO05',
         'PJABF00': 'JetKero',
         'AAPPF00': 'GO50',
-        'AACUE00': 'GO2500'
+        'AACUE00': 'GO2500', 
+        'PCAAS00': 'Brent'
     }
     df['suffix'] = df['symbol'].map(symbol_map)
     df_value = df.pivot_table(
@@ -257,12 +259,71 @@ def pivot_data_to_columns_bbm(df):
     ).reset_index()
     df_moddate.columns = ['assessDate'] + [f'modDate_{col}' for col in df_moddate.columns if col != 'assessDate']
     df_final = df_value.merge(df_moddate, on='assessDate', how='outer')
+    products = ['RON92', 'RON95', 'RON97', 'FO05', 'JetKero', 'GO50', 'GO2500']
+    for product in products:
+        value_col = f'value_{product}'
+        final_col = f'value_{product}_final'
+        if value_col in df_final.columns and 'value_Brent' in df_final.columns:
+            df_final[final_col] = (df_final[value_col]) - (df_final['value_Brent'])
+        else:
+            df_final[final_col] = None
     column_order = [
         'assessDate',
         'value_RON92', 'value_RON95', 'value_RON97', 'value_FO05',
-        'value_JetKero', 'value_GO50', 'value_GO2500',
+        'value_JetKero', 'value_GO50', 'value_GO2500', 'value_Brent', 'value_RON92_final', 'value_RON95_final', 'value_RON97_final', 'value_FO05_final',
+        'value_JetKero_final', 'value_GO50_final', 'value_GO2500_final',
         'modDate_RON92', 'modDate_RON95', 'modDate_RON97', 'modDate_FO05',
-        'modDate_JetKero', 'modDate_GO50', 'modDate_GO2500'
+        'modDate_JetKero', 'modDate_GO50', 'modDate_GO2500', 'modDate_Brent'
+    ]
+    for col in column_order:
+        if col not in df_final.columns:
+            df_final[col] = None
+    return df_final[column_order].sort_values('assessDate')
+
+def pivot_data_to_columns_non_bbm(df):
+    symbol_map = {
+        'PTAAF10': 'Butane',
+        'PTAAM10': 'Propane',
+        'PHABV00': 'Paraxylene',
+        'PHAKR00': 'Propylene',
+        'PHASM05': 'Benzene', 
+        'PCAAS00': 'Brent'
+    }
+    df['suffix'] = df['symbol'].map(symbol_map)
+    df_value = df.pivot_table(
+        index='assessDate',
+        columns='suffix',
+        values='value',
+        aggfunc='first'
+    ).reset_index()
+    df_value.columns = ['assessDate'] + [f'value_{col}' for col in df_value.columns if col != 'assessDate']
+    df_moddate = df.pivot_table(
+        index='assessDate',
+        columns='suffix',
+        values='modDate',
+        aggfunc='first'
+    ).reset_index()
+    df_moddate.columns = ['assessDate'] + [f'modDate_{col}' for col in df_moddate.columns if col != 'assessDate']
+    df_final = df_value.merge(df_moddate, on='assessDate', how='outer')
+    if 'value_Butane' in df_final.columns and 'value_Propane' in df_final.columns:
+        df_final['value_LPG'] = (df_final['value_Butane'] * 0.5) + (df_final['value_Propane'] * 0.5)
+    else:
+        df_final['value_LPG'] = None
+    products = ['LPG', 'Paraxylene', 'Propylene', 'Benzene']
+    for product in products:
+        value_col = f'value_{product}'
+        final_col = f'value_{product}_final'
+        if value_col in df_final.columns and 'value_Brent' in df_final.columns:
+            df_final[final_col] = (df_final[value_col]) - (df_final['value_Brent'])
+        else:
+            df_final[final_col] = None
+    column_order = [
+        'assessDate',
+        'value_Butane', 'value_Propane', 'value_LPG',
+        'value_Paraxylene', 'value_Propylene', 'value_Benzene', 'value_Brent',
+        'value_LPG_final', 'value_Paraxylene_final', 'value_Propylene_final', 'value_Benzene_final',
+        'modDate_Butane', 'modDate_Propane',
+        'modDate_Paraxylene', 'modDate_Propylene', 'modDate_Benzene'
     ]
     for col in column_order:
         if col not in df_final.columns:
@@ -461,8 +522,8 @@ def main_saf_weekly():
     print("SELESAI")
     print("=" * 60)
 
-def main_bbm_daily():
-    symbols = ["PGAEY00", "PGAEZ00", "PGAMS00", "AMFSA00", "PJABF00", "AAPPF00", "AACUE00"]
+def main_crackspeed_bbm_daily():
+    symbols = ["PGAEY00", "PGAEZ00", "PGAMS00", "AMFSA00", "PJABF00", "AAPPF00", "AACUE00", "PCAAS00"]
     fields = ["UOM", "Currency", "description"]
     try:
         onedrive_access_token = get_access_token()
@@ -508,8 +569,54 @@ def main_bbm_daily():
     print("SELESAI")
     print("=" * 60)
 
-def main_bbm_weekly():
-    symbols = ["PGAEY00", "PGAEZ00", "PGAMS00", "AMFSA00", "PJABF00", "AAPPF00", "AACUE00"]
+def main_crackspeed_non_bbm_daily():
+    symbols = ["PTAAF10", "PTAAM10", "PHABV00", "PHAKR00", "PHASM05", "PCAAS00"]
+    fields = ["UOM", "Currency", "description"]
+    try:
+        onedrive_access_token = get_access_token()
+        print("OneDrive authentication successful")
+    except Exception as e:
+        print(f"OneDrive authentication failed: {e}")
+        exit(1)
+    print("\nLoading S&P Global API tokens...")
+    spglobal_access_token, spglobal_refresh_token = load_tokens()
+    if not spglobal_access_token or not spglobal_refresh_token:
+        print("Gagal memuat S&P Global token dari file")
+        exit(1)
+    print("\n" + "=" * 60)
+    print("SCRAPING CURRENT DATA - NON BBM (LPG & Petrokimia)")
+    print("=" * 60)
+    df_current = get_current_data(spglobal_access_token, symbols, fields)
+    if df_current is None:
+        print("Mencoba refresh token...")
+        new_access_token, _ = refresh_access_token(spglobal_refresh_token)
+        if new_access_token:
+            df_current = get_current_data(new_access_token, symbols, fields)
+        else:
+            print("Gagal refresh token untuk current data")
+            exit(1)
+    if df_current is None:
+        print("\n[CURRENT] Gagal mengambil data current")
+        exit(1)
+    print(f"\n[CURRENT] Data berhasil diambil!")
+    print(f"[CURRENT] Total data: {len(df_current)} baris")
+    df_pivoted = pivot_data_to_columns_non_bbm(df_current)
+    print("\n" + "=" * 60)
+    print("MENYIMPAN KE ONEDRIVE")
+    print("=" * 60)
+    write_sap_sheet_to_onedrive(onedrive_access_token, ONEDRIVE_FILE_PATH, SHEET_NAME_NON_BBM, df_pivoted)
+    print("\n" + "=" * 60)
+    print("DATA BERHASIL DISIMPAN KE ONEDRIVE")
+    print("=" * 60)
+    print(f"  File: {ONEDRIVE_FILE_PATH}")
+    print(f"  Sheet: {SHEET_NAME_NON_BBM}")
+    print(f"  Total rows: {len(df_pivoted)}")
+    print("\n" + "=" * 60)
+    print("SELESAI")
+    print("=" * 60)
+
+def main_crackspeed_bbm_weekly():
+    symbols = ["PGAEY00", "PGAEZ00", "PGAMS00", "AMFSA00", "PJABF00", "AAPPF00", "AACUE00", "PCAAS00"]
     fields = ["UOM", "Currency", "description"]
     start_date = "2024-01-01"
     end_date = datetime.today().strftime("%Y-%m-%d")
@@ -573,5 +680,70 @@ def main_bbm_weekly():
     print("SELESAI")
     print("=" * 60)
 
+def main_crackspeed_non_bbm_weekly():
+    symbols = ["PTAAF10", "PTAAM10", "PHABV00", "PHAKR00", "PHASM05", "PCAAS00"]
+    fields = ["UOM", "Currency", "description"]
+    start_date = "2024-01-01"
+    end_date = datetime.today().strftime("%Y-%m-%d")
+    try:
+        onedrive_access_token = get_access_token()
+        print("OneDrive authentication successful")
+    except Exception as e:
+        print(f"OneDrive authentication failed: {e}")
+        exit(1)
+    print("\nLoading S&P Global API tokens...")
+    spglobal_access_token, spglobal_refresh_token = load_tokens()
+    if not spglobal_access_token or not spglobal_refresh_token:
+        print("Gagal memuat S&P Global token dari file")
+        exit(1)
+    print("\n" + "=" * 60)
+    print("SCRAPING HISTORICAL DATA (WEEKLY) - NON BBM (LPG & Petrokimia)")
+    print("=" * 60)
+    print(f"Period: {start_date} to {end_date}")
+    df_historical = get_historical_data(
+        spglobal_access_token, 
+        symbols, 
+        start_date, 
+        end_date, 
+        fields,
+        page_size=10000
+    )
+    if df_historical is None:
+        print("Mencoba refresh token...")
+        new_access_token, _ = refresh_access_token(spglobal_refresh_token)
+        if new_access_token:
+            df_historical = get_historical_data(
+                new_access_token, 
+                symbols, 
+                start_date, 
+                end_date, 
+                fields,
+                page_size=10000
+            )
+        else:
+            print("Gagal refresh token untuk historical data")
+            exit(1)
+    
+    if df_historical is None:
+        print("\n[HISTORICAL] Gagal mengambil data historical")
+        exit(1)
+    print(f"\n[HISTORICAL] Data berhasil diambil!")
+    print(f"[HISTORICAL] Total data: {len(df_historical)} baris")
+    df_pivoted = pivot_data_to_columns_non_bbm(df_historical)
+    print("\n" + "=" * 60)
+    print("MENYIMPAN KE ONEDRIVE")
+    print("=" * 60)
+    write_sap_sheet_to_onedrive(onedrive_access_token, ONEDRIVE_FILE_PATH, SHEET_NAME_NON_BBM, df_pivoted)
+    print("\n" + "=" * 60)
+    print("DATA BERHASIL DISIMPAN KE ONEDRIVE")
+    print("=" * 60)
+    print(f"  File: {ONEDRIVE_FILE_PATH}")
+    print(f"  Sheet: {SHEET_NAME_NON_BBM}")
+    print(f"  Format: assessDate | value_Butane | value_Propane | value_LPG_final | ...")
+    print(f"  Total rows: {len(df_pivoted)}")
+    print("\n" + "=" * 60)
+    print("SELESAI")
+    print("=" * 60)
+
 if __name__ == "__main__":
-    main_bbm_daily()
+    main_crackspeed_bbm_weekly()
