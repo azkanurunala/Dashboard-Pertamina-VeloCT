@@ -2,311 +2,266 @@ import time
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from datetime import datetime
+import re
+from bs4 import BeautifulSoup
 
 
-class BankIndonesiaScraper:
-    def __init__(self, headless=True):
-        """
-        Inisialisasi scraper
-        
-        Args:
-            headless (bool): Jalankan browser tanpa GUI (default: True)
-        """
-        self.url = "https://www.bi.go.id/id/publikasi/ruang-media/news-release/Default.aspx"
-        self.driver = None
-        self.headless = headless
-        
-    def setup_driver(self):
-        """Setup Selenium WebDriver dengan Chrome"""
-        chrome_options = Options()
-        
-        if self.headless:
-            chrome_options.add_argument("--headless")
-        
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--window-size=1920,1080")
-        chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-        
-        self.driver = webdriver.Chrome(options=chrome_options)
-        print("✓ Browser berhasil diinisialisasi")
-        
-    def search_news(self, keyword):
-        """
-        Melakukan pencarian berita
-        
-        Args:
-            keyword (str): Kata kunci pencarian
-        """
+def setup_driver(headless=True):
+    chrome_options = Options()
+    if headless:
+        chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+    driver = webdriver.Chrome(options=chrome_options)
+    print("Browser berhasil diinisialisasi")
+    return driver
+
+def change_format_date(teks):
+    if not teks or teks == 'N/A':
+        return None
+    bulan = {
+        'januari': '01', 'februari': '02', 'maret': '03', 'april': '04',
+        'mei': '05', 'juni': '06', 'juli': '07', 'agustus': '08',
+        'september': '09', 'oktober': '10', 'november': '11', 'desember': '12'
+    }
+    match = re.search(r'(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})', teks)
+    if match:
+        day = match.group(1).zfill(2)
+        month = bulan.get(match.group(2).lower(), '01')
+        year = match.group(3)
+        return f"{year}-{month}-{day}"
+    return None
+
+
+def search_news(driver, keyword):
+    try:
+        search_box = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "TextBoxSearch"))
+        )
+        search_box.clear()
+        search_box.send_keys(keyword)
+        print(f"Keyword '{keyword}' berhasil diinput")
         try:
-            # Cari input search box
-            search_box = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='search'], input[name='search'], #searchBox"))
+            filter_button = WebDriverWait(driver, 5).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "button.btn-outline-primary.btn--filter"))
             )
-            
-            # Clear dan input keyword
-            search_box.clear()
-            search_box.send_keys(keyword)
-            
-            # Cari tombol search
-            search_button = self.driver.find_element(By.CSS_SELECTOR, "button[type='submit'], .search-button, .btn-search")
-            search_button.click()
-            
-            print(f"✓ Pencarian untuk '{keyword}' berhasil dijalankan")
-            time.sleep(3)  # Tunggu hasil load
-            
-        except Exception as e:
-            print(f"⚠ Search box tidak ditemukan atau error: {e}")
-            print("Melanjutkan scraping tanpa filter pencarian...")
-    
-    def scrape_current_page(self):
-        """
-        Scrape data dari halaman yang sedang aktif
-        
-        Returns:
-            list: List of dictionaries berisi data berita
-        """
-        news_data = []
-        
+            filter_button.click()
+            time.sleep(2)
+        except:
+            pass
         try:
-            # Tunggu elemen berita muncul
-            WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, ".media-list, .news-list, .list-news"))
+            submit_button = WebDriverWait(driver, 5).until(
+                EC.element_to_be_clickable((By.ID, "ctl00_ctl54_g_895e8ef2_eaad_4a83_9db7_1632dd8595c0_ctl00_ButtonFilter"))
             )
+            submit_button.click()
+        except:
+            search_box.send_keys(Keys.RETURN)
+        print(f"Menunggu hasil pencarian...")
+        time.sleep(60)
+        WebDriverWait(driver, 15).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, ".media.media--pers"))
+        )
+        time.sleep(3)
+        print(f"Hasil pencarian berhasil di-load")
+    except Exception as e:
+        print(f"Error saat search: {e}")
+
+def get_article_content(driver, url):
+    try:
+        print(f"\nMengambil konten dari: {url}")
+        driver.get(url)
+        time.sleep(5)
+        WebDriverWait(driver, 15).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, ".ms-rtestate-field"))
+        )
+        page_source = driver.page_source
+        soup = BeautifulSoup(page_source, 'html.parser')
+        content_div = soup.find('div', id='ctl00_PlaceHolderMain_ctl05__ControlWrapper_RichHtmlField')
+        if not content_div:
+            print("✗ Konten div tidak ditemukan")
+            return "N/A"
+        paragraphs = content_div.find_all('p')
+        print(f"Ditemukan {len(paragraphs)} paragraf")
+        content_text = []
+        for idx, p in enumerate(paragraphs, 1):
+            text = p.get_text(strip=True)
+            if not text or len(text) < 5:
+                continue
+            if "Jakarta," in text and "Departemen Komunikasi" in text:
+                print(f"  Paragraph #{idx}: SKIPPED (footer)")
+                continue
+            if text.startswith("No. ") and "DKom" in text:
+                print(f"  Paragraph #{idx}: SKIPPED (nomor surat)")
+                continue
+            if len(text) >= 30:
+                content_text.append(text)
+                print(f"  Paragraph #{idx}: ADDED ({len(text)} chars)")
+            else:
+                print(f"  Paragraph #{idx}: SKIPPED (too short: {len(text)} chars)")
+        if content_text:
+            result = "\n\n".join(content_text).strip()
+            print(f"\nTotal konten: {len(result)} characters")
+            return result
+        else:
+            print("✗ Tidak ada konten yang bisa diambil")
+            return "N/A"
             
-            # Cari semua item berita
-            # Sesuaikan selector berdasarkan struktur HTML BI
-            news_items = self.driver.find_elements(By.CSS_SELECTOR, ".media.media--pers, .news-item, article")
-            
-            print(f"   Ditemukan {len(news_items)} berita di halaman ini")
-            
-            for idx, item in enumerate(news_items, 1):
-                try:
-                    # Ambil nomor siaran pers
-                    try:
-                        number = item.find_element(By.CSS_SELECTOR, ".media__number, .news-number").text.strip()
-                    except:
-                        number = f"N/A"
-                    
-                    # Ambil judul
-                    try:
-                        title_element = item.find_element(By.CSS_SELECTOR, ".media__title, .news-title, h3 a, h2 a")
-                        title = title_element.text.strip()
-                        link = title_element.get_attribute("href")
-                    except:
-                        title = "N/A"
-                        link = "N/A"
-                    
-                    # Ambil tanggal
-                    try:
-                        date = item.find_element(By.CSS_SELECTOR, ".media__date, .news-date, .date").text.strip()
-                    except:
-                        date = "N/A"
-                    
-                    # Ambil snippet/deskripsi jika ada
-                    try:
-                        snippet = item.find_element(By.CSS_SELECTOR, ".media__description, .news-desc, p").text.strip()
-                    except:
-                        snippet = ""
-                    
-                    news_data.append({
-                        "nomor": number,
-                        "judul": title,
-                        "tanggal": date,
-                        "snippet": snippet,
-                        "link": link
-                    })
-                    
-                except Exception as e:
-                    print(f"   ⚠ Error parsing berita #{idx}: {e}")
-                    continue
-            
-        except TimeoutException:
-            print("   ⚠ Timeout menunggu elemen berita")
-        except Exception as e:
-            print(f"   ⚠ Error saat scraping halaman: {e}")
-        
-        return news_data
+    except Exception as e:
+        print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return "N/A"
     
-    def go_to_next_page(self):
-        """
-        Pindah ke halaman berikutnya
-        
-        Returns:
-            bool: True jika berhasil, False jika sudah halaman terakhir
-        """
-        try:
-            # Coba cari tombol next dengan berbagai selector
-            next_selectors = [
-                "a.next",
-                "a[aria-label='Next']",
-                ".pagination-next",
-                "li.next a",
-                ".ms-promlink-button-next",
-                "a:contains('Next')",
-                "a:contains('›')",
-                "a:contains('»')"
-            ]
-            
-            next_button = None
-            for selector in next_selectors:
+def scrape_current_page_with_date_filter(driver, target_date):
+    news_data = []
+    should_stop = False
+    try:
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, ".media-list"))
+        )
+        news_items = driver.find_elements(By.CSS_SELECTOR, ".media.media--pers")
+        print(f"   Ditemukan {len(news_items)} berita di halaman ini")
+        target_datetime = datetime.strptime(target_date, "%Y-%m-%d")
+        for idx, item in enumerate(news_items, 1):
+            try:
                 try:
-                    if "contains" in selector:
-                        # Untuk XPath contains
-                        next_button = self.driver.find_element(By.XPATH, f"//a[contains(text(), 'Next') or contains(text(), '›') or contains(text(), '»')]")
-                    else:
-                        next_button = self.driver.find_element(By.CSS_SELECTOR, selector)
-                    
-                    if next_button:
-                        break
+                    title_element = item.find_element(By.CSS_SELECTOR, ".media__title")
+                    title = title_element.text.strip()
+                    url = title_element.get_attribute("href")
                 except:
                     continue
-            
-            if not next_button:
-                print("   ℹ Tombol 'Next' tidak ditemukan (mungkin sudah halaman terakhir)")
-                return False
-            
-            # Check apakah tombol disabled
-            classes = next_button.get_attribute("class") or ""
-            if "disabled" in classes or "inactive" in classes:
-                print("   ℹ Sudah mencapai halaman terakhir")
-                return False
-            
-            # Scroll ke tombol dan klik
-            self.driver.execute_script("arguments[0].scrollIntoView(true);", next_button)
-            time.sleep(1)
-            next_button.click()
-            
-            print("   ✓ Pindah ke halaman berikutnya...")
-            time.sleep(3)  # Tunggu halaman load
-            
-            return True
-            
-        except Exception as e:
-            print(f"   ⚠ Tidak bisa pindah ke halaman berikutnya: {e}")
+                try:
+                    subtitle = item.find_element(By.CSS_SELECTOR, ".media__subtitle").text.strip()
+                    parts = subtitle.split("•")
+                    date_str = parts[0].strip() if len(parts) > 0 else None
+                except:
+                    continue
+                formatted_date = change_format_date(date_str)
+                if not formatted_date:
+                    print(f"Gagal parse tanggal: {date_str}")
+                    continue
+                article_datetime = datetime.strptime(formatted_date, "%Y-%m-%d")
+                if article_datetime < target_datetime:
+                    print(f"Ditemukan artikel lebih lama ({formatted_date}) di posisi #{idx}, STOP scraping")
+                    should_stop = True
+                    break
+                if formatted_date == target_date:
+                    print(f"Match: {title[:60]}... ({formatted_date})")
+                    news_data.append({
+                        "title": title,
+                        "date": formatted_date,
+                        "url": url,
+                        "content": None
+                    })
+                else:
+                    print(f"Skip: {title[:60]}... ({formatted_date})")
+            except Exception as e:
+                print(f"Error parsing berita #{idx}: {e}")
+                continue
+    except TimeoutException:
+        print("Timeout menunggu elemen berita")
+    except Exception as e:
+        print(f"Error saat scraping: {e}")
+    return news_data, should_stop
+
+
+def go_to_next_page(driver):
+    try:
+        next_button = driver.find_element(By.CSS_SELECTOR, "input.next[type='image']")
+        
+        is_disabled = next_button.get_attribute("disabled")
+        if is_disabled:
+            print("Sudah mencapai halaman terakhir")
             return False
-    
-    def scrape_all_pages(self, max_pages=None, search_keyword=None):
-        """
-        Scrape semua halaman berita
-        
-        Args:
-            max_pages (int): Maksimal halaman yang di-scrape (None = semua)
-            search_keyword (str): Kata kunci untuk filter berita
-            
-        Returns:
-            list: List of dictionaries berisi semua data berita
-        """
-        all_news = []
-        page_count = 1
-        
-        try:
-            self.setup_driver()
-            print(f"\n📰 Mengakses: {self.url}")
-            self.driver.get(self.url)
-            time.sleep(3)
-            
-            # Lakukan search jika ada keyword
-            if search_keyword:
-                print(f"\n🔍 Mencari berita dengan keyword: '{search_keyword}'")
-                self.search_news(search_keyword)
-            
-            # Loop scraping per halaman
-            while True:
-                print(f"\n📄 Scraping Halaman {page_count}...")
-                
-                # Scrape halaman saat ini
-                news_data = self.scrape_current_page()
-                all_news.extend(news_data)
-                
-                print(f"   ✓ Berhasil scrape {len(news_data)} berita")
-                print(f"   📊 Total berita terkumpul: {len(all_news)}")
-                
-                # Check apakah sudah mencapai max_pages
-                if max_pages and page_count >= max_pages:
-                    print(f"\n✓ Mencapai batas maksimal {max_pages} halaman")
-                    break
-                
-                # Coba pindah ke halaman berikutnya
-                if not self.go_to_next_page():
-                    break
-                
-                page_count += 1
-            
-            print(f"\n✅ Scraping selesai! Total {len(all_news)} berita dari {page_count} halaman")
-            
-        except Exception as e:
-            print(f"\n❌ Error saat scraping: {e}")
-        
-        finally:
-            if self.driver:
-                self.driver.quit()
-                print("✓ Browser ditutup")
-        
-        return all_news
-    
-    def save_to_csv(self, data, filename=None):
-        """
-        Simpan data ke file CSV
-        
-        Args:
-            data (list): Data berita
-            filename (str): Nama file output
-        """
-        if not data:
-            print("⚠ Tidak ada data untuk disimpan")
-            return
-        
-        if not filename:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"bi_news_{timestamp}.csv"
-        
-        df = pd.DataFrame(data)
-        df.to_csv(filename, index=False, encoding='utf-8-sig')
-        print(f"\n💾 Data berhasil disimpan ke: {filename}")
-        print(f"   Total baris: {len(df)}")
+        driver.execute_script("arguments[0].scrollIntoView(true);", next_button)
+        time.sleep(1)
+        next_button.click()
+        print("Pindah ke halaman berikutnya...")
+        time.sleep(3)
+        return True
+    except:
+        return False
 
+def scrape_bi_with_date(url, keyword, target_date, headless=True):
+    all_news = []
+    page_count = 1
+    driver = None
+    try:
+        driver = setup_driver(headless=headless)
+        print(f"\nMengakses: {url}")
+        print(f"Keyword: '{keyword}'")
+        print(f"Target tanggal: {target_date}")
+        print("="*80)
+        driver.get(url)
+        time.sleep(3)
+        if keyword:
+            search_news(driver, keyword)
+        should_stop = False
+        while not should_stop:
+            print(f"\nScraping Halaman {page_count}...")
+            news_data, should_stop = scrape_current_page_with_date_filter(driver, target_date)
+            all_news.extend(news_data)
+            print(f"Berita yang cocok di halaman ini: {len(news_data)}")
+            print(f"Total berita terkumpul: {len(all_news)}")
+            if should_stop:
+                print(f"\nBerhenti scraping karena menemukan artikel lebih lama dari {target_date}")
+                break
+            if not go_to_next_page(driver):
+                break
+            page_count += 1
+        print(f"\n" + "="*80)
+        print(f"Scraping list selesai! Ditemukan {len(all_news)} berita pada tanggal {target_date}")
+        if all_news:
+            print(f"\nMulai mengambil konten lengkap untuk {len(all_news)} berita...")
+            print("="*80)
+            for i, news in enumerate(all_news, 1):
+                print(f"\n({i}/{len(all_news)}) {news['title'][:60]}...")
+                news['content'] = get_article_content(driver, news['url'])
+                time.sleep(2)
+        print(f"\n" + "="*80)
+        print(f"Selesai! Total {len(all_news)} berita dengan konten lengkap")
+    except Exception as e:
+        print(f"\nError saat scraping: {e}")
+    finally:
+        if driver:
+            driver.quit()
+            print("Browser ditutup")
+    return all_news
 
-def main():
-    """Fungsi utama untuk menjalankan scraper"""
-    
-    print("="*60)
-    print("  SCRAPER BERITA BANK INDONESIA")
-    print("="*60)
-    
-    # Konfigurasi scraping
-    scraper = BankIndonesiaScraper(headless=True)  # Set False untuk melihat browser
-    
-    # Pilihan: 
-    # 1. Scrape tanpa search, maksimal 3 halaman
-    # news_data = scraper.scrape_all_pages(max_pages=3)
-    
-    # 2. Scrape dengan search keyword
-    # news_data = scraper.scrape_all_pages(max_pages=5, search_keyword="inflasi")
-    
-    # 3. Scrape semua halaman (hati-hati, bisa lama!)
-    news_data = scraper.scrape_all_pages(max_pages=2)
-    
-    # Simpan ke CSV
+def main_bank_indonesia(keyword, tanggal):
+    url = "https://www.bi.go.id/id/publikasi/ruang-media/news-release/Default.aspx"
+    news_data = scrape_bi_with_date(
+        url=url,
+        keyword=keyword,
+        target_date=tanggal,
+        headless=True
+    )
     if news_data:
-        scraper.save_to_csv(news_data)
-        
-        # Preview data
-        print("\n📋 Preview 3 berita pertama:")
-        print("-" * 60)
-        for i, news in enumerate(news_data[:3], 1):
-            print(f"\n{i}. {news['nomor']}")
-            print(f"   Judul: {news['judul'][:80]}...")
-            print(f"   Tanggal: {news['tanggal']}")
+        df = pd.DataFrame(news_data)
+        print(f"\nDitemukan {len(df)} berita")
+        print("\nPreview data berita:")
+        print(df[['title', 'date', 'url']].head())
+        safe_keyword = "".join(c for c in keyword if c.isalnum() or c in (' ', '_')).rstrip()
+        safe_keyword = safe_keyword.replace(' ', '_')
+        return df
     else:
-        print("\n⚠ Tidak ada data yang berhasil di-scrape")
-
-
+        print(f"\nTidak ada berita ditemukan untuk keyword '{keyword}' pada tanggal {tanggal}")
+        return None
+    
 if __name__ == "__main__":
-    main()
+    result = main_bank_indonesia(
+        keyword="BI Rate",
+        target_date="2025-08-29"
+    )
+    if result is not None:
+        print(f"\nTotal berita: {len(result)}")
+        print(f"Kolom: {', '.join(result.columns)}")
