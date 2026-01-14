@@ -40,7 +40,7 @@ TOPICS = {
                             "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
     },
 
-    "JIBOR": {
+    "Indonia": {
         "target_sheets": ["(News)Indonia"],
         "output_sheet": "(Summary)Indonia",
         "role_prompt" : "Ekonom",
