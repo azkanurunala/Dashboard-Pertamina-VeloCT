@@ -473,6 +473,6 @@ def main_reuters(keyword=None, date_filter=None, max_sitemaps=5, max_articles=10
 
 
 if __name__ == '__main__':
-    main_reuters(keyword="Trump", date_filter="2025-11-18", restart_interval=5,
+    main_reuters(keyword="Trump", date_filter="2026-01-14", restart_interval=5,
                  wait_time=60, enable_scrolling=True, max_articles=
                  1)
