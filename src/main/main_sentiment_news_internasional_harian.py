@@ -25,7 +25,7 @@ TOPICS = {
     "Indeks Volatilitas": {
         "target_sheets": ["(News)indeks volatilitas"],
         "output_sheet": "(Summary)Idx Volatilitas",
-        "role_prompt" : "industri minyak dan gas",
+        "role_prompt" : "Ekonom",
         "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
                             "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
                             "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
