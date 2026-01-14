@@ -41,8 +41,8 @@ TOPICS = {
     },
 
     "JIBOR": {
-        "target_sheets": ["(News)JIBOR"],
-        "output_sheet": "(Summary)JIBOR",
+        "target_sheets": ["(News)Indonia"],
+        "output_sheet": "(Summary)Indonia",
         "role_prompt" : "Ekonom",
         "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
                             "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
