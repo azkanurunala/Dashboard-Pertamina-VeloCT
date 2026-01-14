@@ -24,7 +24,7 @@ def run_daily_scraping():
             import traceback
             traceback.print_exc()
 
-        print("\nIstirahat 60 detik sebelum melanjutkan ke CPO scraping...")
+        # print("\nIstirahat 60 detik sebelum melanjutkan ke CPO scraping...")
         # time.sleep(60)
 
         # # # ===== STEP 2: CPO Price Scraping =====

@@ -173,7 +173,7 @@ def main():
         print(f"Authentication failed: {e}")
         return
     
-    tanggal_filter = "2025-12-01"
+    tanggal_filter = "2025-12-02"
     # tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     print(f"\nTanggal filter: {tanggal_filter}")
     
@@ -256,8 +256,10 @@ def main():
     print("\n" + "="*60)
     print("MENYIMPAN KE ONEDRIVE")
     print("="*60)
-    
+
     try:
+        print("\nMendapatkan fresh token untuk menyimpan...")
+        access_token = get_access_token()
         write_multiple_sheets_to_onedrive(access_token, ONEDRIVE_FILE_PATH, all_sheets)
         
         print("\n" + "="*60)

@@ -73,10 +73,10 @@ def scrape_theguardian(keyword, tanggal):
         return pd.DataFrame(columns=['Judul', 'Tanggal', 'Link', 'Konten'])
     df = pd.DataFrame(articles)
     df = df[['Judul', 'Tanggal', 'Link', 'Konten']]
-    print(f"\nSuccessfully scraped {len(df)} articles")
-    print("\nPreview:")
-    print(df.head(3).to_string(index=False))
-    print("=" * 80)
+    # print(f"\nSuccessfully scraped {len(df)} articles")
+    # print("\nPreview:")
+    # print(df.head(3).to_string(index=False))
+    # print("=" * 80)
     return df
 
 if __name__ == "__main__":
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     keyword = "Gasoline"
     df = scrape_theguardian(keyword, today)
     df.to_excel("theguardian_results.xlsx", index=False, engine='openpyxl')
-    print(f"\nReturned DataFrame shape: {df.shape}")
-    if not df.empty:
-        print("\nSample data:")
-        print(df.head())
+    # print(f"\nReturned DataFrame shape: {df.shape}")
+    # if not df.empty:
+    #     print("\nSample data:")
+    #     print(df.head())
