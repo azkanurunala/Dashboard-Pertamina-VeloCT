@@ -4,7 +4,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from main.main_sentiment_news_mingguan import main as main_sentiment_news_mingguan
-from code_scrapping.scrape_sandp_data import main_weekly 
+from code_scrapping.scrape_sandp_data import main_saf_weekly, main_crackspeed_bbm_weekly, main_crackspeed_non_bbm_weekly
 
 def run_weekly_tasks():
     try:
@@ -25,7 +25,9 @@ def run_weekly_tasks():
         print("\n>>> STEP 2: Menjalankan S&P Weekly Data Scraping")
         print("-" * 70)
         try:
-            main_weekly()
+            main_saf_weekly()
+            main_crackspeed_bbm_weekly()
+            main_crackspeed_non_bbm_weekly()
             print("S&P Weekly Data Scraping selesai")
         except Exception as e:
             print(f"ERROR pada S&P Weekly Data Scraping: {e}")
