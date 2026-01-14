@@ -260,8 +260,9 @@ def main_bank_indonesia(keyword, tanggal):
 if __name__ == "__main__":
     result = main_bank_indonesia(
         keyword="BI Rate",
-        target_date="2025-08-29"
+        tanggal="2025-08-29"
     )
+    result.to_excel("bank_indonesia_results.xlsx", index=False, engine='openpyxl')
     if result is not None:
         print(f"\nTotal berita: {len(result)}")
         print(f"Kolom: {', '.join(result.columns)}")
