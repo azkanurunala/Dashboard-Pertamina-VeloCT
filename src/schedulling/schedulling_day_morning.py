@@ -23,21 +23,21 @@ def run_daily_scraping():
             traceback.print_exc()
 
         print("\nIstirahat 60 detik sebelum melanjutkan ke CPO scraping...")
-        time.sleep(60)
+        # time.sleep(60)
 
-        # # ===== STEP 2: CPO Price Scraping =====
-        print("\n>>> STEP 2: Menjalankan CPO Price Scraping")
-        print("-" * 70)
-        try:
-            main_scraper_cpo()
-            print("\nCPO Price Scraping selesai")
-        except Exception as e:
-            print(f"\n✗ ERROR pada CPO Scraping: {e}")
-            import traceback
-            traceback.print_exc()
+        # # # ===== STEP 2: CPO Price Scraping =====
+        # print("\n>>> STEP 2: Menjalankan CPO Price Scraping")
+        # print("-" * 70)
+        # try:
+        #     main_scraper_cpo()
+        #     print("\nCPO Price Scraping selesai")
+        # except Exception as e:
+        #     print(f"\n✗ ERROR pada CPO Scraping: {e}")
+        #     import traceback
+        #     traceback.print_exc()
 
-        print("\nIstirahat 60 detik sebelum melanjutkan ke News Sentiment Summarization...")
-        time.sleep(60)
+        # print("\nIstirahat 60 detik sebelum melanjutkan ke News Sentiment Summarization...")
+        # time.sleep(60)
 
         # ===== STEP 3: News Sentiment Summarization =====
         print("\n>>> STEP 3: Menjalankan News Sentiment Summarization")
