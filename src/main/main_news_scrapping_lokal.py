@@ -36,13 +36,13 @@ load_dotenv()
 ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_FILE_PATH", "/results/(News)Scrapping.xlsx")
 
 sinonim_dict = {
-    # "indeks risiko geopolitik ": ["tekanan geopolitik ", "geopolitik "],
-    # "indeks volatilitas ": ["volatilitas "],
+    "indeks risiko geopolitik ": ["tekanan geopolitik ", "geopolitik "],
+    "indeks volatilitas ": ["volatilitas "],
     # "kurs ": ["nilai tukar rupiah ", "dolar "],
     # "ihsg ": ["pasar saham "],
     # "inflasi ": [],
-    "bi rate ": ["suku bunga ", "bunga bi "],
-    # "indonia ": [],
+    # "bi rate ": ["suku bunga ", "bunga bi "],
+    "indonia ": [],
     # "indeks sales retail ": ["indeks penjualan ritel ", "indeks penjualan retail ", "indeks retail ", "indeks ritel "],
     # "indeks kepercayaan konsumen ": ["indeks kepercayaan pelanggan ", "ekspektasi konsumen ", "kondisi ekonomi terkini ", "kepercayaan konsumen ", "kondisi ekonomi saat ini "],
     # "indeks kinerja manufaktur ": ["kinerja manufaktur "],
@@ -61,18 +61,18 @@ sinonim_dict = {
     # "harga produk kilang pertamina ": ["bbm ","harga kilang pertamina ", "kilang pertamina ", "kilang ", "refinery ", "harga pertamina "],
     # "volume produk kilang pertamina ": ["bbm ", "volume kilang pertamina ", "volume kilang ", "refinery ", "volume pertamina "], 
     # "SAF " : ["UCO ", "CORSIA ", "SAFCo ","biorefinery ", "minyak jelantah ", "bioavtur "],
-    # "RON 92 " : ["pertamax ", "RON 95 ", "RON 97 ", "Residual FO ", "Fuel Oil", "Jet Fuel ", "Avtur ", "Kerosene ", "refinery ", "refined products ", "refining ", "oil products ", "Gasoline ", "Heavy Oil ", "Diesel ", "Gasoil ", "Naphtha ", "LPG ", "Biodiesel ", "Biogasoline ", "Petroleum Coke ", "Oil price "], 
-    # "Petro " : ["chemical ", "petrochemical ", "aromatic ", "olefin ", "polymer ", "LPG ", "Paraxylene ", "Propylene ", "Benzene ", "Green Coke " ]
+    "RON 92 " : ["pertamax ", "RON 95 ", "RON 97 ", "Residual FO ", "Fuel Oil", "Jet Fuel ", "Avtur ", "Kerosene ", "refinery ", "refined products ", "refining ", "oil products ", "Gasoline ", "Heavy Oil ", "Diesel ", "Gasoil ", "Naphtha ", "LPG ", "Biodiesel ", "Biogasoline ", "Petroleum Coke ", "Oil price "], 
+    "Petro " : ["chemical ", "petrochemical ", "aromatic ", "olefin ", "polymer ", "LPG ", "Paraxylene ", "Propylene ", "Benzene ", "Green Coke " ]
 }
 
 sumber_dict = {
-    # "indeks risiko geopolitik ": [main_bloomberg_technoz],
-    # "indeks volatilitas ": [main_bloomberg_technoz],
+    "indeks risiko geopolitik ": [main_bloomberg_technoz],
+    "indeks volatilitas ": [main_bloomberg_technoz],
     # "kurs ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
     # "ihsg ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
     # "inflasi ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bps],
-    "bi rate ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
-    # "indonia ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
+    # "bi rate ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
+    "indonia ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
     # "indeks sales retail ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
     # "indeks kepercayaan konsumen ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
     # "indeks kinerja manufaktur ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
@@ -87,18 +87,18 @@ sumber_dict = {
     # "harga produk kilang pertamina ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
     # "volume produk kilang pertamina ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz], 
     # "SAF " : [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    # "RON 92 " : [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz], 
-    # "Petro " : [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz]
+    "RON 92 " : [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz], 
+    "Petro " : [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz]
 }
 
 sheet_to_keyword = {
-    # "(News)indeks risiko geopolitik": "indeks risiko geopolitik ",
-    # "(News)indeks volatilitas": "indeks volatilitas ",
+    "(News)indeks risiko geopolitik": "indeks risiko geopolitik ",
+    "(News)indeks volatilitas": "indeks volatilitas ",
     # "(News)Kurs": "kurs ",
     # "(News)IHSG": "ihsg ",
     # "(News)Inflasi": "inflasi ",
-    "(News)BI Rate": "bi rate ",
-    # "(News)Indonia": "indonia ",
+    # "(News)BI Rate": "bi rate ",
+    "(News)Indonia": "indonia ",
     # "(News)indeks sales retail": "indeks sales retail ",
     # "(News)indeks kepercayaan knsmn": "indeks kepercayaan konsumen ",
     # "(News)indeks kinerja manufaktur": "indeks kinerja manufaktur ",
@@ -113,8 +113,8 @@ sheet_to_keyword = {
     # "(News)Harga Produk Kilang": "harga produk kilang pertamina ",
     # "(News)Volume Produk Kilang": "volume produk kilang pertamina ", 
     # "(News)SAF" : "SAF ",
-    # "(News)Crackspeed_BBM" : "RON 92 ", 
-    # "(News)Crackspeed_NonBBM" : "Petro "
+    "(News)Crackspeed_BBM" : "RON 92 ", 
+    "(News)Crackspeed_NonBBM" : "Petro "
 }
 
 def standardize_format(df):
@@ -227,13 +227,13 @@ def main():
     print(f"\nTanggal filter: {tanggal_filter}")
     
     sheet_names = [
-        # "(News)indeks risiko geopolitik",
-        # "(News)indeks volatilitas",
+        "(News)indeks risiko geopolitik",
+        "(News)indeks volatilitas",
         # "(News)Kurs",
         # "(News)IHSG",
         # "(News)Inflasi",
-        "(News)BI Rate",
-        # "(News)Indonia",
+        # "(News)BI Rate",
+        "(News)Indonia",
         # "(News)indeks sales retail",
         # "(News)indeks kepercayaan knsmn",
         # "(News)indeks kinerja manufaktur",
@@ -248,8 +248,8 @@ def main():
         # "(News)Harga Produk Kilang",
         # "(News)Volume Produk Kilang", 
         # "(News)SAF", 
-        # "(News)Crackspeed_BBM", 
-        # "(News)Crackspeed_NonBBM"
+        "(News)Crackspeed_BBM", 
+        "(News)Crackspeed_NonBBM"
     ]
     
     print(f"\nLoading existing data from OneDrive...")

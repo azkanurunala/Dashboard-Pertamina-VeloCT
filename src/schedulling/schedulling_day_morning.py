@@ -6,6 +6,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from main.main_news_scrapping_lokal import main as main_news_scraping
+from main.main_news_scrapping_internasional import main as main_news_scraping_internasional
 from code_scrapping.scrapping_cpo import main_scraper_cpo
 from main.main_sentiment_news_lokal_harian import main as main_sentiment_news
 
@@ -16,6 +17,7 @@ def run_daily_scraping():
         print("-" * 70)
         try:
             main_news_scraping()
+            main_news_scraping_internasional()
             print("\nNews Scraping selesai")
         except Exception as e:
             print(f"\n✗ ERROR pada News Scraping: {e}")
@@ -40,15 +42,15 @@ def run_daily_scraping():
         # time.sleep(60)
 
         # ===== STEP 3: News Sentiment Summarization =====
-        print("\n>>> STEP 3: Menjalankan News Sentiment Summarization")
-        print("-" * 70)
-        try:
-            main_sentiment_news()
-            print("\nNews Sentiment Summarization selesai")
-        except Exception as e:
-            print(f"\nERROR pada News Sentiment Summarization: {e}")
-            import traceback
-            traceback.print_exc()
+        # print("\n>>> STEP 3: Menjalankan News Sentiment Summarization")
+        # print("-" * 70)
+        # try:
+        #     main_sentiment_news()
+        #     print("\nNews Sentiment Summarization selesai")
+        # except Exception as e:
+        #     print(f"\nERROR pada News Sentiment Summarization: {e}")
+        #     import traceback
+        #     traceback.print_exc()
 
     except Exception as e:
         print(f"\nERROR FATAL SAAT SCRAPING: {e}")
