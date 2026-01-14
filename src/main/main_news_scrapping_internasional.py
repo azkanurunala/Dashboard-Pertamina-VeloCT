@@ -20,45 +20,52 @@ from code_scrapping.cnn import main_google_news_cnn
 from code_scrapping.cnbc import main_google_news_cnbc
 from code_scrapping.oilprice import scrape_oilprice
 from code_scrapping.scrape_sandp_news import scrape_news_sap
+from code_scrapping.scmp import main_scmp
+from code_scrapping.theguardian import scrape_theguardian
+from code_scrapping.energiesmedia import scrape_energiesmedia
+from code_scrapping.bioenergytimes import scrape_bioenergytimes
 
 load_dotenv()
 
 ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_FILE_PATH", "/results/(News)Scrapping.xlsx")
 
 sinonim_dict = {
-    # "indeks risiko geopolitik": ["tekanan geopolitik", "geopolitical risk", "geopolitical pressure", "geopolitik", "geopolitics"],
-    # "volatilitas": ["volatilitality"],
-    # "indeks kinerja manufaktur": ["purchasing manufaktur index"],
-    # "indeks kinerja jasa": ["purchasing services index"],
-    # "harga minyak": ["oil price", "minyak mentah","crude oil"],
-    # "volume minyak": ["volume bbm", "oil volume", "minyak mentah", "volume minyak"],
-    # "SAF" : ["UCO ", "sustainable aviation fuel ", "used cooking oil ", "CORSIA ", "SAFCo ", "biorefinery ", "minyak jelantah ", "bioavtur "], 
-    "RON 92" : ["pertamax ", "RON 95 ", "RON 97 ", "Singapore Residual FO 0.5% ", "Fuel Oil 0.5% ", "Jet Fuel ", "Avtur", "Kerosene ", "GO50", "GO2500"], 
-    "Petro" : ["chemical ", "petrochemical ", "aromatic ", "olefin ", "polymer ", "LPG ", "Paraxylene ", "Propylene ", "Benzene ", "Green Coke " ]
+    "geopolitical risk ": ["geopolitical pressure ", "geopolitics "],
+    "volatility index ": ["volatilitality "],
+    "dxy ": ["dollar "],
+    "purchasing manufaktur index ": ["manufaktur index "],
+    "purchasing services index ": ["services index "],
+    "oil price ": ["crude oil "],
+    "oil volume ": ["bbm volume "],
+    "SAF " : ["UCO ", "sustainable aviation fuel ", "used cooking oil ", "CORSIA ", "SAFCo ", "biorefinery ", "bioavtur "], 
+    "RON 92 " : ["pertamax ", "RON 95 ", "RON 97 ", "Residual FO ", "Fuel Oil", "Jet Fuel ", "Avtur ", "Kerosene ", "refinery ", "refined products ", "refining ", "oil products ", "Gasoline ", "Heavy Oil ", "Diesel ", "Gasoil ", "Naphtha ", "LPG ", "Biodiesel ", "Biogasoline ", "Petroleum Coke ", "Oil price "], 
+    "Petro " : ["chemical ", "petrochemical ", "aromatic ", "olefin ", "polymer ", "LPG ", "Paraxylene ", "Propylene ", "Benzene ", "Green Coke " ]
 }
 
 sumber_dict = {
-    # "indeks risiko geopolitik": [main_google_news_cnn, main_google_news_cnbc],
-    # "indeks volatilitas": [main_google_news_cnn, main_google_news_cnbc],
-    # "indeks kinerja manufaktur": [scrape_news_sap],
-    # "indeks kinerja jasa": [scrape_news_sap],
-    # "harga minyak": [scrape_oilprice],
-    # "volume minyak": [scrape_oilprice], 
-    # "SAF" : [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn],
-    "RON 92" : [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn],
-
-
+    "geopolitical risk ": [main_google_news_cnn, main_google_news_cnbc, main_scmp, scrape_theguardian],
+    "volatility index ": [main_google_news_cnn, main_google_news_cnbc, main_scmp, scrape_theguardian],
+    "dxy ": [main_google_news_cnn, main_google_news_cnbc],
+    "purchasing manufaktur index ": [scrape_news_sap],
+    "purchasing services index ": [scrape_news_sap],
+    "oil price ": [scrape_oilprice],
+    "oil volume ": [scrape_oilprice], 
+    "SAF " : [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn],
+    "RON 92 " : [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn, scrape_energiesmedia, scrape_bioenergytimes, scrape_theguardian],
+    "Petro " : [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn, scrape_energiesmedia, scrape_bioenergytimes, scrape_theguardian]
 }
 
 sheet_to_keyword = {
-    # "(News)indeks risiko geopolitik": "indeks risiko geopolitik",
-    # "(News)indeks volatilitas": "indeks volatilitas",
-    # "(News)indeks kinerja manufaktur": "indeks kinerja manufaktur",
-    # "(News)indeks kinerja jasa": "indeks kinerja jasa",  
-    # "(News)Harga Minyak": "harga minyak",
-    # "(News)Volume Minyak": "volume minyak",
-    # "(News)SAF" : "SAF",
-    "(News)BBM" : "RON 92"
+    "(News)indeks risiko geopolitik": "geopolitical risk ",
+    "(News)indeks volatilitas": "volatility index ",
+    "(News)Kurs": "dxy ",
+    "(News)indeks kinerja manufaktur": "purchasing manufaktur index ",
+    "(News)indeks kinerja jasa": "purchasing services index ",  
+    "(News)Harga Minyak": "oil price ",
+    "(News)Volume Minyak": "oil volume ",
+    "(News)SAF" : "SAF ",
+    "(News)Crackspeed_BBM" : "RON 92 ",
+    "(News)Crackspeed_NonBBM" : "Petro "
 }
 
 def standardize_format(df):
@@ -166,19 +173,21 @@ def main():
         print(f"Authentication failed: {e}")
         return
     
-    tanggal_filter = "2025-12-18"
+    tanggal_filter = "2025-12-01"
     # tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     print(f"\nTanggal filter: {tanggal_filter}")
     
     sheet_names = [
-        # "(News)indeks risiko geopolitik",
-        # "(News)indeks volatilitas",
-        # "(News)indeks kinerja manufaktur",
-        # "(News)indeks kinerja jasa",
-        # "(News)Harga Minyak",
-        # "(News)Volume Minyak",
-        # "(News)SAF", 
-        "(News)BBM"
+        "(News)indeks risiko geopolitik",
+        "(News)indeks volatilitas",
+        "(News)Kurs",
+        "(News)indeks kinerja manufaktur",
+        "(News)indeks kinerja jasa",
+        "(News)Harga Minyak",
+        "(News)Volume Minyak",
+        "(News)SAF", 
+        "(News)Crackspeed_BBM", 
+        "(News)Crackspeed_NonBBM"
     ]
     
     print(f"\nLoading existing data from OneDrive...")
@@ -242,7 +251,7 @@ def main():
         print(f"  Total: {len(combined_df)} baris")
         
         print("\nIstirahat 60 detik...")
-        # time.sleep(60)
+        time.sleep(60)
     
     print("\n" + "="*60)
     print("MENYIMPAN KE ONEDRIVE")
