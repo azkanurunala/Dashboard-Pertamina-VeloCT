@@ -1,59 +1,52 @@
 import requests
 import pandas as pd
-import json
 import os
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
 
-def load_tokens(token_file_path="../../token.json"):
-    try:
-        with open(token_file_path, 'r') as f:
-            token_data = json.load(f)
-            access_token = token_data.get('access_token')
-            refresh_token = token_data.get('refresh_token')
-            print("Token berhasil dimuat dari file")
-            return access_token, refresh_token
-    except FileNotFoundError:
-        print(f"File {token_file_path} tidak ditemukan")
-        return None, None
-    except json.JSONDecodeError:
-        print(f"Error membaca JSON dari {token_file_path}")
-        return None, None
+load_dotenv()
 
-def save_tokens(token_data, token_file_path="../token.json"):
-    try:
-        with open(token_file_path, 'w') as f:
-            json.dump(token_data, f, indent=2)
-            print("Token baru berhasil disimpan")
-        return True
-    except Exception as e:
-        print(f"Error menyimpan token: {e}")
-        return False
+SP_USERNAME = os.getenv("S&P_USERNAME")
+SP_PASSWORD = os.getenv("S&P_PASSWORD")
 
-def refresh_access_token(refresh_token, token_file_path="../token.json"):
-    url = "https://api.ci.spglobal.com/auth/api/refresh"
+def login_spglobal(username=None, password=None):
+    if username is None:
+        username = SP_USERNAME
+    if password is None:
+        password = SP_PASSWORD
+    if not username or not password:
+        print("Error: S&P_USERNAME atau S&P_PASSWORD tidak ditemukan di environment variables")
+        return None
+    url = "https://api.ci.spglobal.com/auth/api"
     payload = {
-        "refresh_token": refresh_token
+        "username": username,
+        "password": password
+    }
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded"
     }
     try:
-        print("Memperbarui access token...")
-        print(f"Refresh token: {refresh_token[:20]}...")
-        response = requests.post(url, data=payload, timeout=30)
+        print("Login ke S&P Global API...")
+        print(f"Username: {username}")
+        response = requests.post(url, data=payload, headers=headers, timeout=30)
         print(f"Status code: {response.status_code}")
-        print(f"Response: {response.text[:200]}")
         response.raise_for_status()
         token_data = response.json()
-        new_access_token = token_data.get('access_token')
-        new_refresh_token = token_data.get('refresh_token', refresh_token)
-        save_tokens(token_data, token_file_path)
-        print("Access token berhasil diperbarui")
-        return new_access_token, new_refresh_token
+        access_token = token_data.get('access_token')
+        if access_token:
+            print("Login berhasil! Access token diperoleh.")
+            return access_token
+        else:
+            print("Login gagal: access_token tidak ditemukan dalam response")
+            print(f"Response: {token_data}")
+            return None
     except requests.exceptions.RequestException as e:
-        print(f"Error saat refresh token: {e}")
+        print(f"Error saat login: {e}")
         if hasattr(e, 'response') and e.response is not None:
             print(f"Response status: {e.response.status_code}")
             print(f"Response body: {e.response.text}")
-        return None, None
+        return None
 
 def extract_text_from_html(html_content):
     if not html_content:
@@ -145,10 +138,10 @@ def search_news(access_token, query="SAF", start_date=None, end_date=None, pages
         return []
 
 def scrape_news_sap(keyword="SAF", tanggal_filter=None):
-    token_file_path = os.path.join(os.path.dirname(__file__), "..", "..", "token.json")
-    access_token, refresh_token = load_tokens(token_file_path)
-    if not access_token or not refresh_token:
-        print("Gagal memuat S&P Global token dari file")
+    print("\nLogin ke S&P Global API...")
+    access_token = login_spglobal()
+    if not access_token:
+        print("Gagal login ke S&P Global API")
         return []
     start_date = None
     end_date = None
@@ -163,16 +156,34 @@ def scrape_news_sap(keyword="SAF", tanggal_filter=None):
             return []
     articles = search_news(access_token, keyword, start_date, end_date, pagesize=1000)
     if not articles:
-        print("Mencoba refresh token...")
-        new_access_token, _ = refresh_access_token(refresh_token, token_file_path)
-        if new_access_token:
-            articles = search_news(new_access_token, keyword, start_date, end_date, pagesize=1000)
-        else:
-            print("Gagal refresh token")
-            return []
-    if not articles:
         print("Tidak ada artikel yang ditemukan")
         return []
     print(f"\nBerhasil mengambil {len(articles)} artikel")
     return articles
 
+
+if __name__ == "__main__":
+    print("=" * 60)
+    print("TEST SCRAPE S&P GLOBAL NEWS")
+    print("=" * 60)
+    keyword = "SAF"
+    tanggal = datetime.today().strftime('%Y-%m-%d')
+    print(f"\nKeyword: {keyword}")
+    print(f"Tanggal: {tanggal}")
+    articles = scrape_news_sap(keyword=keyword, tanggal_filter=tanggal)
+    print("\n" + "=" * 60)
+    print("HASIL")
+    print("=" * 60)
+    if articles:
+        print(f"Total artikel: {len(articles)}\n")
+        for i, article in enumerate(articles[:5], 1):
+            print(f"[{i}] {article['title']}")
+            print(f"    Date: {article['date']}")
+            print(f"    URL: {article['url']}")
+            print(f"    Content: {article['content'][:200]}..." if article['content'] else "    Content: -")
+            print()
+    else:
+        print("Tidak ada artikel ditemukan")
+    print("=" * 60)
+    print("SELESAI")
+    print("=" * 60)

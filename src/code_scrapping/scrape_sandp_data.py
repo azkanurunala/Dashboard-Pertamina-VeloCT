@@ -1,6 +1,5 @@
 import requests
 import pandas as pd
-import json
 import os
 import sys
 from dotenv import load_dotenv
@@ -21,56 +20,46 @@ ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_DATA_PATH", "/results/(Terstruktur)Data
 SHEET_NAME_SAF = "(Data)SAF"
 SHEET_NAME_BBM = "(Data)Crackspeed_BBM"
 SHEET_NAME_NON_BBM = "(Data)Crackspeed_NonBBM"
+SP_USERNAME = os.getenv("S&P_USERNAME")
+SP_PASSWORD = os.getenv("S&P_PASSWORD")
 
-def load_tokens(token_file_path="../../token.json"):
-    try:
-        with open(token_file_path, 'r') as f:
-            token_data = json.load(f)
-        access_token = token_data.get('access_token')
-        refresh_token = token_data.get('refresh_token')
-        print("Token berhasil dimuat dari file")
-        return access_token, refresh_token
-    except FileNotFoundError:
-        print(f"File {token_file_path} tidak ditemukan")
-        return None, None
-    except json.JSONDecodeError:
-        print(f"Error membaca JSON dari {token_file_path}")
-        return None, None
-
-def save_tokens(token_data, token_file_path="../../token.json"):
-    try:
-        with open(token_file_path, 'w') as f:
-            json.dump(token_data, f, indent=2)
-        print("Token baru berhasil disimpan")
-        return True
-    except Exception as e:
-        print(f"Error menyimpan token: {e}")
-        return False
-
-def refresh_access_token(refresh_token, token_file_path="../../token.json"):
-    url = "https://api.ci.spglobal.com/auth/api/refresh"
+def login_spglobal(username=None, password=None):
+    if username is None:
+        username = SP_USERNAME
+    if password is None:
+        password = SP_PASSWORD
+    if not username or not password:
+        print("Error: S&P_USERNAME atau S&P_PASSWORD tidak ditemukan di environment variables")
+        return None
+    url = "https://api.ci.spglobal.com/auth/api"
     payload = {
-        "refresh_token": refresh_token
+        "username": username,
+        "password": password
+    }
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded"
     }
     try:
-        print("Memperbarui access token...")
-        print(f"Refresh token: {refresh_token[:20]}...")
-        response = requests.post(url, data=payload, timeout=30)
+        print("Login ke S&P Global API...")
+        print(f"Username: {username}")
+        response = requests.post(url, data=payload, headers=headers, timeout=30)
         print(f"Status code: {response.status_code}")
-        print(f"Response: {response.text[:200]}")
         response.raise_for_status()
         token_data = response.json()
-        new_access_token = token_data.get('access_token')
-        new_refresh_token = token_data.get('refresh_token', refresh_token)
-        save_tokens(token_data, token_file_path)
-        print("Access token berhasil diperbarui")
-        return new_access_token, new_refresh_token
+        access_token = token_data.get('access_token')
+        if access_token:
+            print("Login berhasil! Access token diperoleh.")
+            return access_token
+        else:
+            print("Login gagal: access_token tidak ditemukan dalam response")
+            print(f"Response: {token_data}")
+            return None
     except requests.exceptions.RequestException as e:
-        print(f"Error saat refresh token: {e}")
+        print(f"Error saat login: {e}")
         if hasattr(e, 'response') and e.response is not None:
             print(f"Response status: {e.response.status_code}")
             print(f"Response body: {e.response.text}")
-        return None, None
+        return None
 
 def get_historical_data(access_token, symbols, start_date, end_date, fields=None, page_size=2000):
     if fields is None:
@@ -435,22 +424,13 @@ def main_saf_daily():
         print(f"OneDrive authentication failed: {e}")
         exit(1)
     print("\nLoading S&P Global API tokens...")
-    spglobal_access_token, spglobal_refresh_token = load_tokens()
-    if not spglobal_access_token or not spglobal_refresh_token:
-        print("Gagal memuat S&P Global token dari file")
-        exit(1)
+    spglobal_access_token = login_spglobal()
+    if not spglobal_access_token:
+        print("Gagal login ke S&P Global API")
     print("\n" + "=" * 60)
     print("SCRAPING CURRENT DATA - SAF")
     print("=" * 60)
     df_current = get_current_data(spglobal_access_token, symbols, fields)
-    if df_current is None:
-        print("Mencoba refresh token...")
-        new_access_token, _ = refresh_access_token(spglobal_refresh_token)
-        if new_access_token:
-            df_current = get_current_data(new_access_token, symbols, fields)
-        else:
-            print("Gagal refresh token untuk current data")
-            exit(1)
     if df_current is None:
         print("\n[CURRENT] Gagal mengambil data current")
         exit(1)
@@ -484,23 +464,16 @@ def main_saf_weekly():
         print(f"OneDrive authentication failed: {e}")
         exit(1)
     print("\nLoading S&P Global API tokens...")
-    spglobal_access_token, spglobal_refresh_token = load_tokens()
-    if not spglobal_access_token or not spglobal_refresh_token:
-        print("Gagal memuat S&P Global token dari file")
+    print("\nLogin ke S&P Global API...")
+    spglobal_access_token = login_spglobal()
+    if not spglobal_access_token:
+        print("Gagal login ke S&P Global API")
         exit(1)
     print("\n" + "=" * 60)
     print("SCRAPING HISTORICAL DATA (WEEKLY) - SAF")
     print("=" * 60)
     print(f"Period: {start_date} to {end_date}")
     df_historical = get_historical_data(spglobal_access_token, symbols, start_date, end_date, fields)
-    if df_historical is None:
-        print("Mencoba refresh token...")
-        new_access_token, _ = refresh_access_token(spglobal_refresh_token)
-        if new_access_token:
-            df_historical = get_historical_data(new_access_token, symbols, start_date, end_date, fields)
-        else:
-            print("Gagal refresh token untuk historical data")
-            exit(1)
     if df_historical is None:
         print("\n[HISTORICAL] Gagal mengambil data historical")
         exit(1)
@@ -532,22 +505,15 @@ def main_crackspeed_bbm_daily():
         print(f"OneDrive authentication failed: {e}")
         exit(1)
     print("\nLoading S&P Global API tokens...")
-    spglobal_access_token, spglobal_refresh_token = load_tokens()
-    if not spglobal_access_token or not spglobal_refresh_token:
-        print("Gagal memuat S&P Global token dari file")
+    print("\nLogin ke S&P Global API...")
+    spglobal_access_token = login_spglobal()
+    if not spglobal_access_token:
+        print("Gagal login ke S&P Global API")
         exit(1)
     print("\n" + "=" * 60)
     print("SCRAPING CURRENT DATA - BBM")
     print("=" * 60)
     df_current = get_current_data(spglobal_access_token, symbols, fields)
-    if df_current is None:
-        print("Mencoba refresh token...")
-        new_access_token, _ = refresh_access_token(spglobal_refresh_token)
-        if new_access_token:
-            df_current = get_current_data(new_access_token, symbols, fields)
-        else:
-            print("Gagal refresh token untuk current data")
-            exit(1)
     if df_current is None:
         print("\n[CURRENT] Gagal mengambil data current")
         exit(1)
@@ -578,23 +544,15 @@ def main_crackspeed_non_bbm_daily():
     except Exception as e:
         print(f"OneDrive authentication failed: {e}")
         exit(1)
-    print("\nLoading S&P Global API tokens...")
-    spglobal_access_token, spglobal_refresh_token = load_tokens()
-    if not spglobal_access_token or not spglobal_refresh_token:
-        print("Gagal memuat S&P Global token dari file")
+    print("\nLogin ke S&P Global API...")
+    spglobal_access_token = login_spglobal()
+    if not spglobal_access_token:
+        print("Gagal login ke S&P Global API")
         exit(1)
     print("\n" + "=" * 60)
     print("SCRAPING CURRENT DATA - NON BBM (LPG & Petrokimia)")
     print("=" * 60)
     df_current = get_current_data(spglobal_access_token, symbols, fields)
-    if df_current is None:
-        print("Mencoba refresh token...")
-        new_access_token, _ = refresh_access_token(spglobal_refresh_token)
-        if new_access_token:
-            df_current = get_current_data(new_access_token, symbols, fields)
-        else:
-            print("Gagal refresh token untuk current data")
-            exit(1)
     if df_current is None:
         print("\n[CURRENT] Gagal mengambil data current")
         exit(1)
@@ -626,10 +584,10 @@ def main_crackspeed_bbm_weekly():
     except Exception as e:
         print(f"OneDrive authentication failed: {e}")
         exit(1)
-    print("\nLoading S&P Global API tokens...")
-    spglobal_access_token, spglobal_refresh_token = load_tokens()
-    if not spglobal_access_token or not spglobal_refresh_token:
-        print("Gagal memuat S&P Global token dari file")
+    print("\nLogin ke S&P Global API...")
+    spglobal_access_token = login_spglobal()
+    if not spglobal_access_token:
+        print("Gagal login ke S&P Global API")
         exit(1)
     print("\n" + "=" * 60)
     print("SCRAPING HISTORICAL DATA (WEEKLY) - BBM")
@@ -643,22 +601,6 @@ def main_crackspeed_bbm_weekly():
         fields,
         page_size=10000
     )
-    if df_historical is None:
-        print("Mencoba refresh token...")
-        new_access_token, _ = refresh_access_token(spglobal_refresh_token)
-        if new_access_token:
-            df_historical = get_historical_data(
-                new_access_token, 
-                symbols, 
-                start_date, 
-                end_date, 
-                fields,
-                page_size=10000
-            )
-        else:
-            print("Gagal refresh token untuk historical data")
-            exit(1)
-    
     if df_historical is None:
         print("\n[HISTORICAL] Gagal mengambil data historical")
         exit(1)
@@ -691,10 +633,10 @@ def main_crackspeed_non_bbm_weekly():
     except Exception as e:
         print(f"OneDrive authentication failed: {e}")
         exit(1)
-    print("\nLoading S&P Global API tokens...")
-    spglobal_access_token, spglobal_refresh_token = load_tokens()
-    if not spglobal_access_token or not spglobal_refresh_token:
-        print("Gagal memuat S&P Global token dari file")
+    print("\nLogin ke S&P Global API...")
+    spglobal_access_token = login_spglobal()
+    if not spglobal_access_token:
+        print("Gagal login ke S&P Global API")
         exit(1)
     print("\n" + "=" * 60)
     print("SCRAPING HISTORICAL DATA (WEEKLY) - NON BBM (LPG & Petrokimia)")
@@ -708,22 +650,6 @@ def main_crackspeed_non_bbm_weekly():
         fields,
         page_size=10000
     )
-    if df_historical is None:
-        print("Mencoba refresh token...")
-        new_access_token, _ = refresh_access_token(spglobal_refresh_token)
-        if new_access_token:
-            df_historical = get_historical_data(
-                new_access_token, 
-                symbols, 
-                start_date, 
-                end_date, 
-                fields,
-                page_size=10000
-            )
-        else:
-            print("Gagal refresh token untuk historical data")
-            exit(1)
-    
     if df_historical is None:
         print("\n[HISTORICAL] Gagal mengambil data historical")
         exit(1)
@@ -746,4 +672,6 @@ def main_crackspeed_non_bbm_weekly():
     print("=" * 60)
 
 if __name__ == "__main__":
-    main_crackspeed_bbm_weekly()
+    main_crackspeed_bbm_daily()
+    main_crackspeed_non_bbm_daily
+    main_saf_daily()
