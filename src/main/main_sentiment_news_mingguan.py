@@ -176,14 +176,68 @@ TOPICS = {
     #                         "Batasan: 1 poin hanya 1 kalimat saja, serta exclude kasus-kasus hukum!"
     # },
 
-    "SAF": {
-        "target_sheets": ["(News)SAF"],
-        "output_sheet": "(Summary)SAF",
-        "has_data_sentiment": True,
-        "role_prompt" : "analis bioenergi",
-        "spesific_prompt" : "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst. "
-                            "Batasan: 1 poin hanya 1 kalimat saja, serta exclude kasus-kasus hukum!"
+    # "SAF": {
+    #     "target_sheets": ["(News)SAF"],
+    #     "output_sheet": "(Summary)SAF",
+    #     "has_data_sentiment": True,
+    #     "role_prompt" : "analis bioenergi",
+    #     "spesific_prompt" : "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst. "
+    #                         "Batasan: 1 poin hanya 1 kalimat saja, serta exclude kasus-kasus hukum!"
+    # }, 
+
+    # "Harga EBT" :{
+    #     "target_sheets": ["(News)Harga EBT"], 
+    #     "output_sheet": "(Summary)Harga EBT", 
+    #     "has_data_sentiment": False, 
+    #     "role_prompt": "analis ketenagalistrikan Indonesia", 
+    #     "spesific_prompt": "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst. "
+    #                         "Batasan: 1 poin hanya 1 kalimat saja, serta exclude kasus-kasus hukum!"
+    # },
+
+    # "WTE" :{
+    #     "target_sheets": ["(News)Harga WTE"], 
+    #     "output_sheet": "(Summary)Harga WTE", 
+    #     "has_data_sentiment": False, 
+    #     "role_prompt": "analis ketenagalistrikan Indonesia", 
+    #     "spesific_prompt": "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst. "
+    #                         "Batasan: 1 poin hanya 1 kalimat saja, serta exclude kasus-kasus hukum!"
+    #                         "Saat melakukan summary exclude berita - berita yang hanya terkait dengan masalah masalah sampah yang tidak ada kaitannya dengan pembangkit listrik"
+    # }, 
+
+    # "Nuklir" :{
+    #     "target_sheets": ["(News)Nuklir"], 
+    #     "output_sheet": "(Summary)Nuklir", 
+    #     "has_data_sentiment": False, 
+    #     "role_prompt": "analis ketenagalistrikan Indonesia", 
+    #     "spesific_prompt": "Gunakan bahasa ringkas dan netral tanpa kata hiperbolik seperti “signifikan”, “dahsyat”, dan sejenisnya."
+    #                         "Setiap poin ringkasan hanya satu kalimat, serta kecualikan kasus hukum."
+    #                         "Saat merangkum, abaikan berita tentang nuklir yang hanya terkait senjata dan tidak berkaitan dengan pembangkit listrik."
+    # }, 
+
+    "Crackspread_BBM": {
+        "target_sheets": ["(News)Crackspread_BBM"],
+        "output_sheet": "(Summary)Crackspread_BBM",
+        "has_data_sentiment": False,
+        "role_prompt": "analis pasar energi dan BBM di Indonesia",
+        "spesific_prompt": 
+            "Gunakan bahasa yang ringkas, faktual, dan netral tanpa kata hiperbolik seperti \"signifikan\", \"dahsyat\", atau sejenisnya. "
+            "Setiap poin ringkasan harus terdiri dari satu kalimat. "
+            "Fokus pada isu yang memengaruhi crack spread BBM seperti Pertamax, Pertalite, Solar, Avtur, harga minyak mentah, margin kilang, biaya produksi, distribusi, dan kebijakan harga BBM. "
+            "Kecualikan berita yang bersifat kasus hukum, kriminal, atau politik yang tidak berdampak langsung pada harga atau margin BBM. "
+    }, 
+    "Crackspread_Non_BBM": {
+        "target_sheets": ["(News)Crackspread_NonBBM"],
+        "output_sheet": "(Summary)Crackspread_NonBBM",
+        "has_data_sentiment": False,
+        "role_prompt": "analis pasar energi dan produk kilang non-BBM di Indonesia",
+        "spesific_prompt":
+            "Gunakan bahasa yang ringkas, faktual, dan netral tanpa kata hiperbolik seperti \"signifikan\", \"dahsyat\", atau sejenisnya. "
+            "Setiap poin ringkasan harus terdiri dari satu kalimat. "
+            "Fokus pada isu yang memengaruhi crack spread dan margin produk non-BBM seperti LPG, petrokimia, nafta, propilena, butilena, sulfur, dan produk samping kilang lainnya. "
+            "Perhatikan faktor harga minyak mentah, margin kilang, biaya produksi, permintaan industri, distribusi, serta kebijakan energi yang berdampak langsung pada produk non-BBM. "
+            "Kecualikan berita yang bersifat kasus hukum, kriminal, atau politik yang tidak berdampak langsung pada harga atau margin produk non-BBM."
     }
+
 }
 
 def get_prev_period(existing_df):
@@ -456,8 +510,9 @@ def process_topic(model, topic_name, config, existing_df, access_token):
 
     if last_date is not None:
         start_date = last_date + pd.Timedelta(days=1)
+        # start_date = datetime(2025, 12, 29)
     else:
-        start_date = datetime(2025, 12, 29)
+        start_date = datetime(2025, 12, 15)
 
     today = pd.to_datetime(datetime.now().date())
     end_date = min(start_date + pd.Timedelta(days=6), today)
@@ -485,8 +540,7 @@ def process_topic(model, topic_name, config, existing_df, access_token):
                 df_news["date"] = pd.to_datetime(df_news["date"], errors='coerce').dt.normalize()
                 mask = (df_news["date"] >= start_date) & (df_news["date"] <= end_date)
                 filtered_news = df_news[mask]
-
-                # Collect content
+                filtered_news = filtered_news.sort_values('date', ascending=False)
                 for _, row in filtered_news.iterrows():
                     if pd.notna(row.get("content")):
                         all_news_list.append(str(row["content"]))
@@ -495,9 +549,15 @@ def process_topic(model, topic_name, config, existing_df, access_token):
     excel_file.close()
 
     if not all_news_list:
-        print(f"⚠️ Tidak ada berita baru untuk {topic_name}")
+        print(f"Tidak ada berita baru untuk {topic_name}")
         return None
+    MAX_NEWS = 200
+    original_count = len(all_news_list)
 
+    if original_count > MAX_NEWS:
+        all_news_list = all_news_list[:MAX_NEWS]
+    else:
+        print(f"Total berita ditemukan: {original_count}") 
     print(f"Total berita ditemukan: {len(all_news_list)}")
     summary = summarize_all_news(
         model,

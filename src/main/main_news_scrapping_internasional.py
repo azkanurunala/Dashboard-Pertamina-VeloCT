@@ -64,8 +64,8 @@ sheet_to_keyword = {
     "(News)Harga Minyak": "oil price ",
     "(News)Volume Minyak": "oil volume ",
     "(News)SAF" : "SAF ",
-    "(News)Crackspeed_BBM" : "RON 92 ",
-    "(News)Crackspeed_NonBBM" : "Petro "
+    "(News)Crackspread_BBM" : "RON 92 ",
+    "(News)Crackspread_NonBBM" : "Petro "
 }
 
 def standardize_format(df):
@@ -186,8 +186,8 @@ def main():
         "(News)Harga Minyak",
         "(News)Volume Minyak",
         "(News)SAF", 
-        "(News)Crackspeed_BBM", 
-        "(News)Crackspeed_NonBBM"
+        "(News)Crackspread_BBM", 
+        "(News)Crackspread_NonBBM"
     ]
     
     print(f"\nLoading existing data from OneDrive...")

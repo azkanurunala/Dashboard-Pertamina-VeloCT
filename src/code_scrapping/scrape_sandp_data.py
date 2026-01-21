@@ -18,8 +18,8 @@ load_dotenv()
 
 ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_DATA_PATH", "/results/(Terstruktur)Data Scrapping.xlsx")
 SHEET_NAME_SAF = "(Data)SAF"
-SHEET_NAME_BBM = "(Data)Crackspeed_BBM"
-SHEET_NAME_NON_BBM = "(Data)Crackspeed_NonBBM"
+SHEET_NAME_BBM = "(Data)Crackspread_BBM"
+SHEET_NAME_NON_BBM = "(Data)Crackspread_NonBBM"
 SP_USERNAME = os.getenv("S&P_USERNAME")
 SP_PASSWORD = os.getenv("S&P_PASSWORD")
 
