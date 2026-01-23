@@ -152,7 +152,7 @@ def fetch_article_content(url):
         print(f"[ERROR] Failed to fetch content from {url}: {e}")
         return "N/A"
 
-def scrape_the_guardian(keyword, date=None, fetch_content=False):
+def scrape_the_guardian(keyword, date=None, fetch_content=True):
     keyword = keyword.strip()
     print("=" * 70)
     print(f"Scraping The Guardian for keyword: '{keyword}'")

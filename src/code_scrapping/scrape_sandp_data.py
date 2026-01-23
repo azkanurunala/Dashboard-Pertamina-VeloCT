@@ -67,10 +67,12 @@ def get_historical_data(access_token, symbols, start_date, end_date, fields=None
     url = "https://api.ci.spglobal.com/market-data/v3/value/history/symbol"
     symbols_str = ",".join([f'"{s}"' for s in symbols])
     filter_query = f'symbol IN ({symbols_str}) AND assessDate>"{start_date}" AND assessDate<"{end_date}"'
+    # filter_query = f'symbol IN ({symbols_str})'
     params = {
         "Field": ",".join(fields),
         "Filter": filter_query,
         "PageSize": page_size
+        # "page":4
     }
     headers = {
         "Authorization": f"Bearer {access_token}",
@@ -248,6 +250,48 @@ def pivot_data_to_columns_bbm(df):
     ).reset_index()
     df_moddate.columns = ['assessDate'] + [f'modDate_{col}' for col in df_moddate.columns if col != 'assessDate']
     df_final = df_value.merge(df_moddate, on='assessDate', how='outer')
+    if 'value_RON92' in df_final.columns:
+        df_final['value_RON92_MT'] = df_final['value_RON92'] * 0.120
+    else: 
+        df_final['value_RON92_MT'] = None
+
+    if 'value_RON95' in df_final.columns:
+        df_final['value_RON95_MT'] = df_final['value_RON95'] * 0.120
+    else: 
+        df_final['value_RON95_MT'] = None
+
+    if 'value_RON97' in df_final.columns:
+        df_final['value_RON97_MT'] = df_final['value_RON97'] * 0.120
+    else: 
+        df_final['value_RON97_MT'] = None
+
+    if 'value_FO05' in df_final.columns:
+        df_final['value_FO05_MT'] = df_final['value_FO05']
+        df_final['value_FO05'] = df_final['value_FO05'] * 0.15748
+    else: 
+        df_final['value_FO05_MT'] = None
+        df_final['value_FO05'] = None
+
+    if 'value_JetKero' in df_final.columns:
+        df_final['value_JetKero_MT'] = df_final['value_JetKero'] * 0.127
+    else: 
+        df_final['value_JetKero_MT'] = None
+
+    if 'value_GO50' in df_final.columns:
+        df_final['value_GO50_MT'] = df_final['value_GO50'] * 0.134
+    else: 
+        df_final['value_GO50_MT'] = None
+    
+    if 'value_GO2500' in df_final.columns:
+        df_final['value_GO2500_MT'] = df_final['value_GO2500'] * 0.134
+    else: 
+        df_final['value_GO2500_MT'] = None  
+        
+    if 'value_Brent' in df_final.columns:
+        df_final['value_Brent_MT'] = df_final['value_Brent'] * 0.134
+    else:
+        df_final['value_Brent_MT'] = None
+    # Crackspread BBL (product - Brent BBL)
     products = ['RON92', 'RON95', 'RON97', 'FO05', 'JetKero', 'GO50', 'GO2500']
     for product in products:
         value_col = f'value_{product}'
@@ -256,11 +300,30 @@ def pivot_data_to_columns_bbm(df):
             df_final[final_col] = (df_final[value_col]) - (df_final['value_Brent'])
         else:
             df_final[final_col] = None
+    # Crackspread MT (product_MT - Brent_MT)
+    for product in products:
+        value_col_mt = f'value_{product}_MT'
+        final_col_mt = f'value_{product}_MT_final'
+        if value_col_mt in df_final.columns and 'value_Brent_MT' in df_final.columns:
+            df_final[final_col_mt] = (df_final[value_col_mt]) - (df_final['value_Brent_MT'])
+        else:
+            df_final[final_col_mt] = None
+    
     column_order = [
         'assessDate',
+        # Value columns (BBL)
         'value_RON92', 'value_RON95', 'value_RON97', 'value_FO05',
-        'value_JetKero', 'value_GO50', 'value_GO2500', 'value_Brent', 'value_RON92_final', 'value_RON95_final', 'value_RON97_final', 'value_FO05_final',
+        'value_JetKero', 'value_GO50', 'value_GO2500', 'value_Brent',
+        # Value columns (MT)
+        'value_RON92_MT', 'value_RON95_MT', 'value_RON97_MT', 'value_FO05_MT',
+        'value_JetKero_MT', 'value_GO50_MT', 'value_GO2500_MT', 'value_Brent_MT',
+        # Final columns BBL (crackspread)
+        'value_RON92_final', 'value_RON95_final', 'value_RON97_final', 'value_FO05_final',
         'value_JetKero_final', 'value_GO50_final', 'value_GO2500_final',
+        # Final columns MT (crackspread)
+        'value_RON92_MT_final', 'value_RON95_MT_final', 'value_RON97_MT_final', 'value_FO05_MT_final',
+        'value_JetKero_MT_final', 'value_GO50_MT_final', 'value_GO2500_MT_final',
+        # ModDate columns
         'modDate_RON92', 'modDate_RON95', 'modDate_RON97', 'modDate_FO05',
         'modDate_JetKero', 'modDate_GO50', 'modDate_GO2500', 'modDate_Brent'
     ]
@@ -294,6 +357,11 @@ def pivot_data_to_columns_non_bbm(df):
     ).reset_index()
     df_moddate.columns = ['assessDate'] + [f'modDate_{col}' for col in df_moddate.columns if col != 'assessDate']
     df_final = df_value.merge(df_moddate, on='assessDate', how='outer')
+    if 'value_Brent' in df_final.columns:
+        df_final['value_Brent'] = df_final['value_Brent'] * 0.134
+    else:
+        df_final['value_Brent'] = None
+
     if 'value_Butane' in df_final.columns and 'value_Propane' in df_final.columns:
         df_final['value_LPG'] = (df_final['value_Butane'] * 0.5) + (df_final['value_Propane'] * 0.5)
     else:
@@ -455,8 +523,8 @@ def main_saf_daily():
 def main_saf_weekly():
     symbols = ["SFSMR00", "UCFCC00"]
     fields = ["UOM", "Currency", "description"]
-    start_date = "2024-01-01"
     end_date = datetime.today().strftime("%Y-%m-%d")
+    start_date = (datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")
     try:
         onedrive_access_token = get_access_token()
         print("OneDrive authentication successful")
@@ -576,8 +644,8 @@ def main_crackspeed_non_bbm_daily():
 def main_crackspeed_bbm_weekly():
     symbols = ["PGAEY00", "PGAEZ00", "PGAMS00", "AMFSA00", "PJABF00", "AAPPF00", "AACUE00", "PCAAS00"]
     fields = ["UOM", "Currency", "description"]
-    start_date = "2024-01-01"
     end_date = datetime.today().strftime("%Y-%m-%d")
+    start_date = (datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")
     try:
         onedrive_access_token = get_access_token()
         print("OneDrive authentication successful")
@@ -625,8 +693,8 @@ def main_crackspeed_bbm_weekly():
 def main_crackspeed_non_bbm_weekly():
     symbols = ["PTAAF10", "PTAAM10", "PHABV00", "PHAKR00", "PHASM05", "PCAAS00"]
     fields = ["UOM", "Currency", "description"]
-    start_date = "2024-01-01"
     end_date = datetime.today().strftime("%Y-%m-%d")
+    start_date = (datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")
     try:
         onedrive_access_token = get_access_token()
         print("OneDrive authentication successful")
@@ -672,6 +740,7 @@ def main_crackspeed_non_bbm_weekly():
     print("=" * 60)
 
 if __name__ == "__main__":
+    main_crackspeed_bbm_weekly()
+    main_crackspeed_non_bbm_weekly()
     main_crackspeed_bbm_daily()
-    main_crackspeed_non_bbm_daily
-    main_saf_daily()
+    main_crackspeed_non_bbm_daily()
