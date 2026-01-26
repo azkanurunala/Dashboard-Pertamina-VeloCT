@@ -260,118 +260,33 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
   }
 }
 
-// Function App
-resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
-  name: functionAppName
-  location: location
-  kind: 'functionapp'
-  identity: {
-    type: 'SystemAssigned'
-  }
-  properties: {
-    enabled: true
-    hostNameSslStates: [
-      {
-        name: '${functionAppName}.azurewebsites.net'
-        sslState: 'Disabled'
-        hostType: 'Standard'
-      }
-      {
-        name: '${functionAppName}.scm.azurewebsites.net'
-        sslState: 'Disabled'
-        hostType: 'Repository'
-      }
-    ]
-    serverFarmId: appServicePlan.id
-    reserved: false
-    isXenon: false
-    hyperV: false
-    vnetRouteAllEnabled: false
-    vnetImagePullEnabled: false
-    vnetContentShareEnabled: false
-    siteConfig: {
-      numberOfWorkers: 1
-      acrUseManagedIdentityCreds: false
-      alwaysOn: false
-      http20Enabled: false
-      functionAppScaleLimit: 200
-      minimumElasticInstanceCount: 0
-      pythonVersion: '3.11'
-      appSettings: [
-        {
-          name: 'AzureWebJobsStorage'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${az.environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
-        }
-        {
-          name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${az.environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
-        }
-        {
-          name: 'WEBSITE_CONTENTSHARE'
-          value: toLower(functionAppName)
-        }
-        {
-          name: 'FUNCTIONS_EXTENSION_VERSION'
-          value: '~4'
-        }
-        {
-          name: 'WEBSITE_NODE_DEFAULT_VERSION'
-          value: '~18'
-        }
-        {
-          name: 'FUNCTIONS_WORKER_RUNTIME'
-          value: 'python'
-        }
-        {
-          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: applicationInsights.properties.InstrumentationKey
-        }
-        {
-          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: applicationInsights.properties.ConnectionString
-        }
-        {
-          name: 'SQL_SERVER_CONNECTION_STRING'
-          value: 'Driver={ODBC Driver 17 for SQL Server};Server=tcp:${sqlServer.properties.fullyQualifiedDomainName},1433;Database=${sqlDatabaseName};Uid=${sqlAdminLogin};Pwd=${sqlAdminPassword};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;'
-        }
-        {
-          name: 'AZURE_KEY_VAULT_URL'
-          value: keyVault.properties.vaultUri
-        }
-        {
-          name: 'BLOB_STORAGE_CONNECTION_STRING'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${az.environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
-        }
-        {
-          name: 'ENVIRONMENT'
-          value: environment
-        }
-      ]
-    }
-    scmSiteAlsoStopped: false
-    clientAffinityEnabled: false
-    clientCertEnabled: false
-    clientCertMode: 'Required'
-    hostNamesDisabled: false
-    customDomainVerificationId: '333646C25EDA7C903C86F0F0D0193C412978B2E48FA0B4F1461D339FAFB40E4F'
-    containerSize: 1536
-    dailyMemoryTimeQuota: 0
-    httpsOnly: true
-    redundancyMode: 'None'
-    storageAccountRequired: false
-    keyVaultReferenceIdentity: 'SystemAssigned'
+// Function App with Deployment Slots
+module functionAppWithSlots 'modules/functionapp-with-slots.bicep' = {
+  name: 'functionAppWithSlots'
+  params: {
+    functionAppName: functionAppName
+    appServicePlanId: appServicePlan.id
+    location: location
+    storageConnectionString: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${az.environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
+    applicationInsightsConnectionString: applicationInsights.properties.ConnectionString
+    applicationInsightsInstrumentationKey: applicationInsights.properties.InstrumentationKey
+    sqlConnectionString: 'Driver={ODBC Driver 17 for SQL Server};Server=tcp:${sqlServer.properties.fullyQualifiedDomainName},1433;Database=${sqlDatabaseName};Uid=${sqlAdminLogin};Pwd=${sqlAdminPassword};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;'
+    keyVaultUrl: keyVault.properties.vaultUri
+    blobStorageConnectionString: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${az.environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
+    environment: environment
+    enableDeploymentSlots: true
   }
 }
 
-// Key Vault Access Policy for Function App
+// Key Vault Access Policy for Function App and Slots
 resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01' = {
   parent: keyVault
   name: 'add'
   properties: {
-    accessPolicies: [
+    accessPolicies: concat([
       {
         tenantId: subscription().tenantId
-        objectId: functionApp.identity.principalId
+        objectId: functionAppWithSlots.outputs.functionAppPrincipalId
         permissions: {
           keys: []
           secrets: [
@@ -381,7 +296,33 @@ resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-
           certificates: []
         }
       }
-    ]
+    ], functionAppWithSlots.outputs.stagingSlotPrincipalId != '' ? [
+      {
+        tenantId: subscription().tenantId
+        objectId: functionAppWithSlots.outputs.stagingSlotPrincipalId
+        permissions: {
+          keys: []
+          secrets: [
+            'get'
+            'list'
+          ]
+          certificates: []
+        }
+      }
+    ] : [], functionAppWithSlots.outputs.blueGreenSlotPrincipalId != '' ? [
+      {
+        tenantId: subscription().tenantId
+        objectId: functionAppWithSlots.outputs.blueGreenSlotPrincipalId
+        permissions: {
+          keys: []
+          secrets: [
+            'get'
+            'list'
+          ]
+          certificates: []
+        }
+      }
+    ] : [])
   }
 }
 
@@ -403,8 +344,10 @@ resource storageConnectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2023-0
 }
 
 // Outputs
-output functionAppName string = functionApp.name
-output functionAppUrl string = 'https://${functionApp.properties.defaultHostName}'
+output functionAppName string = functionAppWithSlots.outputs.functionAppName
+output functionAppUrl string = functionAppWithSlots.outputs.functionAppUrl
+output stagingSlotUrl string = functionAppWithSlots.outputs.stagingSlotUrl
+output blueGreenSlotUrl string = functionAppWithSlots.outputs.blueGreenSlotUrl
 output sqlServerName string = sqlServer.name
 output sqlDatabaseName string = sqlDatabase.name
 output keyVaultName string = keyVault.name

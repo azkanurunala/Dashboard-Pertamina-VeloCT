@@ -1,0 +1,341 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "title": "Azure Functions Deployment Configuration",
+  "description": "Configuration for blue-green deployment and validation settings",
+  "type": "object",
+  "properties": {
+    "deployment": {
+      "type": "object",
+      "properties": {
+        "slots": {
+          "type": "object",
+          "properties": {
+            "staging": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Enable staging slot for blue-green deployment"
+                },
+                "autoSwap": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Automatically swap to production after successful validation"
+                },
+                "warmupPingPath": {
+                  "type": "string",
+                  "default": "/api/test_function",
+                  "description": "Path to ping for slot warmup"
+                }
+              }
+            },
+            "blueGreen": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Enable blue-green deployment slot"
+                },
+                "useForCanaryDeployment": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Use blue-green slot for canary deployments"
+                }
+              }
+            }
+          }
+        },
+        "validation": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Enable deployment validation"
+            },
+            "timeoutSeconds": {
+              "type": "integer",
+              "default": 300,
+              "minimum": 60,
+              "maximum": 1800,
+              "description": "Validation timeout in seconds"
+            },
+            "healthCheckEndpoints": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "description": "Endpoint path to check"
+                  },
+                  "method": {
+                    "type": "string",
+                    "enum": ["GET", "POST", "PUT", "DELETE"],
+                    "default": "GET",
+                    "description": "HTTP method for health check"
+                  },
+                  "expectedStatus": {
+                    "type": "integer",
+                    "default": 200,
+                    "description": "Expected HTTP status code"
+                  },
+                  "timeoutSeconds": {
+                    "type": "integer",
+                    "default": 30,
+                    "description": "Individual endpoint timeout"
+                  },
+                  "retries": {
+                    "type": "integer",
+                    "default": 3,
+                    "description": "Number of retries for failed checks"
+                  }
+                },
+                "required": ["path"]
+              },
+              "default": [
+                {
+                  "path": "/api/test_function",
+                  "method": "GET",
+                  "expectedStatus": 200,
+                  "timeoutSeconds": 30,
+                  "retries": 3
+                }
+              ]
+            },
+            "performanceThresholds": {
+              "type": "object",
+              "properties": {
+                "averageResponseTimeMs": {
+                  "type": "integer",
+                  "default": 2000,
+                  "description": "Maximum acceptable average response time in milliseconds"
+                },
+                "maxResponseTimeMs": {
+                  "type": "integer",
+                  "default": 5000,
+                  "description": "Maximum acceptable response time for any single request"
+                },
+                "successRate": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "default": 0.95,
+                  "description": "Minimum success rate (0.0 to 1.0)"
+                }
+              }
+            }
+          }
+        },
+        "rollback": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Enable automatic rollback on validation failure"
+            },
+            "triggerOnValidationFailure": {
+              "type": "boolean",
+              "default": true,
+              "description": "Automatically rollback if post-deployment validation fails"
+            },
+            "triggerOnPerformanceIssues": {
+              "type": "boolean",
+              "default": true,
+              "description": "Automatically rollback if performance thresholds are exceeded"
+            },
+            "confirmationRequired": {
+              "type": "boolean",
+              "default": false,
+              "description": "Require manual confirmation before rollback"
+            }
+          }
+        }
+      }
+    },
+    "monitoring": {
+      "type": "object",
+      "properties": {
+        "applicationInsights": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Enable Application Insights monitoring"
+            },
+            "customMetrics": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "deployment.duration",
+                "deployment.success_rate",
+                "validation.response_time",
+                "rollback.triggered"
+              ],
+              "description": "Custom metrics to track during deployment"
+            }
+          }
+        },
+        "alerts": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Enable deployment alerts"
+            },
+            "channels": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["email", "teams", "slack", "webhook"]
+              },
+              "default": ["email"],
+              "description": "Alert notification channels"
+            }
+          }
+        }
+      }
+    },
+    "environments": {
+      "type": "object",
+      "properties": {
+        "dev": {
+          "type": "object",
+          "properties": {
+            "validation": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Skip validation in dev environment"
+                }
+              }
+            },
+            "rollback": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Disable rollback in dev environment"
+                }
+              }
+            }
+          }
+        },
+        "staging": {
+          "type": "object",
+          "properties": {
+            "validation": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Enable validation in staging environment"
+                },
+                "timeoutSeconds": {
+                  "type": "integer",
+                  "default": 180,
+                  "description": "Reduced timeout for staging"
+                }
+              }
+            }
+          }
+        },
+        "production": {
+          "type": "object",
+          "properties": {
+            "validation": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Always enable validation in production"
+                },
+                "timeoutSeconds": {
+                  "type": "integer",
+                  "default": 300,
+                  "description": "Full timeout for production validation"
+                }
+              }
+            },
+            "rollback": {
+              "type": "object",
+              "properties": {
+                "confirmationRequired": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Always require confirmation for production rollback"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "default": {
+    "deployment": {
+      "slots": {
+        "staging": {
+          "enabled": true,
+          "autoSwap": false,
+          "warmupPingPath": "/api/test_function"
+        },
+        "blueGreen": {
+          "enabled": true,
+          "useForCanaryDeployment": false
+        }
+      },
+      "validation": {
+        "enabled": true,
+        "timeoutSeconds": 300,
+        "healthCheckEndpoints": [
+          {
+            "path": "/api/test_function",
+            "method": "GET",
+            "expectedStatus": 200,
+            "timeoutSeconds": 30,
+            "retries": 3
+          }
+        ],
+        "performanceThresholds": {
+          "averageResponseTimeMs": 2000,
+          "maxResponseTimeMs": 5000,
+          "successRate": 0.95
+        }
+      },
+      "rollback": {
+        "enabled": true,
+        "triggerOnValidationFailure": true,
+        "triggerOnPerformanceIssues": true,
+        "confirmationRequired": false
+      }
+    },
+    "monitoring": {
+      "applicationInsights": {
+        "enabled": true,
+        "customMetrics": [
+          "deployment.duration",
+          "deployment.success_rate",
+          "validation.response_time",
+          "rollback.triggered"
+        ]
+      },
+      "alerts": {
+        "enabled": true,
+        "channels": ["email"]
+      }
+    }
+  }
+}

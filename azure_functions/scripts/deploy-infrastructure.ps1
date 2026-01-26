@@ -84,6 +84,9 @@ try {
     # Extract outputs
     $outputs = $deployment.properties.outputs
     $functionAppName = $outputs.functionAppName.value
+    $functionAppUrl = $outputs.functionAppUrl.value
+    $stagingSlotUrl = $outputs.stagingSlotUrl.value
+    $blueGreenSlotUrl = $outputs.blueGreenSlotUrl.value
     $sqlServerName = $outputs.sqlServerName.value
     $sqlDatabaseName = $outputs.sqlDatabaseName.value
     $keyVaultName = $outputs.keyVaultName.value
@@ -92,6 +95,9 @@ try {
     
     Write-Host "📋 Deployment Summary:" -ForegroundColor Cyan
     Write-Host "  Function App: $functionAppName" -ForegroundColor White
+    Write-Host "  Production URL: $functionAppUrl" -ForegroundColor White
+    Write-Host "  Staging Slot URL: $stagingSlotUrl" -ForegroundColor White
+    Write-Host "  Blue-Green Slot URL: $blueGreenSlotUrl" -ForegroundColor White
     Write-Host "  SQL Server: $sqlServerName" -ForegroundColor White
     Write-Host "  SQL Database: $sqlDatabaseName" -ForegroundColor White
     Write-Host "  Key Vault: $keyVaultName" -ForegroundColor White
@@ -162,12 +168,18 @@ Write-Host "`n🎉 Deployment completed successfully!" -ForegroundColor Green
 Write-Host "`n📝 Next Steps:" -ForegroundColor Cyan
 Write-Host "1. Review the generated .env.azure file" -ForegroundColor White
 Write-Host "2. Test database connection using the test scripts" -ForegroundColor White
-Write-Host "3. Deploy your Function App code" -ForegroundColor White
+Write-Host "3. Deploy your Function App code using deployment slots" -ForegroundColor White
 Write-Host "4. Configure Copilot API credentials in Key Vault" -ForegroundColor White
 
 Write-Host "`n🔗 Useful Commands:" -ForegroundColor Cyan
 Write-Host "  Test database: python tests/test_database_connection.py" -ForegroundColor White
-Write-Host "  Deploy functions: func azure functionapp publish $functionAppName" -ForegroundColor White
+Write-Host "  Deploy with slots: .\scripts\deploy-with-slots.ps1 -FunctionAppName $functionAppName" -ForegroundColor White
+Write-Host "  Blue-green deploy: .\scripts\blue-green-deploy.ps1 -FunctionAppName $functionAppName" -ForegroundColor White
 Write-Host "  View logs: func azure functionapp logstream $functionAppName" -ForegroundColor White
+Write-Host "  Rollback: .\scripts\rollback-deployment.ps1 -FunctionAppName $functionAppName" -ForegroundColor White
 
-Write-Host "`n✨ Infrastructure is ready for use!" -ForegroundColor Green
+Write-Host "`n📚 Documentation:" -ForegroundColor Cyan
+Write-Host "  Deployment Guide: DEPLOYMENT_SLOTS_GUIDE.md" -ForegroundColor White
+Write-Host "  Infrastructure Guide: DEPLOYMENT_GUIDE.md" -ForegroundColor White
+
+Write-Host "`n✨ Infrastructure with deployment slots is ready for use!" -ForegroundColor Green
