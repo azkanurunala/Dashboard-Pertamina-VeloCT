@@ -1,0 +1,14 @@
+{
+  "scriptFile": "../scheduler_function.py",
+  "entryPoint": "weekly_summary_timer",
+  "bindings": [
+    {
+      "name": "timer",
+      "type": "timerTrigger",
+      "direction": "in",
+      "schedule": "0 0 8 * * 0",
+      "runOnStartup": false,
+      "useMonitor": true
+    }
+  ]
+}

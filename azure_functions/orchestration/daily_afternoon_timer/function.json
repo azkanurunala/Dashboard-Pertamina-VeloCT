@@ -1,0 +1,14 @@
+{
+  "scriptFile": "../scheduler_function.py",
+  "entryPoint": "daily_afternoon_timer",
+  "bindings": [
+    {
+      "name": "timer",
+      "type": "timerTrigger",
+      "direction": "in",
+      "schedule": "0 0 14 * * *",
+      "runOnStartup": false,
+      "useMonitor": true
+    }
+  ]
+}

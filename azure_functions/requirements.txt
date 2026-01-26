@@ -1,0 +1,48 @@
+# Azure Functions Core
+azure-functions>=1.18.0
+azure-functions-worker>=1.2.0
+
+# Azure SDK
+azure-identity>=1.15.0
+azure-keyvault-secrets>=4.7.0
+azure-storage-blob>=12.19.0
+azure-monitor-opentelemetry>=1.2.0
+azure-applicationinsights>=0.11.10
+
+# Database
+pyodbc>=5.0.1
+sqlalchemy>=2.0.23
+alembic>=1.13.1
+
+# HTTP and Web Scraping
+aiohttp>=3.9.1
+beautifulsoup4>=4.12.2
+lxml>=4.9.3
+requests>=2.31.0
+selenium>=4.16.0
+
+# Data Processing
+pandas>=2.1.4
+numpy>=1.26.2
+openpyxl>=3.1.2
+
+# AI/ML Integration
+openai>=1.6.1
+httpx>=0.25.2
+
+# Utilities
+python-dateutil>=2.8.2
+pytz>=2023.3
+pydantic>=2.5.2
+tenacity>=8.2.3
+
+# Testing
+pytest>=7.4.3
+pytest-asyncio>=0.21.1
+pytest-mock>=3.12.0
+hypothesis>=6.92.1
+
+# Development
+black>=23.12.0
+flake8>=6.1.0
+mypy>=1.8.0
