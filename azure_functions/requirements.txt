@@ -1,13 +1,11 @@
 # Azure Functions Core
 azure-functions>=1.18.0
-azure-functions-worker>=1.2.0
 
 # Azure SDK
 azure-identity>=1.15.0
 azure-keyvault-secrets>=4.7.0
 azure-storage-blob>=12.19.0
 azure-monitor-opentelemetry>=1.2.0
-azure-applicationinsights>=0.11.10
 
 # Database
 pyodbc>=5.0.1

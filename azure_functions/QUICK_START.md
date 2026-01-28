@@ -1,5 +1,19 @@
 # 🚀 Quick Start Guide - Migrasi ke Azure
 
+## 📌 Resource Yang Sudah Ada
+
+| Resource | Nama |
+|----------|------|
+| Resource Group | `PeiDashboard` |
+| Key Vault | `PeiDashboard` |
+| SQL Server | `pei-dashboard` |
+| SQL Database | `pei-dashboard` |
+| Function App | `pei-dashboard` |
+| Function URL | `pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net` |
+| Location | Canada Central |
+
+---
+
 ## Untuk Yang Ingin Langsung Mulai!
 
 Panduan singkat untuk memulai migrasi dalam 30 menit pertama.
@@ -30,39 +44,25 @@ az login
 # Pilih subscription
 az account list --output table
 az account set --subscription "NAMA_SUBSCRIPTION_ANDA"
-
-# Buat resource groups
-az group create --name rg-functions-newscraper --location southeastasia
-az group create --name rg-database-newscraper --location southeastasia
 ```
 
-### 3. Buat SQL Database (10 menit)
+### 3. Configure SQL Database Firewall (5 menit)
 ```powershell
-# Ganti [NAMA_UNIK] dengan nama Anda (contoh: pertamina01)
-$UNIQUE_NAME = "pertamina01"
-
-# Buat SQL Server
-az sql server create `
-  --name "sql-newscraper-$UNIQUE_NAME" `
-  --resource-group rg-database-newscraper `
-  --location southeastasia `
-  --admin-user sqladmin `
-  --admin-password "P@ssw0rd123!Strong"
-
-# Buat Database
-az sql db create `
-  --resource-group rg-database-newscraper `
-  --server "sql-newscraper-$UNIQUE_NAME" `
-  --name NewsScraperDB `
-  --service-objective S0
-
 # Allow Azure services
 az sql server firewall-rule create `
-  --resource-group rg-database-newscraper `
-  --server "sql-newscraper-$UNIQUE_NAME" `
+  --resource-group PeiDashboard `
+  --server pei-dashboard `
   --name AllowAzureServices `
   --start-ip-address 0.0.0.0 `
   --end-ip-address 0.0.0.0
+
+# Allow your IP
+az sql server firewall-rule create `
+  --resource-group PeiDashboard `
+  --server pei-dashboard `
+  --name AllowMyIP `
+  --start-ip-address [IP_ANDA] `
+  --end-ip-address [IP_ANDA]
 ```
 
 ### 4. Get Connection String (5 menit)
@@ -70,45 +70,46 @@ az sql server firewall-rule create `
 # Get connection string
 az sql db show-connection-string `
   --client ado.net `
-  --server "sql-newscraper-$UNIQUE_NAME" `
-  --name NewsScraperDB
+  --server pei-dashboard `
+  --name pei-dashboard
 
 # Simpan output ini! Akan digunakan nanti.
 ```
 
-**✅ Checkpoint:** Anda sudah punya database Azure SQL yang siap digunakan!
+**✅ Checkpoint:** Database sudah ready!
 
 ---
 
 ## 🎯 Hari Pertama (2-3 jam)
 
-### Setup Storage & Key Vault
+### Setup Storage Account
 
 ```powershell
-$UNIQUE_NAME = "pertamina01"  # Ganti dengan nama Anda
-
 # 1. Buat Storage Account
 az storage account create `
-  --name "stnewscraper$UNIQUE_NAME" `
-  --resource-group rg-functions-newscraper `
+  --name stpeidashboard `
+  --resource-group PeiDashboard `
   --location southeastasia `
   --sku Standard_LRS
 
-# 2. Buat Key Vault
-az keyvault create `
-  --name "kv-newscraper-$UNIQUE_NAME" `
-  --resource-group rg-functions-newscraper `
-  --location southeastasia
+# 2. Get Storage Connection String
+az storage account show-connection-string `
+  --name stpeidashboard `
+  --resource-group PeiDashboard `
+  --output tsv
+```
 
-# 3. Simpan connection strings ke Key Vault
-# (Ganti [CONNECTION_STRING] dengan yang didapat sebelumnya)
+### Simpan Secrets ke Key Vault
+
+```powershell
+# Simpan connection strings ke Key Vault
 az keyvault secret set `
-  --vault-name "kv-newscraper-$UNIQUE_NAME" `
+  --vault-name PeiDashboard `
   --name DatabaseConnectionString `
   --value "[CONNECTION_STRING_DATABASE]"
 
 az keyvault secret set `
-  --vault-name "kv-newscraper-$UNIQUE_NAME" `
+  --vault-name PeiDashboard `
   --name StorageConnectionString `
   --value "[CONNECTION_STRING_STORAGE]"
 ```
@@ -116,14 +117,12 @@ az keyvault secret set `
 ### Setup Database Schema
 
 ```powershell
-# Download Azure Data Studio atau SQL Server Management Studio
-# Atau gunakan Azure CLI:
-
+# Jalankan schema SQL
 az sql db query `
-  --server "sql-newscraper-$UNIQUE_NAME" `
-  --database NewsScraperDB `
+  --server pei-dashboard `
+  --database pei-dashboard `
   --admin-user sqladmin `
-  --admin-password "P@ssw0rd123!Strong" `
+  --admin-password "[PASSWORD_ANDA]" `
   --file azure_functions/shared/database_schema.sql
 ```
 
@@ -136,12 +135,10 @@ az sql db query `
 ### Setup Azure OpenAI (untuk Copilot)
 
 ```powershell
-$UNIQUE_NAME = "pertamina01"
-
 # Buat Azure OpenAI resource
 az cognitiveservices account create `
-  --name "openai-newscraper-$UNIQUE_NAME" `
-  --resource-group rg-functions-newscraper `
+  --name openai-pei-dashboard `
+  --resource-group PeiDashboard `
   --kind OpenAI `
   --sku S0 `
   --location eastus `
@@ -149,19 +146,19 @@ az cognitiveservices account create `
 
 # Get API key
 az cognitiveservices account keys list `
-  --name "openai-newscraper-$UNIQUE_NAME" `
-  --resource-group rg-functions-newscraper
+  --name openai-pei-dashboard `
+  --resource-group PeiDashboard
 
 # Get endpoint
 az cognitiveservices account show `
-  --name "openai-newscraper-$UNIQUE_NAME" `
-  --resource-group rg-functions-newscraper `
+  --name openai-pei-dashboard `
+  --resource-group PeiDashboard `
   --query properties.endpoint
 
 # Deploy GPT-4 model
 az cognitiveservices account deployment create `
-  --name "openai-newscraper-$UNIQUE_NAME" `
-  --resource-group rg-functions-newscraper `
+  --name openai-pei-dashboard `
+  --resource-group PeiDashboard `
   --deployment-name gpt-4 `
   --model-name gpt-4 `
   --model-version "0613" `
@@ -171,12 +168,12 @@ az cognitiveservices account deployment create `
 
 # Simpan API key dan endpoint ke Key Vault
 az keyvault secret set `
-  --vault-name "kv-newscraper-$UNIQUE_NAME" `
+  --vault-name PeiDashboard `
   --name CopilotApiKey `
   --value "[API_KEY_DARI_OUTPUT_DI_ATAS]"
 
 az keyvault secret set `
-  --vault-name "kv-newscraper-$UNIQUE_NAME" `
+  --vault-name PeiDashboard `
   --name CopilotEndpoint `
   --value "[ENDPOINT_DARI_OUTPUT_DI_ATAS]"
 ```
@@ -197,10 +194,10 @@ python shared/excel_migration.py
 
 # Verifikasi
 az sql db query `
-  --server "sql-newscraper-$UNIQUE_NAME" `
-  --database NewsScraperDB `
+  --server pei-dashboard `
+  --database pei-dashboard `
   --admin-user sqladmin `
-  --admin-password "P@ssw0rd123!Strong" `
+  --admin-password "[PASSWORD_ANDA]" `
   --query "SELECT COUNT(*) as total FROM news_articles"
 ```
 
@@ -210,52 +207,45 @@ az sql db query `
 
 ## 🚀 Hari Ketiga (2-3 jam)
 
-### Deploy Azure Functions
+### Function App (Sudah Ada ✅)
+Function App sudah ada:
+- **Name:** `pei-dashboard`
+- **URL:** `pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net`
+- **Location:** Canada Central
+
+### Configure Azure Functions
 
 ```powershell
-$UNIQUE_NAME = "pertamina01"
-
-# 1. Buat Function App
-az functionapp create `
-  --resource-group rg-functions-newscraper `
-  --consumption-plan-location southeastasia `
-  --runtime python `
-  --runtime-version 3.9 `
-  --functions-version 4 `
-  --name "func-newscraper-$UNIQUE_NAME" `
-  --storage-account "stnewscraper$UNIQUE_NAME" `
-  --os-type Linux
-
-# 2. Enable Managed Identity
+# 1. Enable Managed Identity
 az functionapp identity assign `
-  --name "func-newscraper-$UNIQUE_NAME" `
-  --resource-group rg-functions-newscraper
+  --name pei-dashboard `
+  --resource-group PeiDashboard
 
-# 3. Grant Key Vault access
+# 2. Grant Key Vault access
 $PRINCIPAL_ID = az functionapp identity show `
-  --name "func-newscraper-$UNIQUE_NAME" `
-  --resource-group rg-functions-newscraper `
+  --name pei-dashboard `
+  --resource-group PeiDashboard `
   --query principalId -o tsv
 
 az keyvault set-policy `
-  --name "kv-newscraper-$UNIQUE_NAME" `
+  --name PeiDashboard `
   --object-id $PRINCIPAL_ID `
   --secret-permissions get list
 
-# 4. Configure app settings
+# 3. Configure app settings
 az functionapp config appsettings set `
-  --name "func-newscraper-$UNIQUE_NAME" `
-  --resource-group rg-functions-newscraper `
+  --name pei-dashboard `
+  --resource-group PeiDashboard `
   --settings `
-    "KEY_VAULT_URL=https://kv-newscraper-$UNIQUE_NAME.vault.azure.net/" `
-    "DatabaseConnectionString=@Microsoft.KeyVault(SecretUri=https://kv-newscraper-$UNIQUE_NAME.vault.azure.net/secrets/DatabaseConnectionString/)" `
-    "StorageConnectionString=@Microsoft.KeyVault(SecretUri=https://kv-newscraper-$UNIQUE_NAME.vault.azure.net/secrets/StorageConnectionString/)" `
-    "CopilotApiKey=@Microsoft.KeyVault(SecretUri=https://kv-newscraper-$UNIQUE_NAME.vault.azure.net/secrets/CopilotApiKey/)" `
-    "CopilotEndpoint=@Microsoft.KeyVault(SecretUri=https://kv-newscraper-$UNIQUE_NAME.vault.azure.net/secrets/CopilotEndpoint/)"
+    "KEY_VAULT_URL=https://PeiDashboard.vault.azure.net/" `
+    "DatabaseConnectionString=@Microsoft.KeyVault(SecretUri=https://PeiDashboard.vault.azure.net/secrets/DatabaseConnectionString/)" `
+    "StorageConnectionString=@Microsoft.KeyVault(SecretUri=https://PeiDashboard.vault.azure.net/secrets/StorageConnectionString/)" `
+    "CopilotApiKey=@Microsoft.KeyVault(SecretUri=https://PeiDashboard.vault.azure.net/secrets/CopilotApiKey/)" `
+    "CopilotEndpoint=@Microsoft.KeyVault(SecretUri=https://PeiDashboard.vault.azure.net/secrets/CopilotEndpoint/)"
 
-# 5. Deploy functions
+# 4. Deploy functions
 cd azure_functions
-func azure functionapp publish "func-newscraper-$UNIQUE_NAME" --python
+func azure functionapp publish pei-dashboard --python
 ```
 
 **⏳ Tunggu 5-10 menit untuk deployment selesai...**
@@ -269,10 +259,8 @@ func azure functionapp publish "func-newscraper-$UNIQUE_NAME" --python
 ### Test Scraper Function
 
 ```powershell
-$UNIQUE_NAME = "pertamina01"
-
 # Test CNBC scraper
-$FUNCTION_URL = "https://func-newscraper-$UNIQUE_NAME.azurewebsites.net/api/cnbc_scraper_function"
+$FUNCTION_URL = "https://func-pei-dashboard.azurewebsites.net/api/cnbc_scraper_function"
 
 curl -X POST $FUNCTION_URL `
   -H "Content-Type: application/json" `
@@ -283,10 +271,10 @@ curl -X POST $FUNCTION_URL `
 
 ```powershell
 az sql db query `
-  --server "sql-newscraper-$UNIQUE_NAME" `
-  --database NewsScraperDB `
+  --server pei-dashboard `
+  --database pei-dashboard `
   --admin-user sqladmin `
-  --admin-password "P@ssw0rd123!Strong" `
+  --admin-password "[PASSWORD_ANDA]" `
   --query "SELECT TOP 10 title, source, published_date FROM news_articles ORDER BY scraped_date DESC"
 ```
 
@@ -299,31 +287,29 @@ az sql db query `
 ### Enable Application Insights
 
 ```powershell
-$UNIQUE_NAME = "pertamina01"
-
 # Buat Application Insights
 az monitor app-insights component create `
-  --app "appinsights-newscraper" `
+  --app appinsights-pei-dashboard `
   --location southeastasia `
-  --resource-group rg-functions-newscraper
+  --resource-group PeiDashboard
 
 # Get instrumentation key
 $INSTRUMENTATION_KEY = az monitor app-insights component show `
-  --app "appinsights-newscraper" `
-  --resource-group rg-functions-newscraper `
+  --app appinsights-pei-dashboard `
+  --resource-group PeiDashboard `
   --query instrumentationKey -o tsv
 
 # Configure Function App
 az functionapp config appsettings set `
-  --name "func-newscraper-$UNIQUE_NAME" `
-  --resource-group rg-functions-newscraper `
+  --name func-pei-dashboard `
+  --resource-group PeiDashboard `
   --settings "APPINSIGHTS_INSTRUMENTATIONKEY=$INSTRUMENTATION_KEY"
 ```
 
 ### View Logs
 
 1. Buka Azure Portal: https://portal.azure.com
-2. Go to Function App > func-newscraper-[NAMA_ANDA]
+2. Go to Function App > func-pei-dashboard
 3. Click "Monitor" > "Logs"
 4. View real-time logs
 
@@ -374,23 +360,23 @@ Untuk detail lengkap, lihat:
 ```powershell
 # Check logs
 az functionapp log tail `
-  --name "func-newscraper-$UNIQUE_NAME" `
-  --resource-group rg-functions-newscraper
+  --name func-pei-dashboard `
+  --resource-group PeiDashboard
 ```
 
 **Issue: Database connection failed**
 ```powershell
 # Check firewall rules
 az sql server firewall-rule list `
-  --server "sql-newscraper-$UNIQUE_NAME" `
-  --resource-group rg-database-newscraper
+  --server pei-dashboard `
+  --resource-group PeiDashboard
 ```
 
 **Issue: Key Vault access denied**
 ```powershell
 # Re-grant access
 az keyvault set-policy `
-  --name "kv-newscraper-$UNIQUE_NAME" `
+  --name PeiDashboard `
   --object-id $PRINCIPAL_ID `
   --secret-permissions get list
 ```
@@ -399,11 +385,10 @@ az keyvault set-policy `
 
 ## 💡 Pro Tips
 
-1. **Use Unique Names**: Ganti `pertamina01` dengan nama unik Anda
-2. **Save Passwords**: Simpan semua passwords di password manager
-3. **Document Everything**: Catat semua resource names
-4. **Test Incrementally**: Test setiap step sebelum lanjut
-5. **Monitor Costs**: Setup cost alerts dari awal
+1. **Save Passwords**: Simpan semua passwords di password manager
+2. **Document Everything**: Catat semua resource names
+3. **Test Incrementally**: Test setiap step sebelum lanjut
+4. **Monitor Costs**: Setup cost alerts dari awal
 
 ---
 

@@ -1,0 +1,24 @@
+2026-01-28T10:03:30   [Information]   Executing StatusCodeResult, setting HTTP status code 200
+2026-01-28T10:03:32   [Verbose]   Request successfully matched the route with name 'cnbc_scraper_function' and template 'api/cnbc_scraper_function'
+2026-01-28T10:03:32   [Verbose]   AuthenticationScheme: WebJobsAuthLevel was successfully authenticated.
+2026-01-28T10:03:32   [Verbose]   Authorization was successful.
+2026-01-28T10:03:32   [Information]   Executing 'Functions.cnbc_scraper_function' (Reason='This function was programmatically called via the host APIs.', Id=06e3b788-18d3-4eab-bb3b-facaa6edaf65)
+2026-01-28T10:03:32   [Verbose]   Sending invocation id: '06e3b788-18d3-4eab-bb3b-facaa6edaf65
+2026-01-28T10:03:32   [Verbose]   Posting invocation id:06e3b788-18d3-4eab-bb3b-facaa6edaf65 on workerId:d283c4f7-9a3a-4bee-a1f4-b43b5c37b4f7
+2026-01-28T10:03:32   [Error]   Executed 'Functions.cnbc_scraper_function' (Failed, Id=06e3b788-18d3-4eab-bb3b-facaa6edaf65, Duration=1ms)
+2026-01-28T10:03:32   [Verbose]   Waiting for `00:00:02` before retrying function execution. Next attempt: '1'. Max retry count: '3'.
+2026-01-28T10:03:34   [Information]   Executing 'Functions.cnbc_scraper_function' (Reason='This function was programmatically called via the host APIs.', Id=30dc0d3e-3aae-49b1-8757-73e8cef1e9a6)
+2026-01-28T10:03:34   [Verbose]   Sending invocation id: '30dc0d3e-3aae-49b1-8757-73e8cef1e9a6
+2026-01-28T10:03:34   [Verbose]   Posting invocation id:30dc0d3e-3aae-49b1-8757-73e8cef1e9a6 on workerId:d283c4f7-9a3a-4bee-a1f4-b43b5c37b4f7
+2026-01-28T10:03:34   [Error]   Executed 'Functions.cnbc_scraper_function' (Failed, Id=30dc0d3e-3aae-49b1-8757-73e8cef1e9a6, Duration=2ms)
+2026-01-28T10:03:34   [Verbose]   Waiting for `00:00:04.0832402` before retrying function execution. Next attempt: '2'. Max retry count: '3'.
+2026-01-28T10:03:38   [Information]   Executing 'Functions.cnbc_scraper_function' (Reason='This function was programmatically called via the host APIs.', Id=3a4c88d3-6ca4-4cb8-be0d-82c06a635b1e)
+2026-01-28T10:03:38   [Verbose]   Sending invocation id: '3a4c88d3-6ca4-4cb8-be0d-82c06a635b1e
+2026-01-28T10:03:38   [Verbose]   Posting invocation id:3a4c88d3-6ca4-4cb8-be0d-82c06a635b1e on workerId:d283c4f7-9a3a-4bee-a1f4-b43b5c37b4f7
+2026-01-28T10:03:38   [Error]   Executed 'Functions.cnbc_scraper_function' (Failed, Id=3a4c88d3-6ca4-4cb8-be0d-82c06a635b1e, Duration=3ms)
+2026-01-28T10:03:38   [Verbose]   Waiting for `00:00:06.3694101` before retrying function execution. Next attempt: '3'. Max retry count: '3'.
+2026-01-28T10:03:44   [Information]   Executing 'Functions.cnbc_scraper_function' (Reason='This function was programmatically called via the host APIs.', Id=8371548c-2053-45b9-bb37-43543c1d7a71)
+2026-01-28T10:03:44   [Verbose]   Sending invocation id: '8371548c-2053-45b9-bb37-43543c1d7a71
+2026-01-28T10:03:44   [Verbose]   Posting invocation id:8371548c-2053-45b9-bb37-43543c1d7a71 on workerId:d283c4f7-9a3a-4bee-a1f4-b43b5c37b4f7
+2026-01-28T10:03:44   [Error]   Executed 'Functions.cnbc_scraper_function' (Failed, Id=8371548c-2053-45b9-bb37-43543c1d7a71, Duration=2ms)
+2026-01-28T10:03:44   [Error]   Function execution failed after '3' retries.

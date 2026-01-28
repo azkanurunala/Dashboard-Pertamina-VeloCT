@@ -9,6 +9,11 @@ import os
 from datetime import datetime
 import azure.functions as func
 
+# Import config helpers
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from shared.config import get_database_connection_string, _get_key_vault_secret
+
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     """Main function untuk test endpoint."""
@@ -106,27 +111,41 @@ def test_configuration() -> dict:
 
 
 def test_database_config() -> dict:
-    """Test database configuration (tidak test koneksi aktual)."""
+    """Test database configuration and Key Vault access."""
     try:
-        connection_string = os.getenv('SQL_SERVER_CONNECTION_STRING')
+        # Test environment variable
+        env_var = os.getenv('DatabaseConnectionString')
         
-        if connection_string:
-            # Basic validation of connection string format
-            required_parts = ['Server=', 'Database=', 'Uid=', 'Pwd=']
-            has_all_parts = all(part in connection_string for part in required_parts)
-            
-            return {
-                "passed": has_all_parts,
-                "connection_string_present": True,
-                "connection_string_valid": has_all_parts,
-                "message": "Database configuration found and validated"
-            }
-        else:
-            return {
-                "passed": False,
-                "connection_string_present": False,
-                "message": "Database connection string not found"
-            }
+        # Test Key Vault access
+        key_vault_url = os.getenv('KEY_VAULT_URL')
+        kv_secret = None
+        kv_error = None
+        
+        if key_vault_url:
+            try:
+                kv_secret = _get_key_vault_secret('DatabaseConnectionString')
+            except Exception as e:
+                kv_error = str(e)
+        
+        # Try to get connection string using our helper
+        connection_string = None
+        helper_error = None
+        try:
+            connection_string = get_database_connection_string()
+        except Exception as e:
+            helper_error = str(e)
+        
+        return {
+            "passed": connection_string is not None,
+            "env_variable_present": env_var is not None,
+            "env_variable_value": env_var[:50] + "..." if env_var and len(env_var) > 50 else env_var,
+            "key_vault_url": key_vault_url,
+            "key_vault_secret_retrieved": kv_secret is not None,
+            "key_vault_error": kv_error,
+            "connection_string_retrieved": connection_string is not None,
+            "helper_error": helper_error,
+            "message": "Database configuration check completed"
+        }
             
     except Exception as e:
         return {

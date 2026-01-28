@@ -9,12 +9,59 @@ import asyncio
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 import azure.functions as func
+import sys
+import os
 
-from ..scrapers.reuters_scraper import ReutersNewsScraper
-from ..shared.models import NewsArticle
-from ..shared.database_handler import DatabaseHandler
-from ..shared.config import get_database_connection_string
-from ..shared.logging_config import setup_logging
+# Add parent directory to Python path for absolute imports
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+
+# Detailed import error logging
+try:
+    from scrapers.reuters_scraper import ReutersNewsScraper
+    logging.info("✓ Successfully imported ReutersNewsScraper")
+except Exception as e:
+    logging.error(f"✗ IMPORT ERROR - ReutersNewsScraper: {str(e)}", exc_info=True)
+    raise
+
+try:
+    from shared.models import NewsArticle
+    logging.info("✓ Successfully imported NewsArticle")
+except Exception as e:
+    logging.error(f"✗ IMPORT ERROR - NewsArticle: {str(e)}", exc_info=True)
+    raise
+
+try:
+    from shared.database_handler import DatabaseHandler
+    logging.info("✓ Successfully imported DatabaseHandler")
+except Exception as e:
+    logging.error(f"✗ IMPORT ERROR - DatabaseHandler: {str(e)}", exc_info=True)
+    raise
+
+try:
+    from shared.config import get_database_connection_string
+    logging.info("✓ Successfully imported get_database_connection_string")
+except Exception as e:
+    logging.error(f"✗ IMPORT ERROR - get_database_connection_string: {str(e)}", exc_info=True)
+    raise
+
+try:
+    from shared.logging_config import setup_logging
+    logging.info("✓ Successfully imported setup_logging")
+except Exception as e:
+    logging.error(f"✗ IMPORT ERROR - setup_logging: {str(e)}", exc_info=True)
+    raise
+
+try:
+    from shared.azure_logging import AzureLoggingManager
+    logging.info("✓ Successfully imported AzureLoggingManager")
+except Exception as e:
+    logging.error(f"✗ IMPORT ERROR - AzureLoggingManager: {str(e)}", exc_info=True)
+    raise
+
+logging.info("✓✓✓ ALL IMPORTS SUCCESSFUL FOR REUTERS SCRAPER ✓✓✓")
 
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
@@ -28,16 +75,41 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     - save_to_db: Whether to save results to database (optional, defaults to true)
     """
     setup_logging()
-    logger = logging.getLogger(__name__)
-    logger.info('Reuters scraper function triggered')
+    
+    # Initialize comprehensive logging
+    correlation_id = req.headers.get('x-correlation-id')
+    log_manager = AzureLoggingManager(
+        function_name="reuters_scraper_function",
+        correlation_id=correlation_id
+    )
     
     try:
         # Parse request parameters
         params = _parse_request_parameters(req)
-        logger.info(f"Scraping Reuters with parameters: {params}")
+        
+        # Log function start
+        log_manager.log_function_start(
+            trigger_type="http",
+            parameters={
+                "keywords": params['keywords'],
+                "start_date": params['start_date'].isoformat(),
+                "end_date": params['end_date'].isoformat(),
+                "save_to_db": params['save_to_db']
+            }
+        )
         
         # Run the scraping operation
-        result = asyncio.run(_scrape_reuters_news(params))
+        result = asyncio.run(_scrape_reuters_news(params, log_manager))
+        
+        # Log function completion
+        log_manager.log_function_end(
+            status="success",
+            result_summary={
+                "articles_found": result['results']['articles_found'],
+                "articles_saved": result['results']['articles_saved'],
+                "execution_time_seconds": result['execution_time_seconds']
+            }
+        )
         
         # Return successful response
         return func.HttpResponse(
@@ -47,12 +119,27 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         )
         
     except ValueError as e:
-        logger.error(f"Parameter validation error: {str(e)}")
+        # Log parameter validation error
+        log_manager.log_error(
+            error=e,
+            context_data={
+                "error_type": "parameter_validation",
+                "operation": "parse_parameters"
+            }
+        )
+        
+        log_manager.log_function_end(
+            status="failed",
+            result_summary={"error": "Invalid parameters", "message": str(e)}
+        )
+        
         return func.HttpResponse(
             json.dumps({
                 "status": "error",
                 "error": "Invalid parameters",
                 "message": str(e),
+                "error_type": "ValueError",
+                "execution_id": log_manager.execution_id,
                 "timestamp": datetime.utcnow().isoformat()
             }),
             status_code=400,
@@ -60,12 +147,34 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         )
         
     except Exception as e:
-        logger.error(f"Reuters scraper function error: {str(e)}", exc_info=True)
+        # Log unexpected error
+        log_manager.log_error(
+            error=e,
+            context_data={
+                "error_type": "unexpected_error",
+                "operation": "scraping",
+                "parameters": params if 'params' in locals() else {}
+            }
+        )
+        
+        log_manager.log_function_end(
+            status="failed",
+            result_summary={"error": "Internal server error", "message": str(e)}
+        )
+        
+        # Get detailed error info
+        import traceback
+        error_traceback = traceback.format_exc()
+        
         return func.HttpResponse(
             json.dumps({
                 "status": "error",
+                "source": "Reuters",
                 "error": "Internal server error",
                 "message": str(e),
+                "error_type": type(e).__name__,
+                "execution_id": log_manager.execution_id,
+                "traceback": error_traceback.split('\n')[-5:],  # Last 5 lines
                 "timestamp": datetime.utcnow().isoformat()
             }),
             status_code=500,
@@ -144,20 +253,40 @@ def _parse_request_parameters(req: func.HttpRequest) -> Dict[str, Any]:
     }
 
 
-async def _scrape_reuters_news(params: Dict[str, Any]) -> Dict[str, Any]:
+async def _scrape_reuters_news(params: Dict[str, Any], log_manager: AzureLoggingManager) -> Dict[str, Any]:
     """
     Perform Reuters news scraping operation.
     
     Args:
         params: Parsed request parameters
+        log_manager: Azure logging manager instance
         
     Returns:
         Dictionary with scraping results
     """
-    logger = logging.getLogger(__name__)
     start_time = datetime.utcnow()
     
+    # Log scraping start
+    log_manager.log_scraping_start(
+        source="Reuters",
+        keywords=params['keywords'],
+        date_range={
+            'start': params['start_date'].isoformat(),
+            'end': params['end_date'].isoformat()
+        }
+    )
+    
     try:
+        # Start scraping operation
+        operation_id = log_manager.log_operation_start(
+            operation_name="scrape_articles",
+            details={
+                "source": "Reuters",
+                "keywords_count": len(params['keywords']),
+                "date_range_days": (params['end_date'] - params['start_date']).days
+            }
+        )
+        
         # Initialize scraper
         async with ReutersNewsScraper() as scraper:
             # Scrape articles
@@ -167,27 +296,77 @@ async def _scrape_reuters_news(params: Dict[str, Any]) -> Dict[str, Any]:
                 end_date=params['end_date']
             )
             
-            logger.info(f"Successfully scraped {len(articles)} articles from Reuters")
+            # Log articles found
+            log_manager.log_scraping_articles_found(
+                count=len(articles),
+                parsing_success_rate=100.0 if articles else 0.0
+            )
             
             # Save to database if requested
             saved_count = 0
             if params['save_to_db'] and articles:
                 try:
+                    db_start = datetime.utcnow()
                     connection_string = get_database_connection_string()
+                    
                     async with DatabaseHandler(connection_string) as db:
                         saved_count = await db.save_articles(articles)
-                        logger.info(f"Saved {saved_count} articles to database")
+                        
+                    db_duration = (datetime.utcnow() - db_start).total_seconds() * 1000
+                    
+                    # Log database operation
+                    log_manager.log_database_operation(
+                        operation="INSERT",
+                        table="news_articles",
+                        row_count=saved_count,
+                        duration_ms=db_duration
+                    )
+                    
+                    # Log articles saved
+                    log_manager.log_scraping_articles_saved(
+                        saved_count=saved_count,
+                        duplicate_count=len(articles) - saved_count,
+                        duration_ms=db_duration
+                    )
+                    
                 except Exception as e:
-                    logger.error(f"Failed to save articles to database: {e}")
+                    # Log database error
+                    log_manager.log_database_error(
+                        error=e,
+                        query_type="INSERT",
+                        table="news_articles"
+                    )
                     # Continue without failing the entire operation
             
-            # Prepare response
+            # Calculate execution time
             execution_time = (datetime.utcnow() - start_time).total_seconds()
+            execution_time_ms = execution_time * 1000
             
+            # Log scraping end
+            log_manager.log_scraping_end(
+                articles_scraped=len(articles),
+                articles_saved=saved_count,
+                duration_ms=execution_time_ms
+            )
+            
+            # Log operation end
+            log_manager.log_operation_end(
+                operation_id=operation_id,
+                status="success",
+                metrics={
+                    "articles_found": len(articles),
+                    "articles_saved": saved_count,
+                    "execution_time_ms": execution_time_ms
+                }
+            )
+            
+            # Prepare response
             return {
                 "status": "success",
                 "source": "Reuters",
                 "execution_time_seconds": execution_time,
+                "execution_id": log_manager.execution_id,
+                "correlation_id": log_manager.correlation_id,
                 "parameters": {
                     "keywords": params['keywords'],
                     "start_date": params['start_date'].isoformat(),
@@ -204,7 +383,25 @@ async def _scrape_reuters_news(params: Dict[str, Any]) -> Dict[str, Any]:
             
     except Exception as e:
         execution_time = (datetime.utcnow() - start_time).total_seconds()
-        logger.error(f"Reuters scraping failed after {execution_time}s: {e}")
+        
+        # Log error
+        log_manager.log_error(
+            error=e,
+            context_data={
+                "operation": "scraping",
+                "source": "Reuters",
+                "execution_time_seconds": execution_time
+            }
+        )
+        
+        # Log operation end with failure
+        if 'operation_id' in locals():
+            log_manager.log_operation_end(
+                operation_id=operation_id,
+                status="failed",
+                metrics={"execution_time_seconds": execution_time}
+            )
+        
         raise
 
 

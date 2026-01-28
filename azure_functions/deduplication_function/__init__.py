@@ -9,12 +9,20 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 
 import azure.functions as func
+import sys
+import os
 
-from ..shared.database_handler import DatabaseHandler, create_database_handler
-from ..shared.models import DatabaseConfig, ExecutionResult, FunctionStatus
-from ..shared.config import get_database_config
-from ..shared.logging_config import get_logger
-from ..shared.interfaces import DatabaseError
+# Add parent directory to Python path for absolute imports
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+
+from shared.database_handler import DatabaseHandler, create_database_handler
+from shared.models import DatabaseConfig, ExecutionResult, FunctionStatus
+from shared.config import get_database_config
+from shared.logging_config import get_logger
+from shared.interfaces import DatabaseError
 
 
 async def main(req: func.HttpRequest) -> func.HttpResponse:

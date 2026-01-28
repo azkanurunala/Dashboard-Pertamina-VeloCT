@@ -1,5 +1,19 @@
 # 📘 Panduan Migrasi ke Azure - Step by Step
 
+## 📌 Resource Yang Sudah Ada
+
+| Resource | Nama |
+|----------|------|
+| Resource Group | `PeiDashboard` |
+| Key Vault | `PeiDashboard` |
+| SQL Server | `pei-dashboard` |
+| SQL Database | `pei-dashboard` |
+| Function App | `pei-dashboard` |
+| Function URL | `pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net` |
+| Location | Canada Central |
+
+---
+
 ## Daftar Isi
 1. [Persiapan Awal](#1-persiapan-awal)
 2. [Setup Azure Accounts](#2-setup-azure-accounts)
@@ -19,7 +33,7 @@
 ## 1. Persiapan Awal
 
 ### 1.1 Checklist Kebutuhan
-- [ ] Azure Subscription (minimal 3 subscriptions untuk security isolation)
+- [ ] Azure Subscription
 - [ ] Azure CLI installed di komputer
 - [ ] Python 3.9+ installed
 - [ ] Azure Functions Core Tools installed
@@ -67,63 +81,41 @@ pip install -r requirements.txt
 
 ## 2. Setup Azure Accounts
 
-### 2.1 Buat 3 Resource Groups Terpisah
-Untuk security isolation, kita akan buat 3 resource groups:
-
-```bash
-# Resource Group 1: Azure Functions
-az group create --name rg-functions-newscraper --location southeastasia
-
-# Resource Group 2: Azure SQL Database
-az group create --name rg-database-newscraper --location southeastasia
-
-# Resource Group 3: Microsoft Copilot (jika terpisah)
-az group create --name rg-copilot-newscraper --location southeastasia
-```
+### 2.1 Resource Group (Sudah Ada ✅)
+Resource Group sudah dibuat dengan nama: `PeiDashboard`
 
 ### 2.2 Catat Informasi Penting
 Buat file `deployment-info.txt` dan catat:
 ```
 Subscription ID: [ISI_DISINI]
-Resource Group Functions: rg-functions-newscraper
-Resource Group Database: rg-database-newscraper
-Resource Group Copilot: rg-copilot-newscraper
-Location: southeastasia
+Resource Group: PeiDashboard
+Key Vault: PeiDashboard
+SQL Server: pei-dashboard
+SQL Database: pei-dashboard
+Location: [ISI_LOCATION_ANDA]
 ```
 
 ---
 
 ## 3. Setup Azure SQL Database
 
-### 3.1 Buat SQL Server
-```bash
-# Ganti [NAMA_UNIK] dengan nama yang unik
-az sql server create \
-  --name sql-newscraper-[NAMA_UNIK] \
-  --resource-group rg-database-newscraper \
-  --location southeastasia \
-  --admin-user sqladmin \
-  --admin-password "[PASSWORD_KUAT_ANDA]"
-
-# Catat nama server dan password!
-```
-
-**⚠️ PENTING:** Simpan password ini dengan aman!
+### 3.1 SQL Server (Sudah Ada ✅)
+SQL Server sudah ada dengan nama: `pei-dashboard`
 
 ### 3.2 Configure Firewall
 ```bash
 # Allow Azure services
 az sql server firewall-rule create \
-  --resource-group rg-database-newscraper \
-  --server sql-newscraper-[NAMA_UNIK] \
+  --resource-group PeiDashboard \
+  --server pei-dashboard \
   --name AllowAzureServices \
   --start-ip-address 0.0.0.0 \
   --end-ip-address 0.0.0.0
 
 # Allow your IP (untuk testing dari komputer lokal)
 az sql server firewall-rule create \
-  --resource-group rg-database-newscraper \
-  --server sql-newscraper-[NAMA_UNIK] \
+  --resource-group PeiDashboard \
+  --server pei-dashboard \
   --name AllowMyIP \
   --start-ip-address [IP_ANDA] \
   --end-ip-address [IP_ANDA]
@@ -131,22 +123,15 @@ az sql server firewall-rule create \
 
 Cek IP Anda di: https://whatismyipaddress.com/
 
-### 3.3 Buat Database
-```bash
-az sql db create \
-  --resource-group rg-database-newscraper \
-  --server sql-newscraper-[NAMA_UNIK] \
-  --name NewsScraperDB \
-  --service-objective S0 \
-  --backup-storage-redundancy Local
-```
+### 3.3 Database (Sudah Ada ✅)
+Database sudah ada dengan nama: `pei-dashboard`
 
 ### 3.4 Get Connection String
 ```bash
 az sql db show-connection-string \
   --client ado.net \
-  --server sql-newscraper-[NAMA_UNIK] \
-  --name NewsScraperDB
+  --server pei-dashboard \
+  --name pei-dashboard
 ```
 
 Simpan connection string ini, akan digunakan nanti.
@@ -160,8 +145,8 @@ Simpan connection string ini, akan digunakan nanti.
 **Atau via Azure CLI:**
 ```bash
 az sql db query \
-  --server sql-newscraper-[NAMA_UNIK] \
-  --database NewsScraperDB \
+  --server pei-dashboard \
+  --database pei-dashboard \
   --admin-user sqladmin \
   --admin-password "[PASSWORD_ANDA]" \
   --file azure_functions/shared/database_schema.sql
@@ -174,8 +159,8 @@ az sql db query \
 ### 4.1 Buat Storage Account
 ```bash
 az storage account create \
-  --name stnewscraper[NAMA_UNIK] \
-  --resource-group rg-functions-newscraper \
+  --name stpeidashboard \
+  --resource-group PeiDashboard \
   --location southeastasia \
   --sku Standard_LRS \
   --kind StorageV2
@@ -187,37 +172,37 @@ az storage account create \
 ```bash
 # Get storage account key
 STORAGE_KEY=$(az storage account keys list \
-  --resource-group rg-functions-newscraper \
-  --account-name stnewscraper[NAMA_UNIK] \
+  --resource-group PeiDashboard \
+  --account-name stpeidashboard \
   --query '[0].value' -o tsv)
 
 # Buat containers
 az storage container create \
   --name temp-files \
-  --account-name stnewscraper[NAMA_UNIK] \
+  --account-name stpeidashboard \
   --account-key $STORAGE_KEY
 
 az storage container create \
   --name processing \
-  --account-name stnewscraper[NAMA_UNIK] \
+  --account-name stpeidashboard \
   --account-key $STORAGE_KEY
 
 az storage container create \
   --name backups \
-  --account-name stnewscraper[NAMA_UNIK] \
+  --account-name stpeidashboard \
   --account-key $STORAGE_KEY
 
 az storage container create \
   --name archive \
-  --account-name stnewscraper[NAMA_UNIK] \
+  --account-name stpeidashboard \
   --account-key $STORAGE_KEY
 ```
 
 ### 4.3 Get Connection String
 ```bash
 az storage account show-connection-string \
-  --name stnewscraper[NAMA_UNIK] \
-  --resource-group rg-functions-newscraper \
+  --name stpeidashboard \
+  --resource-group PeiDashboard \
   --output tsv
 ```
 
@@ -227,37 +212,32 @@ Simpan connection string ini.
 
 ## 5. Setup Azure Key Vault
 
-### 5.1 Buat Key Vault
-```bash
-az keyvault create \
-  --name kv-newscraper-[NAMA_UNIK] \
-  --resource-group rg-functions-newscraper \
-  --location southeastasia
-```
+### 5.1 Key Vault (Sudah Ada ✅)
+Key Vault sudah ada dengan nama: `PeiDashboard`
 
 ### 5.2 Simpan Secrets
 ```bash
 # Database connection string
 az keyvault secret set \
-  --vault-name kv-newscraper-[NAMA_UNIK] \
+  --vault-name PeiDashboard \
   --name DatabaseConnectionString \
   --value "[CONNECTION_STRING_DATABASE]"
 
 # Storage connection string
 az keyvault secret set \
-  --vault-name kv-newscraper-[NAMA_UNIK] \
+  --vault-name PeiDashboard \
   --name StorageConnectionString \
   --value "[CONNECTION_STRING_STORAGE]"
 
 # Copilot API Key (akan diisi nanti)
 az keyvault secret set \
-  --vault-name kv-newscraper-[NAMA_UNIK] \
+  --vault-name PeiDashboard \
   --name CopilotApiKey \
   --value "[COPILOT_API_KEY]"
 
 # Copilot Endpoint (akan diisi nanti)
 az keyvault secret set \
-  --vault-name kv-newscraper-[NAMA_UNIK] \
+  --vault-name PeiDashboard \
   --name CopilotEndpoint \
   --value "[COPILOT_ENDPOINT]"
 ```
@@ -274,8 +254,8 @@ az keyvault secret set \
 ```bash
 # Buat Azure OpenAI resource
 az cognitiveservices account create \
-  --name openai-newscraper-[NAMA_UNIK] \
-  --resource-group rg-copilot-newscraper \
+  --name openai-pei-dashboard \
+  --resource-group PeiDashboard \
   --kind OpenAI \
   --sku S0 \
   --location eastus \
@@ -283,13 +263,13 @@ az cognitiveservices account create \
 
 # Get API key
 az cognitiveservices account keys list \
-  --name openai-newscraper-[NAMA_UNIK] \
-  --resource-group rg-copilot-newscraper
+  --name openai-pei-dashboard \
+  --resource-group PeiDashboard
 
 # Get endpoint
 az cognitiveservices account show \
-  --name openai-newscraper-[NAMA_UNIK] \
-  --resource-group rg-copilot-newscraper \
+  --name openai-pei-dashboard \
+  --resource-group PeiDashboard \
   --query properties.endpoint
 ```
 
@@ -297,8 +277,8 @@ az cognitiveservices account show \
 ```bash
 # Deploy GPT-4 model
 az cognitiveservices account deployment create \
-  --name openai-newscraper-[NAMA_UNIK] \
-  --resource-group rg-copilot-newscraper \
+  --name openai-pei-dashboard \
+  --resource-group PeiDashboard \
   --deployment-name gpt-4 \
   --model-name gpt-4 \
   --model-version "0613" \
@@ -311,12 +291,12 @@ az cognitiveservices account deployment create \
 ```bash
 # Update secrets dengan info yang didapat
 az keyvault secret set \
-  --vault-name kv-newscraper-[NAMA_UNIK] \
+  --vault-name PeiDashboard \
   --name CopilotApiKey \
   --value "[API_KEY_DARI_STEP_6.2]"
 
 az keyvault secret set \
-  --vault-name kv-newscraper-[NAMA_UNIK] \
+  --vault-name PeiDashboard \
   --name CopilotEndpoint \
   --value "[ENDPOINT_DARI_STEP_6.2]"
 ```
@@ -325,24 +305,19 @@ az keyvault secret set \
 
 ## 7. Setup Azure Functions
 
-### 7.1 Buat Function App
-```bash
-az functionapp create \
-  --resource-group rg-functions-newscraper \
-  --consumption-plan-location southeastasia \
-  --runtime python \
-  --runtime-version 3.9 \
-  --functions-version 4 \
-  --name func-newscraper-[NAMA_UNIK] \
-  --storage-account stnewscraper[NAMA_UNIK] \
-  --os-type Linux
-```
+### 7.1 Function App (Sudah Ada ✅)
+Function App sudah ada dengan info:
+- **Name:** `pei-dashboard`
+- **URL:** `pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net`
+- **Location:** Canada Central
+- **OS:** Linux
+- **Runtime:** Python (Functions v4)
 
 ### 7.2 Enable Managed Identity
 ```bash
 az functionapp identity assign \
-  --name func-newscraper-[NAMA_UNIK] \
-  --resource-group rg-functions-newscraper
+  --name pei-dashboard \
+  --resource-group PeiDashboard
 ```
 
 Catat `principalId` yang muncul.
@@ -351,13 +326,13 @@ Catat `principalId` yang muncul.
 ```bash
 # Get principal ID
 PRINCIPAL_ID=$(az functionapp identity show \
-  --name func-newscraper-[NAMA_UNIK] \
-  --resource-group rg-functions-newscraper \
+  --name pei-dashboard \
+  --resource-group PeiDashboard \
   --query principalId -o tsv)
 
 # Grant access
 az keyvault set-policy \
-  --name kv-newscraper-[NAMA_UNIK] \
+  --name PeiDashboard \
   --object-id $PRINCIPAL_ID \
   --secret-permissions get list
 ```
@@ -366,34 +341,34 @@ az keyvault set-policy \
 ```bash
 # Key Vault reference
 az functionapp config appsettings set \
-  --name func-newscraper-[NAMA_UNIK] \
-  --resource-group rg-functions-newscraper \
+  --name pei-dashboard \
+  --resource-group PeiDashboard \
   --settings \
-    "KEY_VAULT_URL=https://kv-newscraper-[NAMA_UNIK].vault.azure.net/" \
-    "DatabaseConnectionString=@Microsoft.KeyVault(SecretUri=https://kv-newscraper-[NAMA_UNIK].vault.azure.net/secrets/DatabaseConnectionString/)" \
-    "StorageConnectionString=@Microsoft.KeyVault(SecretUri=https://kv-newscraper-[NAMA_UNIK].vault.azure.net/secrets/StorageConnectionString/)" \
-    "CopilotApiKey=@Microsoft.KeyVault(SecretUri=https://kv-newscraper-[NAMA_UNIK].vault.azure.net/secrets/CopilotApiKey/)" \
-    "CopilotEndpoint=@Microsoft.KeyVault(SecretUri=https://kv-newscraper-[NAMA_UNIK].vault.azure.net/secrets/CopilotEndpoint/)"
+    "KEY_VAULT_URL=https://PeiDashboard.vault.azure.net/" \
+    "DatabaseConnectionString=@Microsoft.KeyVault(SecretUri=https://PeiDashboard.vault.azure.net/secrets/DatabaseConnectionString/)" \
+    "StorageConnectionString=@Microsoft.KeyVault(SecretUri=https://PeiDashboard.vault.azure.net/secrets/StorageConnectionString/)" \
+    "CopilotApiKey=@Microsoft.KeyVault(SecretUri=https://PeiDashboard.vault.azure.net/secrets/CopilotApiKey/)" \
+    "CopilotEndpoint=@Microsoft.KeyVault(SecretUri=https://PeiDashboard.vault.azure.net/secrets/CopilotEndpoint/)"
 ```
 
 ### 7.5 Enable Application Insights
 ```bash
 # Buat Application Insights
 az monitor app-insights component create \
-  --app appinsights-newscraper \
+  --app appinsights-pei-dashboard \
   --location southeastasia \
-  --resource-group rg-functions-newscraper
+  --resource-group PeiDashboard
 
 # Get instrumentation key
 INSTRUMENTATION_KEY=$(az monitor app-insights component show \
-  --app appinsights-newscraper \
-  --resource-group rg-functions-newscraper \
+  --app appinsights-pei-dashboard \
+  --resource-group PeiDashboard \
   --query instrumentationKey -o tsv)
 
 # Configure Function App
 az functionapp config appsettings set \
-  --name func-newscraper-[NAMA_UNIK] \
-  --resource-group rg-functions-newscraper \
+  --name func-pei-dashboard \
+  --resource-group PeiDashboard \
   --settings "APPINSIGHTS_INSTRUMENTATIONKEY=$INSTRUMENTATION_KEY"
 ```
 
@@ -423,8 +398,8 @@ python shared/excel_migration.py
 ```bash
 # Connect ke database dan check
 az sql db query \
-  --server sql-newscraper-[NAMA_UNIK] \
-  --database NewsScraperDB \
+  --server pei-dashboard \
+  --database pei-dashboard \
   --admin-user sqladmin \
   --admin-password "[PASSWORD_ANDA]" \
   --query "SELECT COUNT(*) as total_articles FROM news_articles"
@@ -448,7 +423,7 @@ func start
 ### 9.2 Deploy ke Azure
 ```bash
 # Deploy semua functions
-func azure functionapp publish func-newscraper-[NAMA_UNIK] --python
+func azure functionapp publish func-pei-dashboard --python
 ```
 
 **Note:** Proses ini akan memakan waktu 5-10 menit.
@@ -457,8 +432,8 @@ func azure functionapp publish func-newscraper-[NAMA_UNIK] --python
 ```bash
 # List functions yang ter-deploy
 az functionapp function list \
-  --name func-newscraper-[NAMA_UNIK] \
-  --resource-group rg-functions-newscraper \
+  --name func-pei-dashboard \
+  --resource-group PeiDashboard \
   --output table
 ```
 
@@ -466,8 +441,8 @@ az functionapp function list \
 ```bash
 # Get function URL
 az functionapp function show \
-  --name func-newscraper-[NAMA_UNIK] \
-  --resource-group rg-functions-newscraper \
+  --name func-pei-dashboard \
+  --resource-group PeiDashboard \
   --function-name cnbc_scraper_function \
   --query invokeUrlTemplate -o tsv
 
@@ -484,12 +459,12 @@ curl -X POST "[FUNCTION_URL]" \
 ### 10.1 Test Scraper Functions
 ```bash
 # Test CNBC scraper
-curl -X POST "https://func-newscraper-[NAMA_UNIK].azurewebsites.net/api/cnbc_scraper_function" \
+curl -X POST "https://func-pei-dashboard.azurewebsites.net/api/cnbc_scraper_function" \
   -H "Content-Type: application/json" \
   -d '{"keywords": ["oil"], "start_date": "2024-01-01", "end_date": "2024-01-31"}'
 
 # Test CNN scraper
-curl -X POST "https://func-newscraper-[NAMA_UNIK].azurewebsites.net/api/cnn_scraper_function" \
+curl -X POST "https://func-pei-dashboard.azurewebsites.net/api/cnn_scraper_function" \
   -H "Content-Type: application/json" \
   -d '{"keywords": ["energy"], "start_date": "2024-01-01", "end_date": "2024-01-31"}'
 ```
@@ -498,8 +473,8 @@ curl -X POST "https://func-newscraper-[NAMA_UNIK].azurewebsites.net/api/cnn_scra
 ```bash
 # Check articles in database
 az sql db query \
-  --server sql-newscraper-[NAMA_UNIK] \
-  --database NewsScraperDB \
+  --server pei-dashboard \
+  --database pei-dashboard \
   --admin-user sqladmin \
   --admin-password "[PASSWORD_ANDA]" \
   --query "SELECT TOP 10 title, source, published_date FROM news_articles ORDER BY scraped_date DESC"
@@ -508,7 +483,7 @@ az sql db query \
 ### 10.3 Test Sentiment Analysis
 ```bash
 # Trigger sentiment analysis
-curl -X POST "https://func-newscraper-[NAMA_UNIK].azurewebsites.net/api/sentiment_analysis_function" \
+curl -X POST "https://func-pei-dashboard.azurewebsites.net/api/sentiment_analysis_function" \
   -H "Content-Type: application/json" \
   -d '{"start_date": "2024-01-01", "end_date": "2024-01-31"}'
 ```
@@ -516,9 +491,9 @@ curl -X POST "https://func-newscraper-[NAMA_UNIK].azurewebsites.net/api/sentimen
 ### 10.4 Test Backup Function
 ```bash
 # Trigger manual backup
-curl -X POST "https://func-newscraper-[NAMA_UNIK].azurewebsites.net/api/backup_function" \
+curl -X POST "https://func-pei-dashboard.azurewebsites.net/api/backup_function" \
   -H "Content-Type: application/json" \
-  -d '{"database_name": "NewsScraperDB"}'
+  -d '{"database_name": "pei-dashboard"}'
 ```
 
 ### 10.5 Run Unit Tests
@@ -536,8 +511,8 @@ pytest tests/ -v
 # Alert untuk function failures
 az monitor metrics alert create \
   --name "High Function Failure Rate" \
-  --resource-group rg-functions-newscraper \
-  --scopes "/subscriptions/[SUBSCRIPTION_ID]/resourceGroups/rg-functions-newscraper/providers/Microsoft.Web/sites/func-newscraper-[NAMA_UNIK]" \
+  --resource-group PeiDashboard \
+  --scopes "/subscriptions/[SUBSCRIPTION_ID]/resourceGroups/PeiDashboard/providers/Microsoft.Web/sites/func-pei-dashboard" \
   --condition "count FunctionExecutionCount > 100" \
   --window-size 5m \
   --evaluation-frequency 1m
@@ -545,7 +520,7 @@ az monitor metrics alert create \
 
 ### 11.2 Setup Dashboard
 1. Buka Azure Portal
-2. Go to Application Insights > appinsights-newscraper
+2. Go to Application Insights > appinsights-pei-dashboard
 3. Create custom dashboard dengan:
    - Function execution count
    - Success rate
@@ -558,9 +533,9 @@ az monitor metrics alert create \
 # Enable diagnostic logs
 az monitor diagnostic-settings create \
   --name func-diagnostics \
-  --resource "/subscriptions/[SUBSCRIPTION_ID]/resourceGroups/rg-functions-newscraper/providers/Microsoft.Web/sites/func-newscraper-[NAMA_UNIK]" \
+  --resource "/subscriptions/[SUBSCRIPTION_ID]/resourceGroups/PeiDashboard/providers/Microsoft.Web/sites/func-pei-dashboard" \
   --logs '[{"category": "FunctionAppLogs", "enabled": true}]' \
-  --workspace "/subscriptions/[SUBSCRIPTION_ID]/resourceGroups/rg-functions-newscraper/providers/Microsoft.OperationalInsights/workspaces/[WORKSPACE_NAME]"
+  --workspace "/subscriptions/[SUBSCRIPTION_ID]/resourceGroups/PeiDashboard/providers/Microsoft.OperationalInsights/workspaces/[WORKSPACE_NAME]"
 ```
 
 ---
@@ -582,8 +557,8 @@ az monitor diagnostic-settings create \
 # Schedulers akan otomatis berjalan sesuai CRON schedule
 # Verify timer triggers
 az functionapp function show \
-  --name func-newscraper-[NAMA_UNIK] \
-  --resource-group rg-functions-newscraper \
+  --name func-pei-dashboard \
+  --resource-group PeiDashboard \
   --function-name daily_morning_timer
 ```
 
@@ -635,13 +610,13 @@ Setelah yakin sistem baru berjalan dengan baik:
 ```bash
 # Check function logs
 az functionapp log tail \
-  --name func-newscraper-[NAMA_UNIK] \
-  --resource-group rg-functions-newscraper
+  --name func-pei-dashboard \
+  --resource-group PeiDashboard
 
 # Check function status
 az functionapp show \
-  --name func-newscraper-[NAMA_UNIK] \
-  --resource-group rg-functions-newscraper \
+  --name func-pei-dashboard \
+  --resource-group PeiDashboard \
   --query state
 ```
 
@@ -649,21 +624,21 @@ az functionapp show \
 ```bash
 # Test connection
 az sql db show \
-  --server sql-newscraper-[NAMA_UNIK] \
-  --name NewsScraperDB \
-  --resource-group rg-database-newscraper
+  --server pei-dashboard \
+  --name pei-dashboard \
+  --resource-group PeiDashboard
 
 # Check firewall rules
 az sql server firewall-rule list \
-  --server sql-newscraper-[NAMA_UNIK] \
-  --resource-group rg-database-newscraper
+  --server pei-dashboard \
+  --resource-group PeiDashboard
 ```
 
 ### Key Vault Access Issues
 ```bash
 # Check access policies
 az keyvault show \
-  --name kv-newscraper-[NAMA_UNIK] \
+  --name PeiDashboard \
   --query properties.accessPolicies
 ```
 
@@ -719,7 +694,7 @@ Dengan mengikuti panduan ini step-by-step, sistem akan berhasil dimigrasi ke Azu
 - ✅ Security best practices
 - ✅ Cost-effective solution
 
-**Selamat! Sistem Azure Functions News Scraping Anda siap production! 🎉**
+**Selamat! Sistem Azure Functions PEI Dashboard Anda siap production! 🎉**
 
 ---
 

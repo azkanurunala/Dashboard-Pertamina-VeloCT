@@ -3,3 +3,4 @@ venv/
 __pycache__/
 *.pyc
 .kiro/*
+azure_functions/account-deploy.json

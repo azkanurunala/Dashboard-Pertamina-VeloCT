@@ -6,9 +6,19 @@ import os
 from typing import Dict, Any, Optional
 from dataclasses import asdict
 import json
+import logging
 
 from .models import ScrapingConfig, CopilotConfig, DatabaseConfig
 from .interfaces import IConfigurationManager, ConfigurationError
+
+# Azure Key Vault integration
+try:
+    from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
+    from azure.keyvault.secrets import SecretClient
+    AZURE_SDK_AVAILABLE = True
+except ImportError:
+    AZURE_SDK_AVAILABLE = False
+    logging.warning("Azure SDK not available. Key Vault integration disabled.")
 
 
 class EnvironmentConfigurationManager(IConfigurationManager):
@@ -230,3 +240,163 @@ class EnvironmentConfigurationManager(IConfigurationManager):
 
 # Global configuration instance
 config_manager = EnvironmentConfigurationManager()
+
+
+def _get_key_vault_secret(secret_name: str) -> Optional[str]:
+    """
+    Get secret from Azure Key Vault using Managed Identity.
+    
+    Args:
+        secret_name: Name of the secret in Key Vault
+        
+    Returns:
+        Secret value or None if not found
+    """
+    if not AZURE_SDK_AVAILABLE:
+        return None
+    
+    key_vault_url = os.getenv("KEY_VAULT_URL")
+    if not key_vault_url:
+        return None
+    
+    try:
+        # Use Managed Identity to authenticate
+        credential = DefaultAzureCredential()
+        client = SecretClient(vault_url=key_vault_url, credential=credential)
+        
+        # Get the secret
+        secret = client.get_secret(secret_name)
+        return secret.value
+    except Exception as e:
+        logging.warning(f"Failed to get secret '{secret_name}' from Key Vault: {e}")
+        return None
+
+
+def get_database_connection_string() -> str:
+    """
+    Get database connection string from environment variables or Key Vault.
+    Supports both Azure App Settings and local development.
+    
+    Priority order:
+    1. Direct environment variable (DatabaseConnectionString)
+    2. Azure Key Vault (using Managed Identity)
+    3. Fallback environment variables for local dev
+    """
+    # Try direct environment variable first (works if Key Vault reference is resolved)
+    connection_string = os.getenv("DatabaseConnectionString")
+    
+    # If not found or is a Key Vault reference, try to get from Key Vault directly
+    if not connection_string or connection_string.startswith("@Microsoft.KeyVault"):
+        kv_secret = _get_key_vault_secret("DatabaseConnectionString")
+        if kv_secret:
+            connection_string = kv_secret
+    
+    # Fallback to SQL_SERVER_CONNECTION_STRING for local dev
+    if not connection_string:
+        connection_string = os.getenv("SQL_SERVER_CONNECTION_STRING")
+    
+    # Fallback to direct connection string for testing
+    if not connection_string:
+        connection_string = os.getenv("SQLAZURECONNSTR_DefaultConnection")
+    
+    if not connection_string:
+        raise ConfigurationError(
+            "Database connection string not found. "
+            "Please set DatabaseConnectionString, SQL_SERVER_CONNECTION_STRING, "
+            "or SQLAZURECONNSTR_DefaultConnection environment variable."
+        )
+    
+    return connection_string
+
+
+def get_storage_connection_string() -> str:
+    """
+    Get storage connection string from environment variables or Key Vault.
+    
+    Priority order:
+    1. Direct environment variable (StorageConnectionString)
+    2. Azure Key Vault (using Managed Identity)
+    3. Fallback environment variables
+    """
+    # Try direct environment variable first
+    connection_string = os.getenv("StorageConnectionString")
+    
+    # If not found or is a Key Vault reference, try to get from Key Vault directly
+    if not connection_string or connection_string.startswith("@Microsoft.KeyVault"):
+        kv_secret = _get_key_vault_secret("StorageConnectionString")
+        if kv_secret:
+            connection_string = kv_secret
+    
+    # Fallback to AzureWebJobsStorage
+    if not connection_string:
+        connection_string = os.getenv("AzureWebJobsStorage")
+    
+    if not connection_string:
+        raise ConfigurationError(
+            "Storage connection string not found. "
+            "Please set StorageConnectionString or AzureWebJobsStorage environment variable."
+        )
+    
+    return connection_string
+
+
+def get_copilot_api_key() -> str:
+    """
+    Get Copilot API key from environment variables or Key Vault.
+    
+    Priority order:
+    1. Direct environment variable (CopilotApiKey)
+    2. Azure Key Vault (using Managed Identity)
+    3. Fallback environment variables
+    """
+    # Try direct environment variable first
+    api_key = os.getenv("CopilotApiKey")
+    
+    # If not found or is a Key Vault reference, try to get from Key Vault directly
+    if not api_key or api_key.startswith("@Microsoft.KeyVault"):
+        kv_secret = _get_key_vault_secret("CopilotApiKey")
+        if kv_secret:
+            api_key = kv_secret
+    
+    # Fallback
+    if not api_key:
+        api_key = os.getenv("COPILOT_API_KEY")
+    
+    if not api_key or api_key == "PLACEHOLDER-WILL-BE-CONFIGURED-LATER":
+        raise ConfigurationError(
+            "Copilot API key not configured. "
+            "Please set CopilotApiKey environment variable."
+        )
+    
+    return api_key
+
+
+def get_copilot_endpoint() -> str:
+    """
+    Get Copilot API endpoint from environment variables or Key Vault.
+    
+    Priority order:
+    1. Direct environment variable (CopilotEndpoint)
+    2. Azure Key Vault (using Managed Identity)
+    3. Fallback environment variables
+    """
+    # Try direct environment variable first
+    endpoint = os.getenv("CopilotEndpoint")
+    
+    # If not found or is a Key Vault reference, try to get from Key Vault directly
+    if not endpoint or endpoint.startswith("@Microsoft.KeyVault"):
+        kv_secret = _get_key_vault_secret("CopilotEndpoint")
+        if kv_secret:
+            endpoint = kv_secret
+    
+    # Fallback
+    if not endpoint:
+        endpoint = os.getenv("COPILOT_API_ENDPOINT")
+    
+    if not endpoint or endpoint == "PLACEHOLDER-WILL-BE-CONFIGURED-LATER":
+        raise ConfigurationError(
+            "Copilot API endpoint not configured. "
+            "Please set CopilotEndpoint environment variable."
+        )
+    
+    return endpoint

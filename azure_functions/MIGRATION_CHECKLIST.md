@@ -6,6 +6,20 @@ Gunakan checklist ini untuk tracking progress migrasi. Centang setiap item setel
 
 ---
 
+## 📌 Resource Yang Sudah Ada
+
+| Resource | Nama |
+|----------|------|
+| Resource Group | `PeiDashboard` |
+| Key Vault | `PeiDashboard` |
+| SQL Server | `pei-dashboard` |
+| SQL Database | `pei-dashboard` |
+| Function App | `pei-dashboard` |
+| Function URL | `pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net` |
+| Location | Canada Central |
+
+---
+
 ## Phase 1: Persiapan (Estimasi: 2-3 jam)
 
 ### Tools & Software
@@ -31,36 +45,31 @@ Gunakan checklist ini untuk tracking progress migrasi. Centang setiap item setel
 
 ## Phase 2: Setup Azure Resources (Estimasi: 3-4 jam)
 
-### Resource Groups
-- [ ] Buat Resource Group untuk Functions: `rg-functions-newscraper`
-- [ ] Buat Resource Group untuk Database: `rg-database-newscraper`
-- [ ] Buat Resource Group untuk Copilot: `rg-copilot-newscraper`
-- [ ] Catat semua nama resource groups
+### Resource Groups ✅
+- [x] Resource Group: `PeiDashboard` (sudah ada)
 
-### Azure SQL Database
-- [ ] Buat SQL Server dengan nama unik
-- [ ] Catat SQL Server name: `sql-newscraper-___________`
+### Azure SQL Database ✅
+- [x] SQL Server: `pei-dashboard` (sudah ada)
+- [x] SQL Database: `pei-dashboard` (sudah ada)
 - [ ] Catat SQL admin username: `sqladmin`
 - [ ] Catat SQL admin password: `___________` ⚠️ SIMPAN AMAN!
 - [ ] Configure firewall untuk Azure services
 - [ ] Configure firewall untuk IP lokal Anda
-- [ ] Buat database: `NewsScraperDB`
 - [ ] Get connection string dan simpan
 - [ ] Jalankan `database_schema.sql`
 - [ ] Verifikasi tables sudah dibuat
 
 ### Azure Storage Account
 - [ ] Buat Storage Account dengan nama unik
-- [ ] Catat Storage Account name: `stnewscraper___________`
+- [ ] Catat Storage Account name: `stpeidashboard___________`
 - [ ] Buat container: `temp-files`
 - [ ] Buat container: `processing`
 - [ ] Buat container: `backups`
 - [ ] Buat container: `archive`
 - [ ] Get connection string dan simpan
 
-### Azure Key Vault
-- [ ] Buat Key Vault dengan nama unik
-- [ ] Catat Key Vault name: `kv-newscraper-___________`
+### Azure Key Vault ✅
+- [x] Key Vault: `PeiDashboard` (sudah ada)
 - [ ] Simpan secret: `DatabaseConnectionString`
 - [ ] Simpan secret: `StorageConnectionString`
 - [ ] Simpan secret: `CopilotApiKey` (placeholder dulu)
@@ -84,9 +93,11 @@ Gunakan checklist ini untuk tracking progress migrasi. Centang setiap item setel
 
 ## Phase 4: Setup Azure Functions (Estimasi: 2-3 jam)
 
-### Function App
-- [ ] Buat Function App dengan nama unik
-- [ ] Catat Function App name: `func-newscraper-___________`
+### Function App ✅
+- [x] Function App: `pei-dashboard` (sudah ada)
+- [x] URL: `pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net`
+- [x] Location: Canada Central
+- [x] OS: Linux
 - [ ] Enable Managed Identity
 - [ ] Catat Principal ID: `___________`
 - [ ] Grant Key Vault access ke Managed Identity
@@ -131,7 +142,7 @@ Gunakan checklist ini untuk tracking progress migrasi. Centang setiap item setel
 ### Deploy Functions
 - [ ] Review semua code di `azure_functions/`
 - [ ] Pastikan `requirements.txt` lengkap
-- [ ] Deploy: `func azure functionapp publish func-newscraper-[NAMA]`
+- [ ] Deploy: `func azure functionapp publish func-pei-dashboard-[NAMA]`
 - [ ] Tunggu deployment selesai (5-10 menit)
 - [ ] Verifikasi semua functions ter-deploy
 - [ ] List functions: `az functionapp function list`

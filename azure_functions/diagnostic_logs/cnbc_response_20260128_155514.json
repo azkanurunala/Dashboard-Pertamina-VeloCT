@@ -1,0 +1,11 @@
+{
+  "status_code": 500,
+  "elapsed_seconds": 13.499722957611084,
+  "headers": {
+    "Content-Length": "0",
+    "Date": "Wed, 28 Jan 2026 08:55:10 GMT",
+    "Server": "Kestrel",
+    "Request-Context": "appId=cid-v1:9db8826b-a342-44c5-973d-a045bac44ee2"
+  },
+  "body": ""
+}
