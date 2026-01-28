@@ -1,5 +1,6 @@
 """
-Microsoft Copilot API integration for sentiment analysis and summarization.
+Google Gemini API integration for sentiment analysis and summarization.
+(Originally designed for Microsoft Copilot, now using Gemini API with same env var names)
 """
 
 import asyncio
@@ -95,7 +96,6 @@ class CopilotAPIClient:
         if not self.session:
             timeout = aiohttp.ClientTimeout(total=60)
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json",
                 "User-Agent": "Azure-Functions-News-Scraper/1.0"
             }
@@ -109,7 +109,7 @@ class CopilotAPIClient:
                           max_tokens: Optional[int] = None,
                           temperature: Optional[float] = None) -> Dict[str, Any]:
         """
-        Make a request to the Copilot API.
+        Make a request to the Gemini API.
         
         Args:
             messages: List of messages for the conversation
@@ -117,7 +117,7 @@ class CopilotAPIClient:
             temperature: Sampling temperature
             
         Returns:
-            API response data
+            API response data in OpenAI-compatible format
             
         Raises:
             CopilotError: If API request fails
@@ -126,25 +126,48 @@ class CopilotAPIClient:
         await self.rate_limiter.acquire()
         await self._ensure_session()
         
+        # Convert OpenAI-style messages to Gemini format
+        gemini_contents = []
+        system_instruction = None
+        
+        for msg in messages:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            
+            if role == "system":
+                # Gemini uses systemInstruction separately
+                system_instruction = content
+            else:
+                gemini_role = "user" if role == "user" else "model"
+                gemini_contents.append({
+                    "role": gemini_role,
+                    "parts": [{"text": content}]
+                })
+        
         payload = {
-            "model": self.config.model_name,
-            "messages": messages,
-            "max_tokens": max_tokens or self.config.max_tokens,
-            "temperature": temperature or self.config.temperature,
-            "stream": False
+            "contents": gemini_contents,
+            "generationConfig": {
+                "maxOutputTokens": max_tokens or self.config.max_tokens,
+                "temperature": temperature or self.config.temperature,
+            }
         }
         
+        if system_instruction:
+            payload["systemInstruction"] = {
+                "parts": [{"text": system_instruction}]
+            }
+        
+        # Gemini uses API key as query parameter
+        url = f"{self.config.api_endpoint}?key={self.api_key}"
+        
         try:
-            async with self.session.post(self.config.api_endpoint, json=payload) as response:
+            async with self.session.post(url, json=payload) as response:
                 if response.status == 429:
                     retry_after = int(response.headers.get("Retry-After", 60))
                     raise RateLimitError(f"Rate limit exceeded, retry after {retry_after} seconds")
                 
-                if response.status == 401:
+                if response.status == 401 or response.status == 403:
                     raise CopilotError("Authentication failed - invalid API key")
-                
-                if response.status == 403:
-                    raise CopilotError("Access forbidden - insufficient permissions")
                 
                 response_data = await response.json()
                 
@@ -152,12 +175,26 @@ class CopilotAPIClient:
                     error_msg = response_data.get("error", {}).get("message", "Unknown error")
                     raise CopilotError(f"API request failed: {error_msg}")
                 
-                return response_data
+                # Convert Gemini response to OpenAI-compatible format
+                gemini_text = ""
+                if "candidates" in response_data and len(response_data["candidates"]) > 0:
+                    candidate = response_data["candidates"][0]
+                    if "content" in candidate and "parts" in candidate["content"]:
+                        gemini_text = candidate["content"]["parts"][0].get("text", "")
+                
+                return {
+                    "choices": [{
+                        "message": {
+                            "content": gemini_text
+                        }
+                    }]
+                }
                 
         except aiohttp.ClientError as e:
             raise CopilotError(f"Network error: {str(e)}")
         except json.JSONDecodeError as e:
             raise CopilotError(f"Invalid JSON response: {str(e)}")
+
     
     async def chat_completion(self, 
                             system_prompt: str, 

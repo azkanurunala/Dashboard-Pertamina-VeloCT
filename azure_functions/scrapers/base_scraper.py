@@ -14,9 +14,26 @@ from urllib.parse import urljoin, urlparse
 import aiohttp
 from bs4 import BeautifulSoup
 
-from ..shared.models import NewsArticle, ScrapingConfig
-from ..shared.interfaces import INewsScraperFunction
-from .exceptions import ScrapingError, RateLimitError, ValidationError, NetworkError, ContentExtractionError
+import sys
+import os
+
+# Add parent directory to Python path for absolute imports in Azure Functions
+_parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if _parent_dir not in sys.path:
+    sys.path.insert(0, _parent_dir)
+
+from shared.models import NewsArticle, ScrapingConfig
+from shared.interfaces import INewsScraperFunction
+from scrapers.exceptions import ScrapingError, RateLimitError, ValidationError, NetworkError, ContentExtractionError
+
+# Selenium helper for fallback
+try:
+    from shared.selenium_helper import fetch_with_selenium, fetch_sitemap_with_selenium
+    SELENIUM_AVAILABLE = True
+except ImportError:
+    SELENIUM_AVAILABLE = False
+    fetch_with_selenium = None
+    fetch_sitemap_with_selenium = None
 
 
 class BaseNewsScraper(INewsScraperFunction, ABC):
@@ -50,6 +67,10 @@ class BaseNewsScraper(INewsScraperFunction, ABC):
             'Upgrade-Insecure-Requests': '1',
         }
         self._default_headers.update(config.headers)
+        
+        # Selenium fallback settings
+        self._use_selenium_fallback = os.getenv("SCRAPER_USE_SELENIUM", "true").lower() == "true"
+        self._aiohttp_failed = False  # Track if aiohttp consistently fails
 
     @property
     def source_name(self) -> str:
@@ -193,12 +214,13 @@ class BaseNewsScraper(INewsScraperFunction, ABC):
                         url=url
                     )
 
-    async def _fetch_content(self, url: str) -> str:
+    async def _fetch_content(self, url: str, use_selenium: bool = False) -> str:
         """
-        Fetch HTML content from a URL.
+        Fetch HTML content from a URL with Selenium fallback.
         
         Args:
             url: URL to fetch
+            use_selenium: Force Selenium usage
             
         Returns:
             HTML content as string
@@ -209,14 +231,91 @@ class BaseNewsScraper(INewsScraperFunction, ABC):
         if url in self._failed_urls:
             raise NetworkError(f"URL previously failed", source=self.source_name, url=url)
         
+        # Use Selenium directly if forced or if aiohttp has been failing
+        if use_selenium or (self._aiohttp_failed and self._use_selenium_fallback and SELENIUM_AVAILABLE):
+            return await self._fetch_content_selenium(url)
+        
         try:
             response = await self._make_request(url)
             content = await response.text()
             self.logger.debug(f"Fetched {len(content)} characters from {url}")
             return content
         except Exception as e:
-            self._failed_urls.add(url)
-            raise
+            # Try Selenium fallback if available and enabled
+            if self._use_selenium_fallback and SELENIUM_AVAILABLE:
+                self.logger.info(f"aiohttp failed for {url}, trying Selenium fallback...")
+                self._aiohttp_failed = True
+                try:
+                    return await self._fetch_content_selenium(url)
+                except Exception as selenium_error:
+                    self.logger.error(f"Selenium fallback also failed: {selenium_error}")
+                    self._failed_urls.add(url)
+                    raise NetworkError(
+                        f"Both aiohttp and Selenium failed: {str(e)}",
+                        source=self.source_name,
+                        url=url
+                    )
+            else:
+                self._failed_urls.add(url)
+                raise
+    
+    async def _fetch_content_selenium(self, url: str) -> str:
+        """
+        Fetch content using Selenium.
+        
+        Args:
+            url: URL to fetch
+            
+        Returns:
+            HTML content
+        """
+        if not SELENIUM_AVAILABLE or fetch_with_selenium is None:
+            raise NetworkError(
+                "Selenium is not available",
+                source=self.source_name,
+                url=url
+            )
+        
+        try:
+            self.logger.info(f"Fetching with Selenium: {url}")
+            content = await fetch_with_selenium(url)
+            self.logger.debug(f"Selenium fetched {len(content)} characters from {url}")
+            return content
+        except Exception as e:
+            raise NetworkError(
+                f"Selenium fetch failed: {str(e)}",
+                source=self.source_name,
+                url=url
+            )
+    
+    async def _fetch_sitemap_selenium(self, url: str) -> str:
+        """
+        Fetch sitemap using Selenium.
+        
+        Args:
+            url: Sitemap URL
+            
+        Returns:
+            Sitemap XML content
+        """
+        if not SELENIUM_AVAILABLE or fetch_sitemap_with_selenium is None:
+            raise NetworkError(
+                "Selenium is not available",
+                source=self.source_name,
+                url=url
+            )
+        
+        try:
+            self.logger.info(f"Fetching sitemap with Selenium: {url}")
+            content = await fetch_sitemap_with_selenium(url)
+            self.logger.debug(f"Selenium fetched sitemap ({len(content)} chars) from {url}")
+            return content
+        except Exception as e:
+            raise NetworkError(
+                f"Selenium sitemap fetch failed: {str(e)}",
+                source=self.source_name,
+                url=url
+            )
 
     def _clean_text(self, text: str) -> str:
         """

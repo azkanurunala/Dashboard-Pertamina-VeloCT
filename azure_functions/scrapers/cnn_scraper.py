@@ -5,6 +5,8 @@ Implements scraping functionality for CNN news articles using sitemap and direct
 
 import asyncio
 import re
+import sys
+import os
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
@@ -14,9 +16,14 @@ import io
 
 from bs4 import BeautifulSoup
 
-from .base_scraper import BaseNewsScraper
-from .exceptions import ScrapingError, NetworkError, ContentExtractionError
-from ..shared.models import NewsArticle, ScrapingConfig
+# Add parent directory to Python path for absolute imports in Azure Functions
+_parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if _parent_dir not in sys.path:
+    sys.path.insert(0, _parent_dir)
+
+from scrapers.base_scraper import BaseNewsScraper
+from scrapers.exceptions import ScrapingError, NetworkError, ContentExtractionError
+from shared.models import NewsArticle, ScrapingConfig
 
 
 class CNNNewsScraper(BaseNewsScraper):
@@ -125,7 +132,14 @@ class CNNNewsScraper(BaseNewsScraper):
             return content
             
         except Exception as e:
-            raise NetworkError(f"Failed to fetch sitemap: {str(e)}", source=self.source_name, url=self.sitemap_url)
+            # Try Selenium fallback for sitemap
+            self.logger.info(f"aiohttp failed for sitemap, trying Selenium fallback: {e}")
+            try:
+                content_str = await self._fetch_sitemap_selenium(self.sitemap_url)
+                return content_str.encode('utf-8')
+            except Exception as selenium_error:
+                self.logger.error(f"Selenium sitemap fallback also failed: {selenium_error}")
+                raise NetworkError(f"Failed to fetch sitemap: {str(e)}", source=self.source_name, url=self.sitemap_url)
 
     def _extract_article_info_from_sitemap(self, url_tag, namespaces: Dict[str, str]) -> Optional[Dict[str, str]]:
         """

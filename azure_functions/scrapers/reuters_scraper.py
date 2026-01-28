@@ -5,6 +5,8 @@ Implements scraping functionality for Reuters news articles using sitemap and di
 
 import asyncio
 import re
+import sys
+import os
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
@@ -13,9 +15,14 @@ import random
 
 from bs4 import BeautifulSoup
 
-from .base_scraper import BaseNewsScraper
-from .exceptions import ScrapingError, NetworkError, ContentExtractionError
-from ..shared.models import NewsArticle, ScrapingConfig
+# Add parent directory to Python path for absolute imports in Azure Functions
+_parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if _parent_dir not in sys.path:
+    sys.path.insert(0, _parent_dir)
+
+from scrapers.base_scraper import BaseNewsScraper
+from scrapers.exceptions import ScrapingError, NetworkError, ContentExtractionError
+from shared.models import NewsArticle, ScrapingConfig
 
 
 class ReutersNewsScraper(BaseNewsScraper):
@@ -77,9 +84,26 @@ class ReutersNewsScraper(BaseNewsScraper):
             return sitemap_urls
             
         except Exception as e:
-            self.logger.warning(f"Failed to get sitemap URLs: {e}")
-            # Fallback to a default sitemap URL
-            return ["https://www.reuters.com/arc/outboundfeeds/news-sitemap/?outputType=xml"]
+            self.logger.warning(f"Failed to get sitemap URLs via aiohttp: {e}, trying Selenium...")
+            # Try Selenium fallback
+            try:
+                content = await self._fetch_sitemap_selenium(self.sitemap_index_url)
+                root = ET.fromstring(content)
+                namespaces = {'sm': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
+                
+                sitemap_urls = []
+                for sitemap in root.findall('.//sm:sitemap', namespaces):
+                    loc = sitemap.find('sm:loc', namespaces)
+                    if loc is not None and loc.text:
+                        sitemap_urls.append(loc.text.strip())
+                        if max_sitemaps and len(sitemap_urls) >= max_sitemaps:
+                            break
+                
+                self.logger.info(f"Selenium found {len(sitemap_urls)} sitemap URLs")
+                return sitemap_urls if sitemap_urls else ["https://www.reuters.com/arc/outboundfeeds/news-sitemap/?outputType=xml"]
+            except Exception as selenium_error:
+                self.logger.warning(f"Selenium fallback also failed: {selenium_error}")
+                return ["https://www.reuters.com/arc/outboundfeeds/news-sitemap/?outputType=xml"]
 
     def _extract_article_info_from_sitemap(self, url_tag, namespaces: Dict[str, str]) -> Optional[Dict[str, str]]:
         """

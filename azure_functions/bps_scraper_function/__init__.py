@@ -35,10 +35,10 @@ except Exception as e:
     raise
 
 try:
-    from shared.config import get_config
-    logging.info("✓ Successfully imported get_config")
+    from shared.config import get_database_connection_string
+    logging.info("✓ Successfully imported get_database_connection_string")
 except Exception as e:
-    logging.error(f"✗ IMPORT ERROR - get_config: {str(e)}", exc_info=True)
+    logging.error(f"✗ IMPORT ERROR - get_database_connection_string: {str(e)}", exc_info=True)
     raise
 
 try:
@@ -179,7 +179,7 @@ def _parse_request_parameters(req: func.HttpRequest) -> Dict[str, Any]:
     start_date_str = req.params.get('start_date')
     end_date_str = req.params.get('end_date')
     max_pages_str = req.params.get('max_pages')
-    save_to_db = req.params.get('save_to_db', 'true').lower() == 'true'
+    save_to_db = str(req.params.get('save_to_db', 'true')).lower() == 'true'
     
     # Parse dates
     if start_date_str:
@@ -247,8 +247,7 @@ async def _scrape_bps_news(params: Dict[str, Any], log_manager: AzureLoggingMana
             }
         )
         
-        # Get BPS API key from configuration
-        config = get_config()
+        # Get BPS API key from environment
         api_key = os.getenv('BPS_API_KEY')
         
         if not api_key:
@@ -276,7 +275,8 @@ async def _scrape_bps_news(params: Dict[str, Any], log_manager: AzureLoggingMana
             if params['save_to_db'] and articles:
                 try:
                     db_start = datetime.utcnow()
-                    db_handler = DatabaseHandler(config.database_connection_string)
+                    connection_string = get_database_connection_string()
+                    db_handler = DatabaseHandler(connection_string)
                     await db_handler.save_articles(articles)
                     saved_count = len(articles)
                     

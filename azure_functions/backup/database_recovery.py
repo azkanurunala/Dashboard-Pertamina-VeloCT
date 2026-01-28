@@ -5,15 +5,22 @@ Implements restore operations, point-in-time recovery, and recovery testing.
 
 import asyncio
 import logging
+import sys
+import os
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 import json
 
-from ..shared.logging_config import get_logger
-from ..shared.blob_storage import BlobStorageManager
-from ..shared.config import ConfigManager
-from .database_backup import BackupMetadata
+# Add parent directory to Python path for absolute imports in Azure Functions
+_parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if _parent_dir not in sys.path:
+    sys.path.insert(0, _parent_dir)
+
+from shared.logging_config import get_logger
+from shared.blob_storage import BlobStorageManager
+from shared.config import ConfigManager
+from backup.database_backup import BackupMetadata
 
 
 @dataclass

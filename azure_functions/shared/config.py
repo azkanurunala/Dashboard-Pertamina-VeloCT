@@ -56,7 +56,7 @@ class EnvironmentConfigurationManager(IConfigurationManager):
         
         # Default scraping configurations
         self._cache["scraping_defaults"] = {
-            "rate_limit_delay": int(os.getenv("SCRAPER_RATE_LIMIT_DELAY", "1")),
+            "rate_limit_delay": float(os.getenv("SCRAPER_RATE_LIMIT_DELAY", "1")),
             "max_retries": int(os.getenv("SCRAPER_MAX_RETRIES", "3")),
             "timeout": int(os.getenv("SCRAPER_TIMEOUT", "30")),
             "use_selenium": os.getenv("SCRAPER_USE_SELENIUM", "false").lower() == "true"
@@ -272,6 +272,7 @@ def _get_key_vault_secret(secret_name: str) -> Optional[str]:
         return None
 
 
+
 def get_database_connection_string() -> str:
     """
     Get database connection string from environment variables or Key Vault.
@@ -307,6 +308,23 @@ def get_database_connection_string() -> str:
         )
     
     return connection_string
+
+
+def get_database_config() -> Dict[str, Any]:
+    """
+    Get database configuration from environment variables.
+    
+    Returns:
+        Dictionary with database configuration
+    """
+    return {
+        "connection_string": get_database_connection_string(),
+        "connection_pool_size": int(os.getenv("DB_POOL_SIZE", "10")),
+        "connection_timeout": int(os.getenv("DB_CONNECTION_TIMEOUT", "30")),
+        "command_timeout": int(os.getenv("DB_COMMAND_TIMEOUT", "60")),
+        "retry_attempts": int(os.getenv("DB_RETRY_ATTEMPTS", "3")),
+        "retry_delay": int(os.getenv("DB_RETRY_DELAY", "1"))
+    }
 
 
 def get_storage_connection_string() -> str:

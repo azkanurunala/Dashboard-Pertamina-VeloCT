@@ -29,6 +29,79 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def parse_date_parameter(date_str: str) -> datetime:
+    """
+    Parse a date string parameter into a datetime object.
+    
+    Args:
+        date_str: Date string in YYYY-MM-DD format or ISO format
+        
+    Returns:
+        Parsed datetime object
+        
+    Raises:
+        ValueError: If date string is invalid or in wrong format
+    """
+    if not date_str:
+        raise ValueError("Date string cannot be empty")
+    
+    # Try YYYY-MM-DD format first
+    try:
+        return datetime.strptime(date_str.strip(), "%Y-%m-%d")
+    except ValueError:
+        pass
+    
+    # Try ISO format
+    try:
+        return datetime.fromisoformat(date_str.strip().replace('Z', '+00:00'))
+    except ValueError:
+        pass
+    
+    # Try common alternative formats
+    for fmt in ["%Y/%m/%d", "%d-%m-%Y", "%d/%m/%Y", "%m-%d-%Y", "%m/%d/%Y"]:
+        try:
+            return datetime.strptime(date_str.strip(), fmt)
+        except ValueError:
+            continue
+    
+    raise ValueError(f"Invalid date format: {date_str}. Expected YYYY-MM-DD format.")
+
+
+def validate_keywords(keywords_param: str) -> List[str]:
+    """
+    Validate and parse keywords parameter.
+    
+    Args:
+        keywords_param: Comma-separated string of keywords
+        
+    Returns:
+        List of validated keyword strings
+        
+    Raises:
+        ValueError: If keywords are invalid or empty
+    """
+    if not keywords_param:
+        raise ValueError("Keywords parameter cannot be empty")
+    
+    # Split by comma and clean each keyword
+    keywords = [kw.strip() for kw in keywords_param.split(',')]
+    
+    # Filter out empty keywords
+    keywords = [kw for kw in keywords if kw]
+    
+    if not keywords:
+        raise ValueError("At least one valid keyword is required")
+    
+    # Validate each keyword
+    for kw in keywords:
+        if len(kw) < 2:
+            raise ValueError(f"Keyword '{kw}' is too short (minimum 2 characters)")
+        if len(kw) > 100:
+            raise ValueError(f"Keyword '{kw}' is too long (maximum 100 characters)")
+    
+    return keywords
+
+
 def safe_json_serialize(obj: Any) -> str:
     """
     Safely serialize an object to JSON, handling datetime and other non-serializable types.

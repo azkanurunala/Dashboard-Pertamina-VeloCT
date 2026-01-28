@@ -4,3 +4,5 @@ __pycache__/
 *.pyc
 .kiro/*
 azure_functions/account-deploy.json
+azure_functions/.python_packages/
+azure_functions/.venv/

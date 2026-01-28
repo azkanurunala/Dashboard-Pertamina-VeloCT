@@ -5,15 +5,22 @@ Implements scraping functionality for CNBC Indonesia news articles using search-
 
 import asyncio
 import re
+import sys
+import os
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 from urllib.parse import urljoin, quote
 
 from bs4 import BeautifulSoup
 
-from .base_scraper import BaseNewsScraper
-from .exceptions import ScrapingError, NetworkError, ContentExtractionError
-from ..shared.models import NewsArticle, ScrapingConfig
+# Add parent directory to Python path for absolute imports in Azure Functions
+_parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if _parent_dir not in sys.path:
+    sys.path.insert(0, _parent_dir)
+
+from scrapers.base_scraper import BaseNewsScraper
+from scrapers.exceptions import ScrapingError, NetworkError, ContentExtractionError
+from shared.models import NewsArticle, ScrapingConfig
 
 
 class CNBCIndonesiaNewsScraper(BaseNewsScraper):
@@ -192,9 +199,22 @@ class CNBCIndonesiaNewsScraper(BaseNewsScraper):
         if page > 1:
             search_url += f"&page={page}"
         
+        content = None
+        
+        # Try aiohttp first
         try:
             response = await self._make_request(search_url)
             content = await response.text()
+        except Exception as e:
+            # Try Selenium fallback
+            self.logger.info(f"aiohttp failed for search page {page}, trying Selenium fallback: {e}")
+            try:
+                content = await self._fetch_content_selenium(search_url)
+            except Exception as selenium_error:
+                self.logger.error(f"Selenium fallback also failed: {selenium_error}")
+                return [], None
+        
+        try:
             soup = BeautifulSoup(content, 'html.parser')
             
             articles = []

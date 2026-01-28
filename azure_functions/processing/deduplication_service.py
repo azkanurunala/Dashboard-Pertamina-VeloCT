@@ -4,14 +4,21 @@ Provides comprehensive deduplication functionality maintaining existing logic fr
 """
 
 import logging
+import sys
+import os
 from typing import List, Dict, Any, Optional, Set, Tuple
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 
-from ..shared.database_handler import DatabaseHandler
-from ..shared.models import NewsArticle, ArticleFilters
-from ..shared.interfaces import DatabaseError
-from ..shared.logging_config import get_logger
+# Add parent directory to Python path for absolute imports in Azure Functions
+_parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if _parent_dir not in sys.path:
+    sys.path.insert(0, _parent_dir)
+
+from shared.database_handler import DatabaseHandler
+from shared.models import NewsArticle, ArticleFilters
+from shared.interfaces import DatabaseError
+from shared.logging_config import get_logger
 
 
 @dataclass

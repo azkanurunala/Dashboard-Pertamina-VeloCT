@@ -47,10 +47,10 @@ except Exception as e:
     raise
 
 try:
-    from shared.logging_config import setup_logging
-    logging.info("✓ Successfully imported setup_logging")
+    from shared.logging_config import configure_root_logging
+    logging.info("✓ Successfully imported configure_root_logging")
 except Exception as e:
-    logging.error(f"✗ IMPORT ERROR - setup_logging: {str(e)}", exc_info=True)
+    logging.error(f"✗ IMPORT ERROR - configure_root_logging: {str(e)}", exc_info=True)
     raise
 
 try:
@@ -239,7 +239,7 @@ def _parse_request_parameters(req: func.HttpRequest) -> Dict[str, Any]:
         raise ValueError("start_date cannot be after end_date")
     
     # Parse save_to_db flag
-    save_to_db = save_to_db_str.lower() in ('true', '1', 'yes', 'on')
+    save_to_db = str(save_to_db_str).lower() in ('true', '1', 'yes', 'on')
     
     return {
         'keywords': keywords,

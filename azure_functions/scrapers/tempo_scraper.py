@@ -5,6 +5,8 @@ Implements scraping functionality for Tempo news articles using multiple categor
 
 import asyncio
 import re
+import sys
+import os
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
@@ -12,9 +14,14 @@ from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
 
-from .base_scraper import BaseNewsScraper
-from .exceptions import ScrapingError, NetworkError, ContentExtractionError
-from ..shared.models import NewsArticle, ScrapingConfig
+# Add parent directory to Python path for absolute imports in Azure Functions
+_parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if _parent_dir not in sys.path:
+    sys.path.insert(0, _parent_dir)
+
+from scrapers.base_scraper import BaseNewsScraper
+from scrapers.exceptions import ScrapingError, NetworkError, ContentExtractionError
+from shared.models import NewsArticle, ScrapingConfig
 
 
 class TempoNewsScraper(BaseNewsScraper):
@@ -235,13 +242,26 @@ class TempoNewsScraper(BaseNewsScraper):
         Returns:
             List of article data dictionaries
         """
+        content = None
+        
+        # Try aiohttp first
         try:
             response = await self._make_request(sitemap_url)
             content = await response.read()
-            
-            if not content:
+        except Exception as e:
+            # Try Selenium fallback for sitemap
+            self.logger.info(f"aiohttp failed for sitemap {sitemap_url}, trying Selenium fallback: {e}")
+            try:
+                content_str = await self._fetch_sitemap_selenium(sitemap_url)
+                content = content_str.encode('utf-8')
+            except Exception as selenium_error:
+                self.logger.warning(f"Selenium fallback also failed for {sitemap_url}: {selenium_error}")
                 return []
-            
+        
+        if not content:
+            return []
+        
+        try:
             # Parse XML
             root = ET.fromstring(content)
             namespaces = {'sm': 'http://www.sitemaps.org/schemas/sitemap/0.9'}

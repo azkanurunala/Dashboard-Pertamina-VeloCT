@@ -5,14 +5,21 @@ Uses the official BPS API to fetch news articles.
 
 import asyncio
 import logging
+import sys
+import os
 from datetime import datetime
 from typing import List, Optional
 from html import unescape
 from bs4 import BeautifulSoup
 
-from .base_scraper import BaseNewsScraper
-from ..shared.models import NewsArticle, ScrapingConfig
-from .exceptions import ScrapingError, NetworkError
+# Add parent directory to Python path for absolute imports in Azure Functions
+_parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if _parent_dir not in sys.path:
+    sys.path.insert(0, _parent_dir)
+
+from scrapers.base_scraper import BaseNewsScraper
+from scrapers.exceptions import ScrapingError, NetworkError
+from shared.models import NewsArticle, ScrapingConfig
 
 
 class BPSScraper(BaseNewsScraper):
@@ -66,8 +73,22 @@ class BPSScraper(BaseNewsScraper):
             data = await response.json()
             return data
         except Exception as e:
-            self.logger.error(f"Failed to fetch news list: {e}")
-            raise NetworkError(f"API request failed: {str(e)}", source=self.source_name, url=url)
+            self.logger.info(f"aiohttp failed for BPS API, trying Selenium fallback: {e}")
+            # Try Selenium fallback - fetch the page and parse JSON if possible
+            try:
+                full_url = url
+                if params:
+                    param_str = "&".join([f"{k}={v}" for k, v in params.items()])
+                    full_url += f"&{param_str}"
+                
+                content = await self._fetch_content_selenium(full_url)
+                import json
+                # Try to parse as JSON (API response might be embedded in page)
+                data = json.loads(content)
+                return data
+            except Exception as selenium_error:
+                self.logger.error(f"Selenium fallback also failed for BPS: {selenium_error}")
+                raise NetworkError(f"API request failed: {str(e)}", source=self.source_name, url=url)
     
     async def _get_news_detail(self, news_id: str) -> Optional[str]:
         """

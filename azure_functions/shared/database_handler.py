@@ -132,43 +132,86 @@ class DatabaseHandler(IDatabaseHandler):
                 cursor = conn.cursor()
                 
                 try:
-                    for article in articles:
-                        # Get or create source
-                        source_id = self._get_or_create_source_sync(cursor, article.source)
+                    # Filter out articles that already exist in the database (based on URL)
+                    # unique constraint is generally on URL
+                    
+                    if not articles:
+                        return 0
+
+                    # 1. Get List of URLs from input
+                    input_urls = [a.url for a in articles]
+                    
+                    # 2. Check which ones exist
+                    # Handle large lists by chunking if necessary, but for now simple IN clause
+                    # SQL Server parameter limit is around 2100, so we should be careful if batch is huge
+                    
+                    existing_urls = set()
+                    
+                    # Process in chunks of 1000 to be safe with parameters
+                    chunk_size = 1000
+                    for i in range(0, len(input_urls), chunk_size):
+                        chunk_urls = input_urls[i:i + chunk_size]
+                        placeholders = ','.join(['?' for _ in chunk_urls])
                         
-                        # Insert article
-                        insert_query = """
-                        INSERT INTO news_articles 
-                        (id, title, content, url, source_id, published_date, scraped_date, 
-                         language, author, category)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        """
+                        check_query = f"SELECT url FROM news_articles WHERE url IN ({placeholders})"
+                        cursor.execute(check_query, chunk_urls)
                         
-                        cursor.execute(insert_query, (
-                            article.id or str(uuid.uuid4()),
-                            article.title,
-                            article.content,
-                            article.url,
-                            source_id,
-                            article.published_date,
-                            article.scraped_date,
-                            article.language,
-                            article.author,
-                            article.category
-                        ))
-                        
-                        # Insert keywords
-                        if article.keywords:
-                            self._save_article_keywords_sync(cursor, article.id or str(uuid.uuid4()), article.keywords)
+                        for row in cursor.fetchall():
+                            existing_urls.add(row[0])
+                    
+                    # 3. Filter articles
+                    new_articles = [a for a in articles if a.url not in existing_urls]
+                    
+                    if not new_articles:
+                        self.logger.info("No new articles to save (all duplicates)")
+                        return 0
+
+                    saved_count = 0
+                    for article in new_articles:
+                        try:
+                            # Get or create source
+                            source_id = self._get_or_create_source_sync(cursor, article.source)
+                            
+                            # Insert article
+                            insert_query = """
+                            INSERT INTO news_articles 
+                            (id, title, content, url, source_id, published_date, scraped_date, 
+                             language, author, category)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """
+                            
+                            cursor.execute(insert_query, (
+                                article.id or str(uuid.uuid4()),
+                                article.title,
+                                article.content,
+                                article.url,
+                                source_id,
+                                article.published_date,
+                                article.scraped_date,
+                                article.language,
+                                article.author,
+                                article.category
+                            ))
+                            
+                            # Insert keywords
+                            if article.keywords:
+                                self._save_article_keywords_sync(cursor, article.id or str(uuid.uuid4()), article.keywords)
+                            
+                            saved_count += 1
+                        except Exception as inner_e:
+                            self.logger.warning(f"Failed to save individual article {article.url}: {inner_e}")
+                            # Continue to next article
+                            pass
                     
                     conn.commit()
-                    self.logger.info(f"Successfully saved {len(articles)} articles")
+                    self.logger.info(f"Successfully saved {saved_count} new articles (skipped {len(articles) - len(new_articles)} duplicates)")
+                    return saved_count
                     
                 except Exception as e:
                     conn.rollback()
-                    raise DatabaseError(f"Failed to save articles: {str(e)}")
+                    raise DatabaseError(f"Failed to save articles batch: {str(e)}")
         
-        await self._execute_with_retry(_save_operation)
+        return await self._execute_with_retry(_save_operation)
     
     async def _get_or_create_source(self, cursor, source_name: str) -> int:
         """Get or create a news source and return its ID."""

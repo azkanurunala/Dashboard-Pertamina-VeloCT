@@ -5,6 +5,8 @@ Implements scraping functionality for Kompas news articles using sitemap and dir
 
 import asyncio
 import re
+import sys
+import os
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
@@ -14,9 +16,14 @@ import io
 
 from bs4 import BeautifulSoup
 
-from .base_scraper import BaseNewsScraper
-from .exceptions import ScrapingError, NetworkError, ContentExtractionError
-from ..shared.models import NewsArticle, ScrapingConfig
+# Add parent directory to Python path for absolute imports in Azure Functions
+_parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if _parent_dir not in sys.path:
+    sys.path.insert(0, _parent_dir)
+
+from scrapers.base_scraper import BaseNewsScraper
+from scrapers.exceptions import ScrapingError, NetworkError, ContentExtractionError
+from shared.models import NewsArticle, ScrapingConfig
 
 
 class KompasNewsScraper(BaseNewsScraper):
@@ -95,7 +102,14 @@ class KompasNewsScraper(BaseNewsScraper):
             return content
             
         except Exception as e:
-            raise NetworkError(f"Failed to fetch sitemap: {str(e)}", source=self.source_name, url=self.sitemap_url)
+            # Try Selenium fallback for sitemap
+            self.logger.info(f"aiohttp failed for sitemap, trying Selenium fallback: {e}")
+            try:
+                content_str = await self._fetch_sitemap_selenium(self.sitemap_url)
+                return content_str.encode('utf-8')
+            except Exception as selenium_error:
+                self.logger.error(f"Selenium sitemap fallback also failed: {selenium_error}")
+                raise NetworkError(f"Failed to fetch sitemap: {str(e)}", source=self.source_name, url=self.sitemap_url)
 
     def _is_sitemap_index(self, root, namespaces: Dict[str, str]) -> bool:
         """Check if this is a sitemap index or direct sitemap."""

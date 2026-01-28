@@ -5,12 +5,19 @@ Implements scraping functionality for The Guardian news articles using their API
 
 import asyncio
 import re
+import sys
+import os
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 
-from .base_scraper import BaseNewsScraper
-from .exceptions import ScrapingError, NetworkError, ContentExtractionError
-from ..shared.models import NewsArticle, ScrapingConfig
+# Add parent directory to Python path for absolute imports in Azure Functions
+_parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if _parent_dir not in sys.path:
+    sys.path.insert(0, _parent_dir)
+
+from scrapers.base_scraper import BaseNewsScraper
+from scrapers.exceptions import ScrapingError, NetworkError, ContentExtractionError
+from shared.models import NewsArticle, ScrapingConfig
 
 
 class TheGuardianNewsScraper(BaseNewsScraper):

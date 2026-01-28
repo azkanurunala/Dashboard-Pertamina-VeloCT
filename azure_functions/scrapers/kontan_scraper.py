@@ -1,21 +1,27 @@
 """
 Kontan News Scraper for Azure Functions.
-Implements scraping functionality for Kontan news articles using sitemap crawling.
+Implements scraping functionality for Kontan news articles using sitemap and direct scraping.
 """
 
 import asyncio
 import re
+import sys
+import os
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
-import gzip
-import io
+from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
-from .base_scraper import BaseNewsScraper
-from .exceptions import ScrapingError, NetworkError, ContentExtractionError
-from ..shared.models import NewsArticle, ScrapingConfig
+# Add parent directory to Python path for absolute imports in Azure Functions
+_parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if _parent_dir not in sys.path:
+    sys.path.insert(0, _parent_dir)
+
+from scrapers.base_scraper import BaseNewsScraper
+from scrapers.exceptions import ScrapingError, NetworkError, ContentExtractionError
+from shared.models import NewsArticle, ScrapingConfig
 
 
 class KontanNewsScraper(BaseNewsScraper):
@@ -102,7 +108,14 @@ class KontanNewsScraper(BaseNewsScraper):
             return content
             
         except Exception as e:
-            raise NetworkError(f"Failed to fetch sitemap: {str(e)}", source=self.source_name, url=url)
+            # Try Selenium fallback for sitemap
+            self.logger.info(f"aiohttp failed for sitemap, trying Selenium fallback: {e}")
+            try:
+                content_str = await self._fetch_sitemap_selenium(url)
+                return content_str.encode('utf-8')
+            except Exception as selenium_error:
+                self.logger.error(f"Selenium sitemap fallback also failed: {selenium_error}")
+                raise NetworkError(f"Failed to fetch sitemap: {str(e)}", source=self.source_name, url=url)
 
     async def _get_subsitemap_urls(self, root) -> List[str]:
         """

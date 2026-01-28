@@ -7,16 +7,23 @@ scheduling capabilities for daily, weekly, and monthly routines.
 
 import logging
 import json
+import sys
+import os
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
 import azure.functions as func
 
-from ..shared.interfaces import ISchedulerFunction, IDatabaseHandler, ICopilotIntegration
-from ..shared.models import ExecutionResult, FunctionStatus, DateRange, ArticleFilters
-from ..shared.config import config_manager
-from ..shared.database_handler import DatabaseHandler
-from ..shared.copilot_integration import CopilotIntegration
-from ..shared.logging_config import setup_logging
+# Add parent directory to Python path for absolute imports in Azure Functions
+_parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if _parent_dir not in sys.path:
+    sys.path.insert(0, _parent_dir)
+
+from shared.interfaces import ISchedulerFunction, IDatabaseHandler, ICopilotIntegration
+from shared.models import ExecutionResult, FunctionStatus, DateRange, ArticleFilters
+from shared.config import config_manager
+from shared.database_handler import DatabaseHandler
+from shared.copilot_integration import CopilotIntegration
+from shared.logging_config import setup_logging
 
 # Set up logging
 logger = setup_logging(__name__)

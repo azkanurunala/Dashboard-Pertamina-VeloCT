@@ -1,20 +1,28 @@
 """
-OilPrice.com News Scraper for Azure Functions.
-Implements scraping functionality for OilPrice.com news articles using sitemap and JSON-LD extraction.
+OilPrice News Scraper for Azure Functions.
+Implements scraping functionality for OilPrice news articles using sitemap and direct scraping.
 """
 
 import asyncio
 import re
+import sys
+import os
 import xml.etree.ElementTree as ET
 import json
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
+from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
-from .base_scraper import BaseNewsScraper
-from .exceptions import ScrapingError, NetworkError, ContentExtractionError
-from ..shared.models import NewsArticle, ScrapingConfig
+# Add parent directory to Python path for absolute imports in Azure Functions
+_parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if _parent_dir not in sys.path:
+    sys.path.insert(0, _parent_dir)
+
+from scrapers.base_scraper import BaseNewsScraper
+from scrapers.exceptions import ScrapingError, NetworkError, ContentExtractionError
+from shared.models import NewsArticle, ScrapingConfig
 
 
 class OilPriceNewsScraper(BaseNewsScraper):
@@ -224,11 +232,22 @@ class OilPriceNewsScraper(BaseNewsScraper):
         Returns:
             List of article data dictionaries
         """
+        content = None
+        
+        # Try aiohttp first
         try:
-            # Fetch sitemap
             response = await self._make_request(self.sitemap_url)
             content = await response.read()
-            
+        except Exception as e:
+            self.logger.info(f"aiohttp failed for sitemap, trying Selenium fallback: {e}")
+            try:
+                content_str = await self._fetch_sitemap_selenium(self.sitemap_url)
+                content = content_str.encode('utf-8')
+            except Exception as selenium_error:
+                self.logger.error(f"Selenium sitemap fallback also failed: {selenium_error}")
+                raise ScrapingError(f"Failed to fetch sitemap: {str(e)}", source=self.source_name)
+        
+        try:
             # Parse XML
             root = ET.fromstring(content)
             namespaces = {
