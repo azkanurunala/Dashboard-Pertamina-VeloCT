@@ -292,4 +292,4 @@ def main_kompas(keyword="MotoGP", tanggal="2025-11-16"):
         return None
 
 if __name__ == '__main__':
-    print(main_kompas(keyword="MotoGP", tanggal="2025-11-16"))
+    print(main_kompas(keyword="Ekonomi", tanggal="2026-01-28"))

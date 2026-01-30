@@ -196,15 +196,15 @@ def main_oilprice(keyword=None, tanggal=None, save_excel=True):
     return df
 
 
-# if __name__ == '__main__':
-#     # result = main_oilprice(
-#     #     keyword="Oil Price", 
-#     #     tanggal="2025-12-29",
-#     #     save_excel=True
-#     # )
+if __name__ == '__main__':
+    result = main_oilprice(
+        keyword="Oil Price", 
+        tanggal="2025-12-29",
+        save_excel=True
+    )
     
-#     # if result is not None:
-#     #     print(f"\n{'='*60}")
-#     #     print("Content Preview (first article):")
-#     #     print(f"{'='*60}")
-#     #     print(result.iloc[0]['content'][:500] + "...")
+    if result is not None:
+        print(f"\n{'='*60}")
+        print("Content Preview (first article):")
+        print(f"{'='*60}")
+        print(result.iloc[0]['content'][:500] + "...")
