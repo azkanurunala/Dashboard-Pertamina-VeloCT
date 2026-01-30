@@ -434,4 +434,19 @@ def main_eia():
     print("=" * 80)
 
 if __name__ == "__main__":
-    main_eia()
+    print("=" * 80)
+    print("EIA STEO DATA SCRAPER")
+    print("STORAGE MODE: OneDrive")
+    print("=" * 80)
+    print()
+    print(f"File: {ONEDRIVE_FILE_PATH}")
+    print(f"Sheet: {_SHEET_NAME}")
+    print("\nAuthenticating to Microsoft Graph API...")
+    try:
+        access_token = get_access_token()
+        print("Authentication successful")
+    except Exception as e:
+        print(f"Authentication failed: {e}")
+    should_run, release_info = should_run_scraping(access_token)
+    needed_data = get_migas_eia_needed_data(access_token)
+    print(needed_data)

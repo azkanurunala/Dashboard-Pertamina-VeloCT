@@ -197,7 +197,8 @@ if __name__ == "__main__":
     if hasil:
         df = pd.DataFrame(hasil)
         filename = f"guardian_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        df.to_excel(filename, index=False, engine='openpyxl')
+        # df.to_excel(filename, index=False, engine='openpyxl')
+        print(df)
         print(f"Saved: {filename}")
         print("\nPreview:")
         for i, row in enumerate(hasil[:3], 1):

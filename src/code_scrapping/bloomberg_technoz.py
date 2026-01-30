@@ -250,3 +250,4 @@ def main_bloomberg_technoz(query: str, filter_tanggal: str = None, output_filena
 
 if __name__ == "__main__":
     df = main_bloomberg_technoz("Biodiesel", filter_tanggal="2025-09-20")
+    print(df)

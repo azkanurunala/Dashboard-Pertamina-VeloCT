@@ -1252,4 +1252,43 @@ def main_saf_weekly():
 
 
 if __name__ == "__main__":
-    main_petrochemical_short_term()
+    priceSymbols = [
+        "PGAEY00", 
+        "PGAEZ00", 
+        "PGAMS00",
+        "AMFSA00",
+        "PJABF00",
+        "AAPPF00",
+        "AACUE00",
+        "PCAAS00" 
+    ]
+    current_date = datetime.today()
+    current_year = current_date.year
+    current_month = current_date.month
+    unitName = "BBL"
+    fields = ["year", "month", "price", "priceSymbol"]
+    try:
+        onedrive_access_token = get_access_token()
+        print("OneDrive authentication successful")
+    except Exception as e:
+        print(f"OneDrive authentication failed: {e}")
+        exit(1)
+    print("\nLogin ke S&P Global API...")
+    spglobal_access_token = login_spglobal()
+    if not spglobal_access_token:
+        print("Gagal login ke S&P Global API")
+        exit(1)
+    print("\n" + "=" * 60)
+    print("SCRAPING PRICE FORECAST SHORT-TERM - BBM")
+    print("=" * 60)
+    print(f"Period: {current_year}-{current_month:02d}")
+    print(f"Symbols: {', '.join(priceSymbols)}")
+    df_forecast = get_historical_price_energy_forecast_short_term(
+        spglobal_access_token,
+        priceSymbols,
+        current_year,
+        current_month,
+        unitName,
+        fields
+    )
+    print(df_forecast)

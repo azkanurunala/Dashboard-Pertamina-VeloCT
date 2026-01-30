@@ -23,6 +23,15 @@ SHEET_MAPPING = {
     'komposisi': '(Data)WTE_Komposisi',
     'timbulan': '(Data)WTE_Timbulan'
 }
+
+def clean_column_names(df):
+    rename_dict = {
+        'nama_dati2': 'Nama Kota/Kabupaten',
+        'nama_propinsi': 'Nama Provinsi'
+    }
+    df.rename(columns=rename_dict, inplace=True)
+    return df
+
 def fetch_all_data(tahun: str = '2025'):
     jenis_list = ['sumber', 'komposisi', 'timbulan']
     all_data = {}
@@ -37,6 +46,7 @@ def fetch_all_data(tahun: str = '2025'):
         if response.status_code == 200:
             data = response.json()
             df = pd.DataFrame(data['data'])
+            df = clean_column_names(df)
             all_data[jenis] = df
             print(f"Data {jenis}: {len(df)} records")
         else:

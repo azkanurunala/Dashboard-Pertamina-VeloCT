@@ -185,5 +185,6 @@ def simpan_excel(data, keyword):
     kolom = ['title', 'date', 'url', 'content']
     cols = [c for c in kolom if c in df.columns]
     df = df[cols]
-    df.to_excel(nama, index=False, engine='openpyxl')
+    # df.to_excel(nama, index=False, engine='openpyxl')
     print(f"Disimpan: {nama}")
+    print(df)

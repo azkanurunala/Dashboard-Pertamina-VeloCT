@@ -154,7 +154,8 @@ if __name__ == '__main__':
         tanggal="2026-01-01"
     )
     if df is not None and not df.empty:
-        df.to_excel("energiesmedia_results.xlsx", index=False, engine='openpyxl')
+        # df.to_excel("energiesmedia_results.xlsx", index=False, engine='openpyxl')
+        print(df)
         print("\n[INFO] Scraping completed and saved to 'energiesmedia_results.xlsx'")
         print(f"[INFO] Total articles: {len(df)}")
     else:

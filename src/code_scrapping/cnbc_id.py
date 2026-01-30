@@ -325,7 +325,8 @@ if __name__ == "__main__":
     df = main_cnbc(keyword="kurs", tanggal="2025-12-21")
     if df is not None and len(df) > 0:
         output_file = f"cnbc_scraping_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        df.to_excel(output_file, index=False, engine='openpyxl')
+        # df.to_excel(output_file, index=False, engine='openpyxl')
+        print(df)
         print(f"\nData berhasil disimpan ke: {output_file}")
         print(f"Total artikel: {len(df)}")
         print("\nPreview data:")

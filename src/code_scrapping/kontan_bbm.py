@@ -227,3 +227,4 @@ def main_kontan_bioenergi(keyword="BBM", tanggal="2025-11-10"):
 
 if __name__ == '__main__':
     main_kontan_bioenergi(keyword="BBM", tanggal="2025-11-10")
+    print(main_kontan_bioenergi)

@@ -498,4 +498,46 @@ def main_scraper_cpo():
 
 
 if __name__ == "__main__":
-    main_scraper_cpo()
+    print("\n" + "="*60)
+    print("GAPKI CPO PRICE SCRAPER")
+    print("STORAGE MODE: OneDrive")
+    print("="*60)
+    
+    print(f"\nFile: {ONEDRIVE_FILE_PATH}")
+    print(f"Sheet: {SHEET_NAME}")
+    
+    print("\nAuthenticating to Microsoft Graph API...")
+    try:
+        access_token = get_access_token()
+        print("Authentication successful")
+    except Exception as e:
+        print(f"Authentication failed: {e}")    
+    last_date = get_last_upload_date(access_token)
+    print("\n" + "="*60)
+    print("STEP 2: Scraping artikel baru")
+    print("="*60)
+    new_articles = scrape_articles_until_last_date(last_date)
+    print(f"\n{'='*60}")
+    print(f"Mengambil harga dari {len(new_articles)} artikel...")
+    print(f"{'='*60}")
+    all_data = []
+    for idx, article in enumerate(new_articles, 1):
+        print(f"\n[{idx}/{len(new_articles)}] {article['title'][:60]}...")
+        print(f"  URL: {article['url']}")
+        harga_list = scrape_harga_multi(article['url'], article['title'])
+        if not harga_list:
+            print(f"  ! Skip - tidak ada harga ditemukan")
+            continue
+        if len(harga_list) > 1:
+            print(f"  Ditemukan {len(harga_list)} harga berbeda")
+        for harga_data in harga_list:
+            if harga_data["parsed_date"]:
+                dates = harga_data["parsed_date"]
+            else:
+                dates = article["upload_date"]
+            
+            all_data.append({
+                "Upload_Dates": article["upload_date"],
+                "Dates": dates,
+                "PX_LAST": harga_data["harga"]
+            })
