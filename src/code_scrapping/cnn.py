@@ -197,7 +197,7 @@ def main_google_news_cnn(keyword, tanggal=None):
 if __name__ == '__main__':
     keyword = "economy"
     print(f"Scraping CNN (Google News + Sitemap) - keyword: {keyword}\n")
-    hasil = main_google_news_cnn(keyword=keyword, tanggal=None)
+    hasil = main_google_news_cnn(keyword=keyword, tanggal="2026-01-28")
     print(f"\nTotal: {len(hasil)} berita")
     if hasil:
         df = pd.DataFrame(hasil)
