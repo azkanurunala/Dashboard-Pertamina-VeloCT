@@ -202,5 +202,6 @@ if __name__ == '__main__':
     if hasil:
         df = pd.DataFrame(hasil)
         filename = f"cnn_combined_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        df.to_excel(filename, index=False, engine='openpyxl')
+        # df.to_excel(filename, index=False, engine='openpyxl')
+        print(df)
         print(f"Saved: {filename}")

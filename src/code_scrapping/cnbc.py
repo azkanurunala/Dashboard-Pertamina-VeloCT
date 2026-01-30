@@ -128,7 +128,8 @@ if __name__ == '__main__':
     if hasil:
         df = pd.DataFrame(hasil)
         filename = f"cnbc_combined_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        df.to_excel(filename, index=False, engine='openpyxl')
+        print(df)
+        # df.to_excel(filename, index=False, engine='openpyxl')
         print(f"Saved: {filename}")
     else:
         print("Tidak ada berita")

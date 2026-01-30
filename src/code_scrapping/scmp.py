@@ -193,10 +193,11 @@ if __name__ == "__main__":
     )
     if df is not None and len(df) > 0:
         output_file = f"scmp_scraping_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        df.to_excel(output_file, index=False, engine='openpyxl')
+        # df.to_excel(output_file, index=False, engine='openpyxl')
         print(f"\nData berhasil disimpan ke: {output_file}")
         print(f"Total artikel: {len(df)}")
         print("\nPreview data:")
         print(df[['title', 'date']].to_string())
+        print(df)
     else:
         print("\nTidak ada data untuk disimpan")

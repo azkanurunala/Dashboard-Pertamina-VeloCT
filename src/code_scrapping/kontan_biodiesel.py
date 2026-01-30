@@ -225,4 +225,4 @@ def main_kontan_biodiesel(keyword="BBM", tanggal="2025-11-10"):
     return df
 
 if __name__ == '__main__':
-    main_kontan_biodiesel(keyword="ekonomi", tanggal="2025-11-10")
+    print(main_kontan_biodiesel(keyword="ekonomi", tanggal="2025-11-10"))

@@ -337,4 +337,25 @@ def main_price_esdm():
         print("Tidak ada data yang berhasil diekstrak.")
 
 if __name__ == "__main__":
-    main_price_esdm()
+    URL = "https://www.migas.esdm.go.id/post/read/harga-minyak-mentah"
+    print("="*80)
+    print("SCRAPER ICP MIGAS ESDM (OneDrive)")
+    print("="*80)
+    print(f"OneDrive file: {ONEDRIVE_FILE_PATH}")
+    print(f"Sheet: {SHEET_NAME}")
+    print("\nAuthenticating to Microsoft Graph API...")
+    try:
+        access_token = get_access_token()
+        print("Authentication successful")
+    except Exception as e:
+        print(f"Authentication failed: {e}")
+    last_year, last_month = read_last_entry_from_excel(access_token, SHEET_NAME)
+    html = fetch_html_from_website(URL)
+    pdf_links = extract_relevant_pdf_links(html, last_year, last_month)
+    download_pdfs(pdf_links)
+    df = extract_icp_from_all_pdfs("../results/hasil-migas-esdm-pdf")
+    if not df.empty:
+        print("\nHasil Akhir (preview):")
+        print(df.head().to_string(index=False))
+    else:
+        print("Tidak ada data yang berhasil diekstrak.")
