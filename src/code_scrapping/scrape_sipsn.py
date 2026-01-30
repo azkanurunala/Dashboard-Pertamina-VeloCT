@@ -19,9 +19,9 @@ load_dotenv()
 ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_DATA_PATH", "/results/(Terstruktur)Data Scrapping.xlsx")
 API_URL = "https://sipsn.kemenlh.go.id/sipsn/public/home/ajax_list"
 SHEET_MAPPING = {
-    'sumber': 'WTE_Sumber',
-    'komposisi': 'WTE_Komposisi',
-    'timbulan': 'WTE_Timbulan'
+    'sumber': '(Data)WTE_Sumber',
+    'komposisi': '(Data)WTE_Komposisi',
+    'timbulan': '(Data)WTE_Timbulan'
 }
 def fetch_all_data(tahun: str = '2025'):
     jenis_list = ['sumber', 'komposisi', 'timbulan']

@@ -52,7 +52,7 @@ sumber_dict = {
     # "oil volume ": [scrape_oilprice], 
     # "SAF " : [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn],
     "RON 92 " : [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn, scrape_energiesmedia, scrape_bioenergytimes, scrape_theguardian],
-    "Petro " : [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn, scrape_energiesmedia, scrape_bioenergytimes, scrape_theguardian]
+    "Petro " : [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn, scrape_energiesmedia, scrape_bioenergytimes]
 }
 
 sheet_to_keyword = {
