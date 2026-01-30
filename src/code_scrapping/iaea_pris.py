@@ -26,7 +26,7 @@ ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_DATA_PATH", "/results/(Terstruktur)Data
 URL_CAPACITY = "https://pris.iaea.org/PRIS/WorldStatistics/WorldTrendNuclearPowerCapacity.aspx"
 URL_PRODUCTION = "https://pris.iaea.org/PRIS/WorldStatistics/WorldTrendinElectricalProduction.aspx"
 SHEET_NAME_CAPACITY = "(Data)IAEA_Nuclear_Capacity"
-SHEET_NAME_PRODUCTION = "(Data)IAEA_Electrical_Production"
+SHEET_NAME_PRODUCTION = "(Data)IAEA_Electrical"
 
 def setup_driver():
     print("Setting up Chrome driver...")
