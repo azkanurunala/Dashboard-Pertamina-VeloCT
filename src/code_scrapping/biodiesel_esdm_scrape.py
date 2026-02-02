@@ -450,39 +450,3 @@ def main_biodiesel_esdm():
                     print("="*60)
                 else:
                     print("\nGagal menyimpan data ke OneDrive")
-
-
-if __name__ == "__main__":
-    print("="*60)
-    print("SCRAPER HIP BBN BIODIESEL (API VERSION)")
-    print("STORAGE MODE: OneDrive")
-    print("="*60)
-    print(f"\nFile: {ONEDRIVE_FILE_PATH}")
-    print(f"Sheet: {SHEET_NAME}")
-    print("\nAuthenticating to Microsoft Graph API...")
-    try:
-        access_token = get_access_token()
-        print("Authentication successful")
-    except Exception as e:
-        print(f"Authentication failed: {e}")
-        return
-    data, missing_months = scrape_biodiesel_articles_api(access_token, SHEET_NAME)
-    if not data:
-        print("\nTidak ada data untuk diproses")
-    else:
-        print(f"\nTotal artikel biodiesel: {len(data)}")
-        pdf_links = scrape_and_download_pdfs(data, missing_months)
-        if not pdf_links:
-            print("\nTidak ada PDF yang berhasil didownload")
-        else:
-            excel_data = parse_all_pdfs(pdf_links)
-            if not excel_data:
-                print("\nTidak ada data HIP yang berhasil di-extract")
-            else:
-                df = save_to_excel(access_token, excel_data, SHEET_NAME)
-                if df is not None:
-                    print("\n" + "="*60)
-                    print("SELESAI!")
-                    print("="*60)
-                else:
-                    print("\nGagal menyimpan data ke OneDrive")

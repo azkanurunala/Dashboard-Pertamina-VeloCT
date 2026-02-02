@@ -9,6 +9,11 @@ from datetime import datetime, timedelta
 import re
 import time
 import traceback
+import sys 
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from helpers.scraping_helper import setup_driver
 
 def clean_date_cnbc(raw_date: str) -> str:
     now = datetime.now()
@@ -62,19 +67,6 @@ def clean_date_cnbc(raw_date: str) -> str:
         print(f" [DATE] '{raw_date_original}' → '{result}' (format absolut)")
         return result
     return raw_date
-
-def setup_driver(headless=True):
-    chrome_options = Options()
-    if headless:
-        chrome_options.add_argument("--headless=new")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=1920,1080")
-    chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36")
-    chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
-    driver = webdriver.Chrome(options=chrome_options)
-    return driver
 
 def find_pagination_container_by_pattern(soup, min_links=3): 
     all_divs = soup.find_all("div")
@@ -295,29 +287,55 @@ def scrape_cnbc_article_content_selenium(driver, url: str) -> str:
             return ""
         for unwanted in content_div.find_all(["script", "style", "iframe"]):
             unwanted.decompose()
+        divs_to_remove = []
         for div in content_div.find_all("div"):
-            class_str = " ".join(div.get("class", []))
+            if div is None:
+                continue
+            class_list = div.get("class", [])
+            if class_list is None:
+                continue
+            class_str = " ".join(class_list) if isinstance(class_list, list) else str(class_list)
             if any(x in class_str for x in ["ads", "related", "sisip", "baca", "lihatjg", "linksisip"]):
-                div.decompose()
+                divs_to_remove.append(div)
+        for div in divs_to_remove:
+            if div is not None:
+                div.decompose()        
+        tables_to_remove = []
         for table in content_div.find_all("table"):
-            class_str = " ".join(table.get("class", []))
+            if table is None:
+                continue
+            class_list = table.get("class", [])
+            if class_list is None:
+                continue
+            class_str = " ".join(class_list) if isinstance(class_list, list) else str(class_list)
             if any(x in class_str for x in ["linksisip", "pic_artikel"]):
+                tables_to_remove.append(table)
+        for table in tables_to_remove:
+            if table is not None:
                 table.decompose()
         all_text_lines = []
         for p in content_div.find_all("p"):
+            if p is None:
+                continue
             text = p.get_text(strip=True)
             if text and len(text) > 15:
                 cleaned_text = clean_content_text(text)
                 if cleaned_text:
                     all_text_lines.append(cleaned_text)
         for ol in content_div.find_all(["ol", "ul"]):
+            if ol is None:
+                continue
             for li in ol.find_all("li", recursive=False):
+                if li is None:
+                    continue
                 text = li.get_text(strip=True)
                 if text and len(text) > 15:
                     all_text_lines.append(text)
         result = "\n\n".join(all_text_lines)
+        print(f"Konten: {len(result)} karakter")
         return result
     except Exception as e:
+        print(f"Error: {str(e)}")
         traceback.print_exc()
         return ""
 
