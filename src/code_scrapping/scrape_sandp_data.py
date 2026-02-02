@@ -23,7 +23,7 @@ SHEET_NAME_SAF = "(Data)SAF"
 SP_USERNAME = os.getenv("S&P_USERNAME")
 SP_PASSWORD = os.getenv("S&P_PASSWORD")
 SHEET_NAME_FORECAST_BBM_LONG = "(Data)Crackspread_BBM_YEAR"
-SHEET_NAME_FORECAST_BBM_SHORT = "(Data)Crackspread_BBM_MONTH"
+SHEET_NAME_FORECAST_BBM_SHORT = "(Data)Crackspread_BBM"
 SHEET_NAME_PETROCHEMICAL = "(Data)Crackspread_NON_BBM"
 
 def login_spglobal(username=None, password=None):
@@ -487,7 +487,7 @@ def get_historical_price_energy_forecast_short_term(access_token, priceSymbols, 
     url = "https://api.ci.spglobal.com/energy-price-forecast/v1/prices-short-term"
     symbols_str = ",".join([f'"{s}"' for s in priceSymbols])
     filter_query = f'priceSymbol IN ({symbols_str}) AND year={year} AND month={month} AND unitName="{unitName}"'
-    # filter_query = f'priceSymbol IN ({symbols_str}) AND year>=1980 AND year<=2025 AND unitName="BBL"'
+    # filter_query = f'priceSymbol IN ({symbols_str}) AND year>=2024 AND year<2026 AND unitName="BBL"'
     params = {
         "field": ",".join(fields),  
         "filter": filter_query,    
@@ -1252,43 +1252,4 @@ def main_saf_weekly():
 
 
 if __name__ == "__main__":
-    priceSymbols = [
-        "PGAEY00", 
-        "PGAEZ00", 
-        "PGAMS00",
-        "AMFSA00",
-        "PJABF00",
-        "AAPPF00",
-        "AACUE00",
-        "PCAAS00" 
-    ]
-    current_date = datetime.today()
-    current_year = current_date.year
-    current_month = current_date.month
-    unitName = "BBL"
-    fields = ["year", "month", "price", "priceSymbol"]
-    try:
-        onedrive_access_token = get_access_token()
-        print("OneDrive authentication successful")
-    except Exception as e:
-        print(f"OneDrive authentication failed: {e}")
-        exit(1)
-    print("\nLogin ke S&P Global API...")
-    spglobal_access_token = login_spglobal()
-    if not spglobal_access_token:
-        print("Gagal login ke S&P Global API")
-        exit(1)
-    print("\n" + "=" * 60)
-    print("SCRAPING PRICE FORECAST SHORT-TERM - BBM")
-    print("=" * 60)
-    print(f"Period: {current_year}-{current_month:02d}")
-    print(f"Symbols: {', '.join(priceSymbols)}")
-    df_forecast = get_historical_price_energy_forecast_short_term(
-        spglobal_access_token,
-        priceSymbols,
-        current_year,
-        current_month,
-        unitName,
-        fields
-    )
-    print(df_forecast)
+    main_price_forecast_short_term_bbm()
