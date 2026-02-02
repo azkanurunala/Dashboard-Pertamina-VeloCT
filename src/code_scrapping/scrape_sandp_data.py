@@ -487,7 +487,7 @@ def get_historical_price_energy_forecast_short_term(access_token, priceSymbols, 
     url = "https://api.ci.spglobal.com/energy-price-forecast/v1/prices-short-term"
     symbols_str = ",".join([f'"{s}"' for s in priceSymbols])
     filter_query = f'priceSymbol IN ({symbols_str}) AND year={year} AND month={month} AND unitName="{unitName}"'
-    # filter_query = f'priceSymbol IN ({symbols_str}) AND year>=2024 AND year<2026 AND unitName="BBL"'
+    # filter_query = f'priceSymbol IN ({symbols_str}) AND year>=2022 AND year<2022 AND unitName="BBL"'
     params = {
         "field": ",".join(fields),  
         "filter": filter_query,    

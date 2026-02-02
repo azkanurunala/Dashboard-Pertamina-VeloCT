@@ -19,6 +19,7 @@ from helpers.onedrive_helper import (
     download_excel_from_onedrive,
     upload_excel_to_onedrive
 )
+from helpers.scraping_helper import setup_driver
 
 load_dotenv()
 
@@ -27,18 +28,6 @@ URL_CAPACITY = "https://pris.iaea.org/PRIS/WorldStatistics/WorldTrendNuclearPowe
 URL_PRODUCTION = "https://pris.iaea.org/PRIS/WorldStatistics/WorldTrendinElectricalProduction.aspx"
 SHEET_NAME_CAPACITY = "(Data)IAEA_Nuclear_Capacity"
 SHEET_NAME_PRODUCTION = "(Data)IAEA_Electrical"
-
-def setup_driver():
-    print("Setting up Chrome driver...")
-    chrome_options = Options()
-    chrome_options.add_argument('--headless')
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-dev-shm-usage')
-    chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_argument('--window-size=1920,1080')
-    chrome_options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
-    driver = webdriver.Chrome(options=chrome_options)
-    return driver
 
 def fetch_nuclear_capacity_data():
     driver = None
@@ -228,6 +217,7 @@ def main_iaea_scraper():
         return
     df_capacity = fetch_nuclear_capacity_data()
     df_production = fetch_electrical_production_data()
+    print(df_production)
     if (df_capacity is not None and not df_capacity.empty) or \
        (df_production is not None and not df_production.empty):
         save_to_onedrive(access_token, df_capacity, df_production)
