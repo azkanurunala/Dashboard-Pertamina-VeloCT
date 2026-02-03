@@ -6,21 +6,14 @@ import io
 import re
 import time
 from datetime import datetime
-
 from bs4 import BeautifulSoup
+import sys 
+import os
 
-def fetch_xml(url):
-    try:
-        r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=20)
-        r.raise_for_status()
-        c = r.content
-        if url.endswith('.gz') or c[:2] == b'\x1f\x8b':
-            with gzip.GzipFile(fileobj=io.BytesIO(c)) as f:
-                c = f.read()
-        return c
-    except Exception as e:
-        print(f"[ERROR] Failed to fetch {url}: {e}")
-        return b""
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from helpers.scraping_helper import fetch_xml
+
+
 
 def extract_news_info(url_tag, ns):
     loc_tag = url_tag.find('sm:loc', ns)
