@@ -1,5 +1,8 @@
 from selenium.webdriver.chrome.options import Options
 from selenium import webdriver
+import requests
+import gzip
+import io
 
 def setup_driver(headless=True):
     chrome_options = Options()
@@ -18,3 +21,13 @@ def setup_driver(headless=True):
     except Exception as e:
         print("Pastikan ChromeDriver sudah terinstall dan sesuai dengan versi Chrome Anda")
         raise
+
+def fetch_xml(url):
+    headers = {'User-Agent': 'Mozilla/5.0'}
+    r = requests.get(url, headers=headers, timeout=15)
+    r.raise_for_status()
+    content = r.content
+    if url.endswith('.gz') or content[:2] == b'\x1f\x8b':
+        with gzip.GzipFile(fileobj=io.BytesIO(content)) as f:
+            content = f.read()
+    return content
