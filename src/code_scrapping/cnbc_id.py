@@ -440,7 +440,13 @@ def main_cnbc(keyword: str, tanggal: str = None, headless=True, max_pages=None):
     if tanggal is None:
         tanggal = datetime.now().strftime("%d %b %Y")
     else:
-        if re.match(r"\d{2}-\d{2}-\d{4}", tanggal):  
+        if re.match(r"\d{4}-\d{2}-\d{2}", tanggal):
+            try:
+                temp_date = datetime.strptime(tanggal, "%Y-%m-%d")
+                tanggal = temp_date.strftime("%d %b %Y")
+            except:
+                pass
+        elif re.match(r"\d{2}-\d{2}-\d{4}", tanggal):
             try:
                 temp_date = datetime.strptime(tanggal, "%d-%m-%Y")
                 tanggal = temp_date.strftime("%d %b %Y")
@@ -472,9 +478,8 @@ def main_cnbc(keyword: str, tanggal: str = None, headless=True, max_pages=None):
 if __name__ == "__main__":
     df = main_cnbc(
         keyword="emas",
-        tanggal="02-02-2026"
+        tanggal="2026-02-02"
     )
-    
     if df is not None and len(df) > 0:
         print(f"\n{'='*70}")
         print(f"HASIL AKHIR")

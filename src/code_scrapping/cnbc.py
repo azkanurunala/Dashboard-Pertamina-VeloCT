@@ -2,20 +2,9 @@ import requests, xml.etree.ElementTree as ET, pandas as pd, gzip, io, re, time, 
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-sys.path.append(os.path.dirname(__file__))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from google_news import scrape_google_news_with_content
-
-def fetch_xml(url):
-    try:
-        r = requests.get(url, headers={'User-Agent':'Mozilla/5.0'}, timeout=20)
-        r.raise_for_status()
-        c = r.content
-        if url.endswith('.gz') or c[:2] == b'\x1f\x8b':
-            with gzip.GzipFile(fileobj=io.BytesIO(c)) as f:
-                c = f.read()
-        return c
-    except:
-        return b""
+from helpers.scraping_helper import fetch_xml
     
 def ekstrak_info(url_tag, ns):
     loc = url_tag.find('sm:loc', ns)
