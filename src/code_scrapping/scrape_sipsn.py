@@ -26,6 +26,46 @@ SHEET_MAPPING = {
     'timbulan': '(Data)WTE_Timbulan'
 }
 
+def check_year_exists_in_onedrive(access_token, tahun: str):
+    try:
+        excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
+        if excel_buffer is None:
+            print(f"File belum ada di OneDrive")
+            return {'timbulan': False, 'sumber': False, 'komposisi': False}
+        excel_buffer.seek(0)
+        wb = load_workbook(excel_buffer)
+        results = {}
+        for jenis, sheet_name in SHEET_MAPPING.items():
+            if sheet_name not in wb.sheetnames:
+                print(f"[{jenis}] Sheet tidak ditemukan")
+                results[jenis] = False
+                continue
+            ws = wb[sheet_name]
+            tahun_col = None
+            for col in range(1, ws.max_column + 1):
+                if ws.cell(1, col).value == 'tahun':
+                    tahun_col = col
+                    break
+            if tahun_col is None:
+                print(f"[{jenis}] Kolom 'tahun' tidak ditemukan")
+                results[jenis] = False
+                continue
+            found = False
+            for row in range(2, ws.max_row + 1):
+                cell_value = ws.cell(row, tahun_col).value
+                if cell_value is not None and str(cell_value) == str(tahun):
+                    found = True
+                    break
+            results[jenis] = found
+            status = "Sudah ada" if found else "Belum ada"
+            print(f"[{jenis}] Data tahun {tahun}: {status}")
+        wb.close()
+        return results
+    except Exception as e:
+        print(f"Error saat cek tahun: {e}")
+        traceback.print_exc()
+        return {'timbulan': False, 'sumber': False, 'komposisi': False}
+
 def clean_column_names(df):
     rename_dict = {
         'nama_dati2': 'Nama Kota/Kabupaten',
@@ -155,10 +195,19 @@ def main_sipsn_scraper():
     except Exception as e:
         print(f"Authentication failed: {e}")
         return
-    tahun = str(datetime.now().year-1)
+    tahun = str(datetime.now().year)
+    print(f"\nTahun yang akan di-scrape: {tahun}")
+    print(f"{'='*60}")
+    data_status = check_year_exists_in_onedrive(access_token, tahun)
+    all_exists = all(data_status.values())
+    if all_exists:
+        print(f"Semua data tahun {tahun} sudah ada di OneDrive")
+        return
+    else:
+        missing = [jenis for jenis, exists in data_status.items() if not exists]
+        print(f"\nData yang belum ada: {', '.join(missing)}")
     data_dict = fetch_all_data(tahun=tahun)
     if data_dict:
-        print(f"\nSaving to OneDrive...")
         save_to_onedrive(access_token, data_dict, tahun)
     else:
         print("\nTidak ada data yang berhasil diambil")

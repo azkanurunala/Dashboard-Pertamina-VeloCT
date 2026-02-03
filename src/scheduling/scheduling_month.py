@@ -78,7 +78,7 @@ def run_monthly_tasks():
             print("STEP 5: Harga dan Crackspread BBM dan Non BBM - DILEWATI")
 
         # ==== STEP 6: Scraping Data Sampah dan Data Nuklir ====
-        if current_day == 3:
+        if current_day == 15:
             print("\nSTEP 6: Menjalankan Scraping Data Sampah dan Nuklir")
             print(f"Tanggal {current_day}, scraping dijalankan")
             try:
@@ -95,7 +95,7 @@ def run_monthly_tasks():
                 traceback.print_exc()
         else:
             print("\nSTEP 6: Scraping Data Sampah dan Nuklir - DILEWATI")
-            print(f"    [INFO] Tanggal {current_day}, bukan tanggal 3. Scraping tidak dijalankan")
+            print(f"    [INFO] Tanggal {current_day}, bukan tanggal 15. Scraping tidak dijalankan")
             print("-" * 70)
             print("\n" + "=" * 70)
             print("MONTHLY TASKS COMPLETED")
