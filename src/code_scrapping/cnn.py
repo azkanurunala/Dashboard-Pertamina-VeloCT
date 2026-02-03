@@ -5,15 +5,14 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import time
 import re
-import gzip
-import io
 import sys
 import os
 
-sys.path.append(os.path.dirname(__file__))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from google_news import scrape_google_news_with_content
+from helpers.scraping_helper import fetch_xml
 
-def bersihkan_teks(teks):
+def clean_teks(teks):
     if not teks or teks == 'N/A':
         return teks
     pola = [
@@ -69,19 +68,9 @@ def ambil_konten_cnn(url):
                 teks = el.get_text(strip=True)
                 if is_valid_paragraph(teks, min_length=10) and teks not in paragraf:
                     paragraf.append(teks)
-        return bersihkan_teks("\n\n".join(paragraf)) if paragraf else 'N/A'
+        return clean_teks("\n\n".join(paragraf)) if paragraf else 'N/A'
     except Exception:
         return 'N/A'
-
-def fetch_xml(url):
-    headers = {'User-Agent': 'Mozilla/5.0'}
-    r = requests.get(url, headers=headers, timeout=15)
-    r.raise_for_status()
-    content = r.content
-    if url.endswith('.gz') or content[:2] == b'\x1f\x8b':
-        with gzip.GzipFile(fileobj=io.BytesIO(content)) as f:
-            content = f.read()
-    return content
 
 def ekstrak_info_artikel(url_tag, ns):
     loc_tag = url_tag.find('sm:loc', ns)
@@ -195,12 +184,13 @@ def main_google_news_cnn(keyword, tanggal=None):
     return unique_articles
 
 if __name__ == '__main__':
-    keyword = "economy"
+    keyword = "january"
     print(f"Scraping CNN (Google News + Sitemap) - keyword: {keyword}\n")
-    hasil = main_google_news_cnn(keyword=keyword, tanggal=None)
+    hasil = main_google_news_cnn(keyword=keyword, tanggal="2026-02-02")
     print(f"\nTotal: {len(hasil)} berita")
     if hasil:
         df = pd.DataFrame(hasil)
         filename = f"cnn_combined_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        df.to_excel(filename, index=False, engine='openpyxl')
+        # df.to_excel(filename, index=False, engine='openpyxl')
+        print(df)
         print(f"Saved: {filename}")

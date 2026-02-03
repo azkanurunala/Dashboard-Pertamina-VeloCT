@@ -2,20 +2,9 @@ import requests, xml.etree.ElementTree as ET, pandas as pd, gzip, io, re, time, 
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-sys.path.append(os.path.dirname(__file__))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from google_news import scrape_google_news_with_content
-
-def fetch_xml(url):
-    try:
-        r = requests.get(url, headers={'User-Agent':'Mozilla/5.0'}, timeout=20)
-        r.raise_for_status()
-        c = r.content
-        if url.endswith('.gz') or c[:2] == b'\x1f\x8b':
-            with gzip.GzipFile(fileobj=io.BytesIO(c)) as f:
-                c = f.read()
-        return c
-    except:
-        return b""
+from helpers.scraping_helper import fetch_xml
     
 def ekstrak_info(url_tag, ns):
     loc = url_tag.find('sm:loc', ns)
@@ -123,12 +112,13 @@ def main_google_news_cnbc(keyword, tanggal=None):
 if __name__ == '__main__':
     keyword = "geopolitical risks"
     print(f"Scraping CNBC (Google News + Sitemap) - keyword: {keyword}\n")
-    hasil = main_google_news_cnbc(keyword=keyword, tanggal=None)
+    hasil = main_google_news_cnbc(keyword=keyword, tanggal="2026-01-28")
     print(f"\nTotal: {len(hasil)} berita")
     if hasil:
         df = pd.DataFrame(hasil)
         filename = f"cnbc_combined_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        df.to_excel(filename, index=False, engine='openpyxl')
+        print(df)
+        # df.to_excel(filename, index=False, engine='openpyxl')
         print(f"Saved: {filename}")
     else:
         print("Tidak ada berita")

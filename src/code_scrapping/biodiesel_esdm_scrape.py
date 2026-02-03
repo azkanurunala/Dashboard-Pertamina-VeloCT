@@ -450,7 +450,3 @@ def main_biodiesel_esdm():
                     print("="*60)
                 else:
                     print("\nGagal menyimpan data ke OneDrive")
-
-
-if __name__ == "__main__":
-    main_biodiesel_esdm()

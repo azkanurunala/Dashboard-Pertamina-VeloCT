@@ -8,18 +8,10 @@ import re
 import gzip
 import io
 import os
+import sys
 
-def fetch_xml(url):
-    r = requests.get(url, timeout=15)
-    r.raise_for_status()
-    content = r.content
-    if url.endswith('.gz') or content[:2] == b'\x1f\x8b':
-        try:
-            with gzip.GzipFile(fileobj=io.BytesIO(content)) as f:
-                content = f.read()
-        except Exception as e:
-            print(f"[WARN] Failed to decompress gzip {url}: {e}")
-    return content
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from helpers.scraping_helper import fetch_xml
 
 def get_text_from_element(element):
     if element is None:
@@ -292,4 +284,4 @@ def main_kompas(keyword="MotoGP", tanggal="2025-11-16"):
         return None
 
 if __name__ == '__main__':
-    print(main_kompas(keyword="MotoGP", tanggal="2025-11-16"))
+    print(main_kompas(keyword="Ekonomi", tanggal="2026-01-28"))

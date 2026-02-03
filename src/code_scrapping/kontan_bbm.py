@@ -8,6 +8,11 @@ import re
 import gzip
 import io
 import os
+import sys
+
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from helpers.scraping_helper import fetch_xml
 
 # ============================== TEXT CLEANING ==============================
 def clean_text(text):
@@ -57,20 +62,6 @@ def fetch_article_content(url):
     except Exception as e:
         print(f"[ERROR] Failed to fetch content {url}: {e}")
         return "N/A"
-
-# ============================== XML FETCHER ==============================
-def fetch_xml(url):
-    """Fetch and decompress XML or GZ sitemap file."""
-    r = requests.get(url, timeout=15)
-    r.raise_for_status()
-    content = r.content
-    if url.endswith('.gz') or content[:2] == b'\x1f\x8b':
-        try:
-            with gzip.GzipFile(fileobj=io.BytesIO(content)) as f:
-                content = f.read()
-        except Exception as e:
-            print(f"[WARN] Failed to decompress gzip {url}: {e}")
-    return content
 
 # ============================== SITEMAP HANDLING ==============================
 def get_main_sitemap():
@@ -227,3 +218,4 @@ def main_kontan_bioenergi(keyword="BBM", tanggal="2025-11-10"):
 
 if __name__ == '__main__':
     main_kontan_bioenergi(keyword="BBM", tanggal="2025-11-10")
+    print(main_kontan_bioenergi)

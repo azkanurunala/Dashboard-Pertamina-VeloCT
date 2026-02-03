@@ -7,8 +7,13 @@ import time
 import re
 import gzip
 import io
+import sys
+import os
 
-def bersihkan_teks(teks):
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from helpers.scraping_helper import fetch_xml
+
+def clean_teks(teks):
     if not teks or teks == 'N/A':
         return teks
     teks = re.sub(r'Baca Juga.*', '', teks, flags=re.IGNORECASE | re.DOTALL)
@@ -16,7 +21,7 @@ def bersihkan_teks(teks):
     teks = re.sub(r'\n{3,}', '\n\n', teks)
     return teks.strip()
 
-def ambil_konten_kontan(url):
+def get_content_kontan(url):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
     try:
         r = requests.get(url, headers=headers, timeout=15)
@@ -51,28 +56,16 @@ def ambil_konten_kontan(url):
         if not konten:
             konten = 'N/A'
 
-        return bersihkan_teks(konten)
+        return clean_teks(konten)
     except Exception:
         return 'N/A'
 
-def fetch_xml(url):
-    r = requests.get(url, timeout=15)
-    r.raise_for_status()
-    content = r.content
-    if url.endswith('.gz') or content[:2] == b'\x1f\x8b':
-        try:
-            with gzip.GzipFile(fileobj=io.BytesIO(content)) as f:
-                content = f.read()
-        except Exception:
-            pass
-    return content
-
-def ambil_sitemap_utama():
+def get_main_sitemap():
     url = "https://www.kontan.co.id/sitemap.xml"
     content = fetch_xml(url)
     return ET.fromstring(content)
 
-def ambil_daftar_subsitemap(root):
+def get_subsitemap(root):
     ns = {'sm': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
     links = []
     # ambil semua <loc> yang kemungkinan sub-sitemap
@@ -116,12 +109,12 @@ def ekstrak_info_news(url_tag, ns):
 
 def get_kontan_news_by_keyword(keyword):
     try:
-        root = ambil_sitemap_utama()
+        root = get_main_sitemap()
     except Exception as e:
         print(f"Gagal ambil sitemap utama: {e}")
         return []
 
-    subs = ambil_daftar_subsitemap(root)
+    subs = get_subsitemap(root)
     results = []
     keyword_lower = keyword.lower()
     ns = {'sm': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
@@ -165,7 +158,7 @@ def scrape_kontan(keyword, tanggal=None):
         return []
     hasil = []
     for i, a in enumerate(artikel, 1):
-        content = ambil_konten_kontan(a['link'])
+        content = get_content_kontan(a['link'])
         hasil.append({
             "title": a.get("judul", "-"),
             "date": a.get("tanggal", "-"),
@@ -175,8 +168,7 @@ def scrape_kontan(keyword, tanggal=None):
         time.sleep(1.0)
     return hasil
 
-
-def simpan_excel(data, keyword):
+def save_excel(data, keyword):
     if not data:
         print("Tidak ada data untuk disimpan.")
         return
@@ -185,5 +177,6 @@ def simpan_excel(data, keyword):
     kolom = ['title', 'date', 'url', 'content']
     cols = [c for c in kolom if c in df.columns]
     df = df[cols]
-    df.to_excel(nama, index=False, engine='openpyxl')
+    # df.to_excel(nama, index=False, engine='openpyxl')
     print(f"Disimpan: {nama}")
+    print(df)

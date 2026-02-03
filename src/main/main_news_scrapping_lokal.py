@@ -52,20 +52,20 @@ sinonim_dict = {
     # "biodiesel ": ["minyak kelapa sawit ", "crude palm oil ", "CPO ", "minyak sawit ", "kelapa sawit ", "sawit ",
     #                "HIP BBN Biodesel ","biodiesel ", "harga fame ", "harga indeks pasar biodiesel ", "b40 ", "b50 ", "biodiesel ", "biofuel "],
     # "bioetanol ": ["tebu ", "gula ", "molase ", "etanol ", "ethanol ", "bioethanol ", "tetes tebu "],
-    "RUPTL " : ["listrik ", "PLN ", "IPP ", "PJBL ", "pembangkit ", "ketenagalistrikan ", 
-               "transmisi ", "distribusi ", "elektrifikasi ", "batubara ", "batu bara ", "panas bumi ", 
-               "surya ", "nuklir ", "BESS ", "PLTA ", "PLTAL ", "PLTB ", "PLTBg ", "PLTBm ", "PLTD ", "PLTG ", 
-               "PLTGU ", "PLTM ", "PLTMG ", "PLTN ", "PLTP ", "PLTS ", "PLTSa ", "PLTU "],
+    # "RUPTL " : ["listrik ", "PLN ", "IPP ", "PJBL ", "pembangkit ", "ketenagalistrikan ", 
+    #            "transmisi ", "distribusi ", "elektrifikasi ", "batubara ", "batu bara ", "panas bumi ", 
+    #            "surya ", "nuklir ", "BESS ", "PLTA ", "PLTAL ", "PLTB ", "PLTBg ", "PLTBm ", "PLTD ", "PLTG ", 
+    #            "PLTGU ", "PLTM ", "PLTMG ", "PLTN ", "PLTP ", "PLTS ", "PLTSa ", "PLTU "],
     # "harga minyak ": ["minyak mentah "],
     # "volume minyak ": ["volume bbm ", "minyak mentah "],
     # "harga produk kilang pertamina ": ["bbm ","harga kilang pertamina ", "kilang pertamina ", "kilang ", "refinery ", "harga pertamina "],
     # "volume produk kilang pertamina ": ["bbm ", "volume kilang pertamina ", "volume kilang ", "refinery ", "volume pertamina "], 
     # "SAF " : ["UCO ", "CORSIA ", "SAFCo ","biorefinery ", "minyak jelantah ", "bioavtur "],
-    # "RON 92 " : ["pertamax ", "RON 95 ", "RON 97 ", "Residual FO ", "Fuel Oil", "Jet Fuel ", "Avtur ", "Kerosene ", "refinery ", "refined products ", "refining ", "oil products ", "Gasoline ", "Heavy Oil ", "Diesel ", "Gasoil ", "Naphtha ", "LPG ", "Biodiesel ", "Biogasoline ", "Petroleum Coke ", "Oil price "], 
-    # "Petro " : ["chemical ", "petrochemical ", "aromatic ", "olefin ", "polymer ", "LPG ", "Paraxylene ", "Propylene ", "Benzene ", "Green Coke " ]
+    "RON 92 " : ["pertamax ", "RON 95 ", "RON 97 ", "Residual FO ", "Fuel Oil", "Jet Fuel ", "Avtur ", "Kerosene ", "refinery ", "refined products ", "refining ", "oil products ", "Gasoline ", "Heavy Oil ", "Diesel ", "Gasoil ", "Naphtha ", "LPG ", "Biodiesel ", "Biogasoline ", "Petroleum Coke ", "Oil price ", "Fuel "], 
+    "Petro " : ["chemical ", "petrochemical ", "aromatic ", "olefin ", "polymer ", "LPG ", "Paraxylene ", "Propylene ", "Benzene ", "Green Coke " ]
     # "LCOE " : ["harga jual listrik EBT ", "harga listrik EBT ", "tarif listrik EBT "], 
-    "WTE " : ["waste to energy ", "sampah "], 
-    "Pembangkit listrik nuklir ": []
+    # "WTE " : ["waste to energy ", "sampah "], 
+    # "Pembangkit listrik nuklir ": []
 }
 EBT_KEYWORDS = ["PLTA ", "PLTS ", "PLTB ", "BESS ", "PLTBm ", "panas bumi ", "PLTP ", "PLTBg ", "listrik ", "PLN ", "IPP ", "PJBL ", "pembangkit ", "ketenagalistrikan ", "transmisi ", "distribusi ", "elektrifikasi "]
 WTE_KEYWORDS = ["PLTSa "]
@@ -87,17 +87,17 @@ sumber_dict = {
     # "pertumbuhan domestik bruto ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bps],
     # "biodiesel ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
     # "bioetanol ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    "RUPTL ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
+    # "RUPTL ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
     # "harga minyak ": [scrape_kontan_bbm, main_bisnis_indonesia, main_bloomberg_technoz],
     # "volume minyak ": [scrape_kontan_bbm, main_bisnis_indonesia, main_bloomberg_technoz],
     # "harga produk kilang pertamina ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
     # "volume produk kilang pertamina ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz], 
     # "SAF " : [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    # "RON 92 " : [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz], 
-    # "Petro " : [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz], 
+    "RON 92 " : [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz], 
+    "Petro " : [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz], 
     # "LCOE ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    "WTE " : [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    "Pembangkit listrik nuklir " :  [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz]
+    # "WTE " : [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
+    # "Pembangkit listrik nuklir " :  [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz]
 }
 
 sheet_to_keyword = {
@@ -116,17 +116,17 @@ sheet_to_keyword = {
     # "(News)PDB": "pertumbuhan domestik bruto ",
     # "(News)Biodiesel": "biodiesel ",
     # "(News)Bioetanol": "bioetanol ",
-    "(News)RUPTL": "RUPTL ",     
+    # "(News)RUPTL": "RUPTL ",     
     # "(News)Harga Minyak": "harga minyak ",
     # "(News)Volume Minyak": "volume minyak ",
     # "(News)Harga Produk Kilang": "harga produk kilang pertamina ",
     # "(News)Volume Produk Kilang": "volume produk kilang pertamina ", 
     # "(News)SAF" : "SAF ",
-    # "(News)Crackspread_BBM" : "RON 92 ", 
-    # "(News)Crackspread_NonBBM" : "Petro ", 
+    "(News)Crackspread_BBM" : "RON 92 ", 
+    "(News)Crackspread_NonBBM" : "Petro ", 
     # "(News)Harga EBT": "LCOE ", 
-    "(News)Harga WTE": "WTE ", 
-    "(News)Nuklir" : "Pembangkit listrik nuklir "
+    # "(News)Harga WTE": "WTE ", 
+    # "(News)Nuklir" : "Pembangkit listrik nuklir "
 }
 
 def standardize_format(df):
@@ -282,17 +282,17 @@ def main():
         # "(News)PDB",
         # "(News)Biodiesel",
         # "(News)Bioetanol",
-        "(News)RUPTL",
+        # "(News)RUPTL",
         # "(News)Harga Minyak",
         # "(News)Volume Minyak",
         # "(News)Harga Produk Kilang",
         # "(News)Volume Produk Kilang", 
         # "(News)SAF", 
-        # "(News)Crackspread_BBM", 
-        # "(News)Crackspread_NonBBM", 
+        "(News)Crackspread_BBM", 
+        "(News)Crackspread_NonBBM", 
         # "(News)Harga EBT", 
-        "(News)Harga WTE", 
-        "(News)Nuklir"
+        # "(News)Harga WTE", 
+        # "(News)Nuklir"
     ]
     
     print(f"\nLoading existing data from OneDrive...")

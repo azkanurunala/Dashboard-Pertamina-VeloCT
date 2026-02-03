@@ -135,3 +135,8 @@ def scrape_tempo(keyword, tanggal=None):
         })
 
     return hasil_bersih
+
+if __name__ == "__main__":
+    df = scrape_tempo("pertamina", save_to_excel=True)
+    print(df)
+    

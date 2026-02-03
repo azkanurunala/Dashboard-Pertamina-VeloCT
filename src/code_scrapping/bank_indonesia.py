@@ -10,20 +10,11 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from datetime import datetime
 import re
 from bs4 import BeautifulSoup
+import sys
+import os
 
-
-def setup_driver(headless=True):
-    chrome_options = Options()
-    if headless:
-        chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=1920,1080")
-    chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-    driver = webdriver.Chrome(options=chrome_options)
-    print("Browser berhasil diinisialisasi")
-    return driver
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from helpers.scraping_helper import setup_driver
 
 def change_format_date(teks):
     if not teks or teks == 'N/A':

@@ -7,29 +7,11 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from urllib.parse import quote
+import sys
+import os
 
-def setup_driver():
-    options = Options()
-    options.add_argument("--headless=new")
-    options.add_argument("--window-size=1920,1080")
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument(
-        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
-    )
-    driver = webdriver.Chrome(
-        service=Service(ChromeDriverManager().install()),
-        options=options
-    )
-    driver.execute_cdp_cmd(
-        "Page.addScriptToEvaluateOnNewDocument",
-        {
-            "source": "Object.defineProperty(navigator,'webdriver',{get:()=>undefined})"
-        }
-    )
-    return driver
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from helpers.scraping_helper import setup_driver
 
 def get_oldest_article_date(page_source):
     soup = BeautifulSoup(page_source, "html.parser")
@@ -193,10 +175,11 @@ if __name__ == "__main__":
     )
     if df is not None and len(df) > 0:
         output_file = f"scmp_scraping_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        df.to_excel(output_file, index=False, engine='openpyxl')
+        # df.to_excel(output_file, index=False, engine='openpyxl')
         print(f"\nData berhasil disimpan ke: {output_file}")
         print(f"Total artikel: {len(df)}")
         print("\nPreview data:")
         print(df[['title', 'date']].to_string())
+        print(df)
     else:
         print("\nTidak ada data untuk disimpan")
