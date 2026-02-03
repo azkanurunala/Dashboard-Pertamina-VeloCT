@@ -318,6 +318,11 @@ def main_petrochemical_short_term():
     current_date = datetime.today()
     current_year = current_date.year
     current_month = current_date.month
+    if current_month == 1:
+        current_month = 12
+        current_year = current_year - 1
+    else:
+        current_month = current_month - 1
     # current_year = 2024
     # current_month = 12
     try:
@@ -678,6 +683,11 @@ def main_price_forecast_short_term_bbm():
     current_date = datetime.today()
     current_year = current_date.year
     current_month = current_date.month
+    if current_month == 1:
+        current_month = 12
+        current_year = current_year - 1
+    else:
+        current_month = current_month - 1
     unitName = "BBL"
     fields = ["year", "month", "price", "priceSymbol"]
     try:

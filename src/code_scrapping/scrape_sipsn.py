@@ -6,7 +6,7 @@ from io import BytesIO
 from openpyxl import load_workbook
 from dotenv import load_dotenv
 import traceback
-import datetime
+from datetime import datetime
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -155,7 +155,7 @@ def main_sipsn_scraper():
     except Exception as e:
         print(f"Authentication failed: {e}")
         return
-    tahun = str(datetime.now().year)
+    tahun = str(datetime.now().year-1)
     data_dict = fetch_all_data(tahun=tahun)
     if data_dict:
         print(f"\nSaving to OneDrive...")
