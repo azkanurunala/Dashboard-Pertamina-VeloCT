@@ -103,7 +103,7 @@ def run_monthly_tasks():
             print("=" * 70 + "\n")
 
         # ==== STEP 7: Scraping Data Kapasitas EBT ====
-        if current_day == 4: 
+        if current_day == 28: 
             print(f"\nSTEP 7: Menjalankan Scraping Data Kapasitas EBT")
             try:
                 main_ebtke_scraper()

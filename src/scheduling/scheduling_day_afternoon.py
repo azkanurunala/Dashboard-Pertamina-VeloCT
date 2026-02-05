@@ -7,7 +7,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from main.main_news_scrapping_internasional import main as main_news_scraping
 from main.main_sentiment_news_internasional_harian import main as main_sentiment_news
-from code_scrapping.scrape_sandp_data import main_saf_daily, main_crackspeed_bbm_daily, main_crackspeed_non_bbm_daily
+from code_scrapping.scrape_sandp_data import main_saf_daily
 
 def run_daily_scraping():
     try:
@@ -41,10 +41,6 @@ def run_daily_scraping():
         try:
             main_saf_daily()
             print("\nSAF Daily scraping selesai")
-            main_crackspeed_bbm_daily()
-            print("\nCrackspeed BBM Daily scraping selesai")
-            main_crackspeed_non_bbm_daily()
-            print("\nCrackspeed Non-BBM Daily scraping selesai")
         except Exception as e:
             print(f"\n✗ ERROR pada SAF & Crackspeed Scraping: {e}")
             import traceback
