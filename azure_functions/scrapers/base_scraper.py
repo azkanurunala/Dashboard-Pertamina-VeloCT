@@ -12,6 +12,9 @@ from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any, Set
 from urllib.parse import urljoin, urlparse
 import aiohttp
+import gzip
+import io
+import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
 
 import sys
@@ -204,37 +207,45 @@ class BaseNewsScraper(INewsScraperFunction, ABC):
         await self._ensure_session()
         
         for attempt in range(self.config.max_retries + 1):
+            response = None
             try:
                 self.logger.debug(f"Making {method} request to {url} (attempt {attempt + 1})")
                 
-                async with self._session.request(method, url, **kwargs) as response:
-                    # Handle rate limiting responses
-                    if response.status == 429:
-                        retry_after = int(response.headers.get('Retry-After', 60))
-                        raise RateLimitError(
-                            f"Rate limited by server",
-                            retry_after=retry_after,
-                            source=self.source_name
+                response = await self._session.request(method, url, **kwargs)
+                
+                # Handle rate limiting responses
+                if response.status == 429:
+                    retry_after = int(response.headers.get('Retry-After', 60))
+                    await response.release()
+                    raise RateLimitError(
+                        f"Rate limited by server",
+                        retry_after=retry_after,
+                        source=self.source_name
+                    )
+                
+                # Handle other HTTP errors
+                if response.status >= 400:
+                    if attempt < self.config.max_retries:
+                        delay = 2 ** attempt  # Exponential backoff
+                        self.logger.warning(f"HTTP {response.status} for {url}, retrying in {delay}s")
+                        await response.release()
+                        await asyncio.sleep(delay)
+                        continue
+                    else:
+                        status = response.status
+                        await response.release()
+                        raise NetworkError(
+                            f"HTTP request failed with status {status}",
+                            status_code=status,
+                            source=self.source_name,
+                            url=url
                         )
-                    
-                    # Handle other HTTP errors
-                    if response.status >= 400:
-                        if attempt < self.config.max_retries:
-                            delay = 2 ** attempt  # Exponential backoff
-                            self.logger.warning(f"HTTP {response.status} for {url}, retrying in {delay}s")
-                            await asyncio.sleep(delay)
-                            continue
-                        else:
-                            raise NetworkError(
-                                f"HTTP request failed with status {response.status}",
-                                status_code=response.status,
-                                source=self.source_name,
-                                url=url
-                            )
-                    
-                    return response
-                    
+                
+                return response
+                
             except aiohttp.ClientError as e:
+                if response:
+                    await response.release()
                 if attempt < self.config.max_retries:
                     delay = 2 ** attempt
                     self.logger.warning(f"Request failed: {e}, retrying in {delay}s")
@@ -246,9 +257,10 @@ class BaseNewsScraper(INewsScraperFunction, ABC):
                         url=url
                     )
             except RateLimitError:
-                # Re-raise rate limit errors immediately
                 raise
             except Exception as e:
+                if response:
+                    await response.release()
                 if attempt < self.config.max_retries:
                     delay = 2 ** attempt
                     self.logger.warning(f"Unexpected error: {e}, retrying in {delay}s")
@@ -283,9 +295,12 @@ class BaseNewsScraper(INewsScraperFunction, ABC):
         
         try:
             response = await self._make_request(url)
-            content = await response.text()
-            self.logger.debug(f"Fetched {len(content)} characters from {url}")
-            return content
+            try:
+                content = await response.text()
+                self.logger.debug(f"Fetched {len(content)} characters from {url}")
+                return content
+            finally:
+                await response.release()
         except Exception as e:
             # Try Selenium fallback if available and enabled
             if self._use_selenium_fallback and SELENIUM_AVAILABLE:
@@ -362,6 +377,267 @@ class BaseNewsScraper(INewsScraperFunction, ABC):
                 source=self.source_name,
                 url=url
             )
+
+    async def _fetch_sitemap_robust(self, url: str, _depth: int = 0) -> List[Dict[str, str]]:
+        """
+        Centralized robust sitemap fetching and parsing.
+        Handles:
+        1. Gzip compression (automatic or manual)
+        2. XML format (standard)
+        3. HTML format fallback (some sites return HTML tables for sitemaps)
+        4. Malformed XML handling via BeautifulSoup
+        5. Sitemap Index support (recursive discovery)
+        6. Diagnostic saving of failed parsing attempts
+        
+        Args:
+            url: Sitemap URL
+            _depth: Internal recursion depth for indices
+            
+        Returns:
+            List of dictionaries containing article info (loc, title, date)
+        """
+        if _depth > 1:  # Limit recursion to 1 level for index -> sub-sitemap
+            return []
+        
+        content = None
+        
+        # 1. Fetch content
+        try:
+            headers = self._default_headers.copy()
+            headers['Accept'] = 'application/xml,application/xhtml+xml,text/html;q=0.9,text/xml;q=0.8'
+            
+            response = await self._make_request(url, headers=headers)
+            try:
+                content_bytes = await response.read()
+                
+                # Handle potential manual gzip decompression if headers are missing
+                if content_bytes.startswith(b'\x1f\x8b'):
+                    try:
+                        content_bytes = gzip.decompress(content_bytes)
+                        self.logger.debug("Manually decompressed Gzip content")
+                    except Exception as e:
+                        self.logger.warning(f"Manual Gzip decompression failed: {e}")
+                
+                content = content_bytes.decode('utf-8', errors='replace')
+            finally:
+                await response.release()
+        except Exception as e:
+            self.logger.error(f"Failed to fetch sitemap {url}: {e}")
+            if self._use_selenium_fallback and SELENIUM_AVAILABLE:
+                self.logger.info("Trying Selenium fallback for sitemap...")
+                try:
+                    content = await self._fetch_sitemap_selenium(url)
+                except Exception as se:
+                    self.logger.error(f"Sitemap Selenium fallback failed: {se}")
+                    return []
+            else:
+                return []
+
+        if not content:
+            return []
+
+        # 2. Parse Content - Step 1: Standard ElementTree
+        articles = []
+        try:
+            # Strip potential BOM or whitespace
+            clean_content = content.strip()
+            root = ET.fromstring(clean_content)
+            
+            # Map common sitemap namespaces
+            namespaces = {
+                'sm': 'http://www.sitemaps.org/schemas/sitemap/0.9',
+                'news': 'http://www.google.com/schemas/sitemap-news/0.9',
+                'image': 'http://www.google.com/schemas/sitemap-image/1.1',
+                'video': 'http://www.google.com/schemas/sitemap-video/1.1'
+            }
+            
+            # Handle default namespace if present
+            if 'http://www.sitemaps.org/schemas/sitemap/0.9' in clean_content:
+                url_tags = root.findall('.//sm:url', namespaces) if 'sm' in namespaces else root.findall('.//{http://www.sitemaps.org/schemas/sitemap/0.9}url')
+            else:
+                url_tags = root.findall('.//url')
+            
+            if url_tags:
+                for url_tag in url_tags:
+                    info = self._extract_article_info_robust(url_tag, namespaces)
+                    if info:
+                        articles.append(info)
+                
+                if articles:
+                    self.logger.info(f"Successfully parsed {len(articles)} articles using ElementTree")
+                    return articles
+            
+            # 2.2 Parse Content - Step 1.1: Sitemap Index if no URLs found
+            if 'http://www.sitemaps.org/schemas/sitemap/0.9' in clean_content:
+                sitemap_tags = root.findall('.//sm:sitemap', namespaces) if 'sm' in namespaces else root.findall('.//{http://www.sitemaps.org/schemas/sitemap/0.9}sitemap')
+            else:
+                sitemap_tags = root.findall('.//sitemap')
+            
+            if sitemap_tags:
+                self.logger.info(f"Found {len(sitemap_tags)} potential sub-sitemaps in index")
+                results = []
+                # Only process the first few sub-sitemaps to stay recent and avoid over-fetching
+                processed_count = 0
+                for s_tag in sitemap_tags:
+                    loc_node = s_tag.find('loc') or s_tag.find('sm:loc', namespaces or {})
+                    if loc_node is not None:
+                        loc = loc_node.get_text() if hasattr(loc_node, 'get_text') else loc_node.text
+                        if loc:
+                            loc = loc.strip()
+                            # Basic filtering: skip non-xml (unless index)
+                            # Most sub-sitemaps follow a year/month pattern or say 'sitemap'
+                            self.logger.info(f"Recursing into sub-sitemap: {loc}")
+                            sub_articles = await self._fetch_sitemap_robust(loc, _depth + 1)
+                            results.extend(sub_articles)
+                            processed_count += 1
+                            if processed_count >= 3: # Limit to top 3 sub-sitemaps
+                                break
+                
+                if results:
+                    return results
+        except Exception as e:
+            self.logger.debug(f"ElementTree parsing failed for {url}: {e}. Trying BeautifulSoup (XML)...")
+
+        # 3. Parse Content - Step 2: BeautifulSoup (XML)
+        try:
+            soup = BeautifulSoup(content, 'xml')
+            url_tags = soup.find_all('url')
+            if url_tags:
+                for url_tag in url_tags:
+                    info = self._extract_article_info_robust(url_tag)
+                    if info:
+                        articles.append(info)
+                
+                if articles:
+                    self.logger.info(f"Successfully parsed {len(articles)} articles using BeautifulSoup (XML)")
+                    return articles
+        except Exception as e:
+            self.logger.debug(f"BeautifulSoup (XML) parsing failed for {url}: {e}. Trying BeautifulSoup (HTML)...")
+
+        # 4. Parse Content - Step 3: BeautifulSoup (HTML) - Fallback for "Pretty" sitemaps
+        try:
+            soup = BeautifulSoup(content, 'html.parser')
+            # Look for <table> or <ul> that might contain links
+            rows = soup.find_all(['tr', 'li'])
+            for row in rows:
+                link_tag = row.find('a', href=True)
+                if link_tag:
+                    loc = urljoin(url, link_tag['href'])
+                    title = link_tag.get_text(strip=True)
+                    
+                    # Try to find a date in sibling cells/elements
+                    date_val = ""
+                    # Simple heuristic: find text that looks like a date (YYYY-MM-DD or similar)
+                    date_match = re.search(r'\d{4}-\d{2}-\d{2}', row.get_text())
+                    if date_match:
+                        date_val = date_match.group(0)
+                        
+                    articles.append({
+                        'loc': loc,
+                        'title': title,
+                        'date': date_val
+                    })
+            
+            if articles:
+                self.logger.info(f"Successfully extracted {len(articles)} links using HTML fallback for {url}")
+                return articles
+        except Exception as e:
+            self.logger.error(f"All parsing stages failed for {url}: {e}")
+
+        # 5. Diagnostic: Save failed sitemap
+        self._save_failed_sitemap(url, content)
+        return []
+
+    def _extract_article_info_robust(self, url_tag, namespaces: Optional[Dict[str, str]] = None) -> Optional[Dict[str, str]]:
+        """
+        Robustly extract loc, title, and date from a sitemap <url> tag.
+        Handles various namespaces and tag names.
+        
+        Args:
+            url_tag: XML element or BS4 tag
+            namespaces: Optional namespace map for ElementTree
+            
+        Returns:
+            Dictionary with loc, title, date or None
+        """
+        try:
+            loc = ""
+            title = ""
+            date = ""
+            
+            # Extract Loc
+            if hasattr(url_tag, 'find'): # BS4 or ElementTree
+                loc_node = url_tag.find('loc') or url_tag.find('sm:loc', namespaces or {})
+                if loc_node is not None:
+                    loc = loc_node.get_text() if hasattr(loc_node, 'get_text') else loc_node.text
+            
+            if not loc:
+                return None
+                
+            loc = loc.strip()
+            
+            # Extract Title and Date (News Search)
+            # Support both ET and BS4
+            news_nodes = []
+            if hasattr(url_tag, 'find_all'): # BS4
+                news_nodes = url_tag.find_all('news:news') + url_tag.find_all('news')
+            elif hasattr(url_tag, 'findall'): # ElementTree
+                news_nodes = url_tag.findall('.//news:news', namespaces or {}) + url_tag.findall('.//news')
+                
+            for news in news_nodes:
+                # Title
+                title_node = news.find('news:title', namespaces or {}) or news.find('title')
+                if title_node is not None:
+                    title = title_node.get_text() if hasattr(title_node, 'get_text') else title_node.text
+                
+                # Date
+                date_node = news.find('news:publication_date', namespaces or {}) or news.find('publication_date')
+                if date_node is not None:
+                    date_val = date_node.get_text() if hasattr(date_node, 'get_text') else date_node.text
+                    if date_val:
+                        # Extract YYYY-MM-DD
+                        match = re.search(r'\d{4}-\d{2}-\d{2}', date_val)
+                        if match:
+                            date = match.group(0)
+
+            # Fallback for date: lastmod
+            if not date:
+                lastmod_node = url_tag.find('lastmod') or url_tag.find('sm:lastmod', namespaces or {})
+                if lastmod_node is not None:
+                    lastmod_val = lastmod_node.get_text() if hasattr(lastmod_node, 'get_text') else lastmod_node.text
+                    if lastmod_val:
+                        match = re.search(r'\d{4}-\d{2}-\d{2}', lastmod_val)
+                        if match:
+                            date = match.group(0)
+
+            return {
+                'loc': loc,
+                'title': title.strip() if title else "",
+                'date': date
+            }
+        except Exception as e:
+            self.logger.warning(f"Error extracting info from sitemap tag: {e}")
+            return None
+
+    def _save_failed_sitemap(self, url: str, content: str):
+        """Save failed sitemap content for diagnostic purposes."""
+        try:
+            diag_dir = os.path.join(os.getcwd(), 'failed_sitemaps')
+            if not os.path.exists(diag_dir):
+                os.makedirs(diag_dir)
+            
+            filename = re.sub(r'[^\w\-_]', '_', url) + f"_{int(time.time())}.txt"
+            filepath = os.path.join(diag_dir, filename)
+            
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(f"URL: {url}\n")
+                f.write(f"TIMESTAMP: {datetime.now().isoformat()}\n")
+                f.write("-" * 40 + "\n")
+                f.write(content)
+                
+            self.logger.info(f"Saved failed sitemap diagnostic to {filepath}")
+        except Exception as e:
+            self.logger.error(f"Failed to save diagnostic sitemap: {e}")
 
     def _clean_text(self, text: str) -> str:
         """

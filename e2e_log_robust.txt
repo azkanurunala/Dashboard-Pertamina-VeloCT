@@ -160,3 +160,22 @@
 [Step 2] Scraping News (Tempo)...
 2026-02-09 22:48:35.274282 - Scraping for keywords: ['Pertamina', 'Indonesia', 'Energi', 'Ekonomi', 'Bisnis', 'Market', 'Pemerintah']
 2026-02-09 22:48:35.274799 - Date range: 2024-01-01 to 2026-02-09
+2026-02-09 23:10:35.722231 - SUCCESS: Found 25 real articles from Tempo matching keywords.
+2026-02-09 23:10:35.726497 - 
+[Step 3] Saving Articles to Database...
+2026-02-09 23:10:36.019056 - SUCCESS: Saved 25 articles to DB.
+2026-02-09 23:10:36.020134 - 
+[Step 4] Fetching Articles for Analysis...
+2026-02-09 23:10:36.310158 - SUCCESS: Retrieved 13 target articles from DB.
+2026-02-09 23:10:36.311199 - 
+[Step 5] Running Sentiment Analysis (OPENAI)...
+2026-02-09 23:10:41.183604 - SUCCESS: Analysis completed for batch. Label: SentimentLabel.NEUTRAL, Score: -0.1
+2026-02-09 23:10:41.184121 - 
+[Step 6] Saving Sentiment Analysis to Database...
+2026-02-09 23:10:41.373366 - SUCCESS: Sentiment Analysis saved. ID: 2f74678a-0200-4b05-9e16-ec5db929d08c
+2026-02-09 23:10:41.374423 - 
+[Step 7] Final Verification Query...
+2026-02-09 23:10:41.444345 - FAIL: Sentiment analysis record NOT found in sentiment_analyses table.
+2026-02-09 23:10:41.445943 - DEBUG: Closed AI provider session.
+2026-02-09 23:10:41.446467 - 
+--- End-to-End Pipeline Test Completed ---

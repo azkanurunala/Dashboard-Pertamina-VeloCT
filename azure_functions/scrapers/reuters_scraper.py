@@ -51,270 +51,7 @@ class ReutersNewsScraper(BaseNewsScraper):
             )
         
         super().__init__(config)
-        self.sitemap_index_url = self.config.selectors.get("sitemap_index", "https://www.reuters.com/arc/outboundfeeds/news-sitemap-index/?outputType=xml")
-
-    async def _get_sitemap_urls(self, max_sitemaps: Optional[int] = 5) -> List[str]:
-        """
-        Get sitemap URLs from the sitemap index.
-        
-        Args:
-            max_sitemaps: Maximum number of sitemaps to process (optional)
-            
-        Returns:
-            List of sitemap URLs
-        """
-        try:
-            response = await self._make_request(self.sitemap_index_url)
-            content = await response.text()
-            
-            # Parse XML
-            root = ET.fromstring(content)
-            namespaces = {'sm': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
-            
-            sitemap_urls = []
-            for sitemap in root.findall('.//sm:sitemap', namespaces):
-                loc = sitemap.find('sm:loc', namespaces)
-                if loc is not None and loc.text:
-                    sitemap_urls.append(loc.text.strip())
-                    
-                    if max_sitemaps and len(sitemap_urls) >= max_sitemaps:
-                        break
-            
-            self.logger.info(f"Found {len(sitemap_urls)} sitemap URLs")
-            return sitemap_urls
-            
-        except Exception as e:
-            self.logger.warning(f"Failed to get sitemap URLs via aiohttp: {e}, trying Selenium...")
-            # Try Selenium fallback
-            try:
-                content = await self._fetch_sitemap_selenium(self.sitemap_index_url)
-                root = ET.fromstring(content)
-                namespaces = {'sm': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
-                
-                sitemap_urls = []
-                for sitemap in root.findall('.//sm:sitemap', namespaces):
-                    loc = sitemap.find('sm:loc', namespaces)
-                    if loc is not None and loc.text:
-                        sitemap_urls.append(loc.text.strip())
-                        if max_sitemaps and len(sitemap_urls) >= max_sitemaps:
-                            break
-                
-                self.logger.info(f"Selenium found {len(sitemap_urls)} sitemap URLs")
-                return sitemap_urls if sitemap_urls else ["https://www.reuters.com/arc/outboundfeeds/news-sitemap/?outputType=xml"]
-            except Exception as selenium_error:
-                self.logger.warning(f"Selenium fallback also failed: {selenium_error}")
-                return ["https://www.reuters.com/arc/outboundfeeds/news-sitemap/?outputType=xml"]
-
-    def _extract_article_info_from_sitemap(self, url_tag, namespaces: Dict[str, str]) -> Optional[Dict[str, str]]:
-        """
-        Extract article information from sitemap URL entry.
-        
-        Args:
-            url_tag: XML URL element
-            namespaces: XML namespaces
-            
-        Returns:
-            Dictionary with article info or None if invalid
-        """
-        try:
-            # Extract URL
-            loc_element = url_tag.find('sm:loc', namespaces)
-            if loc_element is None or not loc_element.text:
-                return None
-            
-            url = loc_element.text.strip()
-            
-            # Skip non-article URLs
-            if not any(pattern in url for pattern in ['/article/', '/news/', '/world/', '/business/', '/technology/']):
-                return None
-            
-            # Extract last modified date
-            lastmod_element = url_tag.find('sm:lastmod', namespaces)
-            date_raw = lastmod_element.text.strip() if lastmod_element is not None else ''
-            
-            # Extract news-specific information
-            news_element = url_tag.find('news:news', namespaces)
-            title = ""
-            
-            if news_element is not None:
-                title_element = news_element.find('news:title', namespaces)
-                pub_element = news_element.find('news:publication_date', namespaces)
-                
-                if title_element is not None and title_element.text:
-                    title = title_element.text.strip()
-                
-                # Use publication date if available, otherwise use lastmod
-                if pub_element is not None and pub_element.text:
-                    date_raw = pub_element.text.strip()
-            
-            # Parse date
-            date = ''
-            if date_raw:
-                # Extract date part (before 'T' if present)
-                date = date_raw.split('T')[0] if 'T' in date_raw else date_raw
-            
-            # Generate title from URL if not available
-            if not title:
-                url_parts = url.rstrip('/').split('/')
-                if len(url_parts) > 0:
-                    title = url_parts[-1].replace('-', ' ').title()
-                else:
-                    title = "Reuters Article"
-            
-            return {
-                'title': title,
-                'url': url,
-                'date': date
-            }
-            
-        except Exception as e:
-            self.logger.warning(f"Failed to extract article info: {e}")
-            return None
-
-    async def _extract_article_content(self, url: str) -> str:
-        """
-        Extract article content from Reuters article page.
-        
-        Args:
-            url: Article URL
-            
-        Returns:
-            Extracted article content
-        """
-        try:
-            content = await self._fetch_content(url)
-            soup = BeautifulSoup(content, 'html.parser')
-            
-            # Remove unwanted elements first
-            unwanted_selector = self.config.selectors.get("unwanted", "")
-            if unwanted_selector:
-                for unwanted in soup.select(unwanted_selector):
-                    unwanted.decompose()
-            
-            # Try to find article body using various selectors
-            body_selectors = [
-                "div.article-body-module__content__bnXL1",
-                "div[data-testid='article-body']",
-                "div.StandardArticleBody_body",
-                "div.ArticleBodyWrapper",
-                "article"
-            ]
-            
-            article_content = None
-            for selector in body_selectors:
-                article_content = soup.select_one(selector)
-                if article_content:
-                    break
-            
-            if not article_content:
-                # Fallback to the entire page
-                article_content = soup
-            
-            # Extract paragraphs
-            paragraphs = []
-            
-            # Look for paragraph elements with various selectors
-            paragraph_selectors = [
-                "div[data-testid^='paragraph-']",
-                "p",
-                "div.text__text__1FZLe"
-            ]
-            
-            for selector in paragraph_selectors:
-                elements = article_content.select(selector)
-                for element in elements:
-                    text = self._clean_text(element.get_text())
-                    if len(text) > 30 and text not in paragraphs:
-                        paragraphs.append(text)
-                
-                if len(paragraphs) >= 3:
-                    break
-            
-            # If no paragraphs found, try extracting from all text elements
-            if not paragraphs:
-                for element in article_content.find_all(['p', 'div', 'span']):
-                    text = self._clean_text(element.get_text())
-                    if len(text) > 50 and text not in paragraphs:
-                        paragraphs.append(text)
-            
-            if not paragraphs:
-                return "N/A"
-            
-            return "\n\n".join(paragraphs)
-            
-        except Exception as e:
-            self.logger.error(f"Failed to extract content from {url}: {e}")
-            return "N/A"
-
-    async def _scrape_from_sitemap(self, keywords: List[str], start_date: datetime, end_date: datetime) -> List[Dict[str, Any]]:
-        """
-        Scrape articles from Reuters sitemap(s).
-        
-        Args:
-            keywords: Keywords to filter articles
-            start_date: Start date for filtering
-            end_date: End date for filtering
-            
-        Returns:
-            List of article data dictionaries
-        """
-        try:
-            # Get sitemap URLs
-            sitemap_urls = await self._get_sitemap_urls(max_sitemaps=3)  # Limit to 3 sitemaps for performance
-            
-            all_articles = []
-            namespaces = {
-                'sm': 'http://www.sitemaps.org/schemas/sitemap/0.9',
-                'news': 'http://www.google.com/schemas/sitemap-news/0.9'
-            }
-            
-            # Process each sitemap
-            for sitemap_url in sitemap_urls:
-                try:
-                    response = await self._make_request(sitemap_url)
-                    sitemap_data = await response.text()
-                    
-                    # Parse XML
-                    root = ET.fromstring(sitemap_data)
-                    
-                    # Extract articles from this sitemap
-                    for url_tag in root.findall('.//sm:url', namespaces):
-                        article_info = self._extract_article_info_from_sitemap(url_tag, namespaces)
-                        if article_info:
-                            all_articles.append(article_info)
-                    
-                    # Rate limiting between sitemaps
-                    await asyncio.sleep(1)
-                    
-                except Exception as e:
-                    self.logger.warning(f"Failed to process sitemap {sitemap_url}: {e}")
-                    continue
-            
-            self.logger.info(f"Found {len(all_articles)} articles across all sitemaps")
-            
-            # Filter by date if specified
-            if start_date and end_date:
-                filtered_articles = []
-                for article in all_articles:
-                    if article['date']:
-                        try:
-                            article_date = datetime.strptime(article['date'], '%Y-%m-%d')
-                            if start_date <= article_date <= end_date:
-                                filtered_articles.append(article)
-                        except ValueError:
-                            # Include articles with unparseable dates
-                            filtered_articles.append(article)
-                    else:
-                        # Include articles without dates
-                        filtered_articles.append(article)
-                
-                all_articles = filtered_articles
-                self.logger.info(f"Date filtering resulted in {len(all_articles)} articles")
-            
-            return all_articles
-            
-        except Exception as e:
-            raise ScrapingError(f"Failed to scrape from sitemap: {str(e)}", source=self.source_name)
+        self.sitemap_url = self.config.selectors.get("sitemap_index", "https://www.reuters.com/arc/outboundfeeds/news-sitemap-index/?outputType=xml")
 
     async def _scrape_articles_from_source(self, keywords: List[str], start_date: datetime, end_date: datetime, **kwargs) -> List[NewsArticle]:
         """
@@ -330,27 +67,95 @@ class ReutersNewsScraper(BaseNewsScraper):
             List of scraped NewsArticle objects
         """
         try:
-            # Get articles from sitemap
-            sitemap_articles = await self._scrape_from_sitemap(keywords, start_date, end_date)
+            # 1. Fetch sitemap index or article sitemaps
+            all_articles_info = []
+            sitemap_entries = await self._fetch_sitemap_robust(self.sitemap_url)
             
-            # Limit the number of articles to process for performance
-            max_articles = kwargs.get('max_articles', 50)
-            if len(sitemap_articles) > max_articles:
-                # Randomize selection to get diverse content
-                import random
-                sitemap_articles = random.sample(sitemap_articles, max_articles)
-                self.logger.info(f"Limited to {max_articles} articles for processing")
+            # Identify article sitemaps (if index) or direct articles
+            article_sitemaps = []
+            direct_articles = []
             
-            # Extract content for each article
+            for entry in sitemap_entries:
+                loc = entry['loc']
+                # arc/outboundfeeds/news-sitemap typically contains articles
+                # If loc ends with .xml or looks like a sub-sitemap, queue it
+                if (loc.endswith('.xml') or 'sitemap' in loc.lower()) and loc != self.sitemap_url:
+                    article_sitemaps.append(loc)
+                elif any(p in loc for p in ['/article/', '/news/', '/world/', '/business/']):
+                    direct_articles.append(entry)
+            
+            # If we found direct articles in the initial fetch, use them
+            if direct_articles and not article_sitemaps:
+                self.logger.info(f"Found {len(direct_articles)} articles directly in sitemap")
+                initial_info = direct_articles
+            else:
+                # Limit to first few sitemaps for performance if it's an index
+                process_sitemaps = article_sitemaps[:3]
+                self.logger.info(f"Processing {len(process_sitemaps)} Reuters sub-sitemaps")
+                initial_info = []
+                
+                for s_url in process_sitemaps:
+                    try:
+                        sub_entries = await self._fetch_sitemap_robust(s_url)
+                        initial_info.extend(sub_entries)
+                        await asyncio.sleep(0.5)
+                    except Exception as e:
+                        self.logger.warning(f"Failed sub-sitemap {s_url}: {e}")
+            
+            # 2. Filter articles
+            for info in initial_info:
+                url = info['loc']
+                title = info.get('title', '')
+                date_str = info.get('date', '')
+                
+                # Skip non-article URLs
+                if not any(pattern in url for pattern in ['/article/', '/news/', '/world/', '/business/', '/technology/']):
+                    continue
+
+                # Filter by keywords if provided
+                if keywords:
+                    keyword_match = False
+                    info_text = f"{title} {url}".lower()
+                    for kw in keywords:
+                        if kw.lower() in info_text:
+                            keyword_match = True
+                            break
+                    if not keyword_match:
+                        continue
+                
+                # Filter by date if provided
+                if start_date and end_date and date_str:
+                    try:
+                        article_date = datetime.strptime(date_str, '%Y-%m-%d')
+                        if not (start_date <= article_date <= end_date):
+                            continue
+                    except ValueError:
+                        pass
+                
+                all_articles_info.append({
+                    'title': title or url.rstrip('/').split('/')[-1].replace('-', ' ').title(),
+                    'url': url,
+                    'date': date_str
+                })
+            
+            self.logger.info(f"Found {len(all_articles_info)} total candidate articles")
+            
+            if not all_articles_info:
+                return []
+            
+            # Limit the number of articles to process
+            max_articles = kwargs.get('max_articles', 25)
+            if len(all_articles_info) > max_articles:
+                all_articles_info = random.sample(all_articles_info, max_articles)
+                self.logger.info(f"Limited to {max_articles} random articles for processing")
+            
+            # 3. Extract content
             articles = []
-            for i, article_data in enumerate(sitemap_articles):
+            for i, article_data in enumerate(all_articles_info):
                 try:
-                    self.logger.info(f"Processing article {i+1}/{len(sitemap_articles)}: {article_data['title'][:60]}...")
-                    
-                    # Extract content
+                    self.logger.info(f"[{i+1}/{len(all_articles_info)}] Processing: {article_data['title'][:50]}...")
                     content = await self._extract_article_content(article_data['url'])
                     
-                    # Parse published date
                     published_date = datetime.utcnow()
                     if article_data['date']:
                         try:
@@ -358,62 +163,31 @@ class ReutersNewsScraper(BaseNewsScraper):
                         except ValueError:
                             pass
                     
-                    # Create article
                     article = self._create_article(
                         title=article_data['title'],
                         content=content,
                         url=article_data['url'],
                         published_date=published_date,
-                        keywords=[]  # Will be populated by keyword filtering
+                        keywords=[]
                     )
-                    
                     articles.append(article)
-                    
-                    # More conservative rate limiting for Reuters
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(2)  # Conservative rate limit for Reuters
                     
                 except Exception as e:
-                    self.logger.error(f"Failed to process article {article_data['url']}: {e}")
+                    self.logger.error(f"Failed article {article_data['url']}: {e}")
                     continue
             
             self.logger.info(f"Successfully scraped {len(articles)} articles from Reuters")
             return articles
             
         except Exception as e:
-            raise ScrapingError(f"Failed to scrape Reuters articles: {str(e)}", source=self.source_name)
+            raise ScrapingError(f"Failed to scrape Reuters: {str(e)}", source=self.source_name)
 
 
 # Azure Function wrapper
 async def scrape_reuters_news(keywords: List[str], start_date: datetime, end_date: datetime, **kwargs) -> List[NewsArticle]:
     """
     Azure Function entry point for Reuters news scraping.
-    
-    Args:
-        keywords: Keywords to search for
-        start_date: Start date for article search
-        end_date: End date for article search
-        **kwargs: Additional parameters
-        
-    Returns:
-        List of scraped NewsArticle objects
-    """
-    async with ReutersNewsScraper() as scraper:
-        return await scraper.scrape_news(keywords, start_date, end_date, **kwargs)
-
-
-# Azure Function wrapper
-async def scrape_reuters_news(keywords: List[str], start_date: datetime, end_date: datetime, **kwargs) -> List[NewsArticle]:
-    """
-    Azure Function entry point for Reuters news scraping.
-    
-    Args:
-        keywords: Keywords to search for
-        start_date: Start date for article search
-        end_date: End date for article search
-        **kwargs: Additional parameters
-        
-    Returns:
-        List of scraped NewsArticle objects
     """
     async with ReutersNewsScraper() as scraper:
         return await scraper.scrape_news(keywords, start_date, end_date, **kwargs)
