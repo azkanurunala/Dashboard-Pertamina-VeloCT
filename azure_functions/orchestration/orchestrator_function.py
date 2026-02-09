@@ -29,8 +29,45 @@ from shared.database_handler import DatabaseHandler
 from shared.copilot_integration import CopilotIntegration
 from shared.logging_config import setup_logging
 
+# Import scrapers
+from scrapers import (
+    # News scrapers
+    BPSScraper, BankIndonesiaScraper, BloombergTechnozScraper,
+    GoogleNewsScraper, BioenergyTimesScraper, SCMPScraper,
+    EnergiesMediaScraper, KontanBBMScraper, KontanBiodieselScraper,
+    SAndPNewsScraper,
+    # Data scrapers  
+    IAEAPRISScraper, MigasEIAScraper, CPOPriceScraper, SIPSNDataScraper,
+    BiodieselESDMScraper, BioetanolESDMScraper, MigasESDMScraper,
+    SAndPDataScraper
+)
+
 # Set up logging
 logger = setup_logging(__name__)
+
+# Scraper registry - maps source names to scraper classes
+SCRAPER_REGISTRY = {
+    # News sources
+    'bps': BPSScraper,
+    'bank_indonesia': BankIndonesiaScraper,
+    'bloomberg_technoz': BloombergTechnozScraper,
+    'google_news': GoogleNewsScraper,
+    'bioenergytimes': BioenergyTimesScraper,
+    'scmp': SCMPScraper,
+    'energiesmedia': EnergiesMediaScraper,
+    'kontan_bbm': KontanBBMScraper,
+    'kontan_biodiesel': KontanBiodieselScraper,
+    'sandp_news': SAndPNewsScraper,
+    # Data sources
+    'iaea_pris': IAEAPRISScraper,
+    'migas_eia': MigasEIAScraper,
+    'cpo': CPOPriceScraper,
+    'sipsn': SIPSNDataScraper,
+    'biodiesel_esdm': BiodieselESDMScraper,
+    'bioetanol_esdm': BioetanolESDMScraper,
+    'migas_esdm': MigasESDMScraper,
+    'sandp_data': SAndPDataScraper
+}
 
 
 class OrchestratorFunction(IOrchestratorFunction):
@@ -460,33 +497,47 @@ class OrchestratorFunction(IOrchestratorFunction):
             logger.info(f"Starting scraping for source: {source}")
             
             try:
-                # In a full implementation, this would call the actual scraper function
-                # For now, we'll simulate the scraping process
-                await asyncio.sleep(2)  # Simulate scraping time
+                # Get scraper class from registry
+                source_key = source.lower().replace(' ', '_').replace('-', '_')
+                scraper_class = SCRAPER_REGISTRY.get(source_key)
                 
-                # Simulate finding articles
-                articles_found = len(keywords) * 3  # Simulate articles per keyword
-                
-                # Create mock articles
-                articles = []
-                for i in range(articles_found):
-                    article = {
-                        "title": f"Mock article {i+1} from {source}",
-                        "content": f"Mock content for article {i+1}",
-                        "url": f"https://{source}.com/article-{i+1}",
+                if not scraper_class:
+                    logger.warning(f"No scraper found for source: {source}")
+                    return {
                         "source": source,
-                        "published_date": date_range.start_date + timedelta(hours=i),
-                        "keywords": keywords[:2]  # Use first 2 keywords
+                        "success": False,
+                        "error": f"No scraper registered for source: {source}",
+                        "articles": []
                     }
-                    articles.append(article)
                 
-                logger.info(f"Scraping completed for {source}: {len(articles)} articles found")
+                # Initialize and run the scraper
+                async with scraper_class() as scraper:
+                    articles = await scraper.scrape_news(
+                        keywords=keywords,
+                        start_date=date_range.start_date,
+                        end_date=date_range.end_date
+                    )
+                
+                # Convert NewsArticle objects to dict format
+                articles_data = []
+                for article in articles:
+                    article_dict = {
+                        "title": article.title,
+                        "content": article.content,
+                        "url": article.url,
+                        "source": article.source,
+                        "published_date": article.published_date,
+                        "keywords": keywords[:2]
+                    }
+                    articles_data.append(article_dict)
+                
+                logger.info(f"Scraping completed for {source}: {len(articles_data)} articles found")
                 
                 return {
                     "source": source,
                     "success": True,
-                    "articles": articles,
-                    "articles_count": len(articles)
+                    "articles": articles_data,
+                    "articles_count": len(articles_data)
                 }
                 
             except Exception as e:

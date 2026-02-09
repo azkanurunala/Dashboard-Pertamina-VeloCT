@@ -24,6 +24,7 @@ from shared.config import config_manager
 from shared.database_handler import DatabaseHandler
 from shared.copilot_integration import CopilotIntegration
 from shared.logging_config import setup_logging
+from orchestration.orchestrator_function import OrchestratorFunction, SCRAPER_REGISTRY
 
 # Set up logging
 logger = setup_logging(__name__)
@@ -82,10 +83,11 @@ class SchedulerFunction(ISchedulerFunction):
         try:
             await self._initialize()
             
-            # Define morning routine parameters
+            # Define morning routine parameters - International sources
             morning_sources = [
-                "reuters", "bloomberg", "cnbc", "cnn", "theguardian",
-                "oilprice", "energiesmedia", "migas_eia"
+                "scmp", "bioenergytimes", "energiesmedia", 
+                "migas_eia", "sandp_news", "sandp_data",
+                "google_news", "iaea_pris"
             ]
             
             morning_keywords = [
@@ -173,10 +175,11 @@ class SchedulerFunction(ISchedulerFunction):
         try:
             await self._initialize()
             
-            # Define afternoon routine parameters
+            # Define afternoon routine parameters - Indonesian/Local sources  
             afternoon_sources = [
-                "kompas", "bisnis_indonesia", "kontan", "tempo", "cnbc_id",
-                "bank_indonesia", "bps", "migas_esdm", "biodiesel_esdm", "bioetanol_esdm"
+                "bank_indonesia", "bps", "kontan_bbm", "kontan_biodiesel",
+                "bloomberg_technoz", "migas_esdm", "biodiesel_esdm", 
+                "bioetanol_esdm", "cpo", "sipsn"
             ]
             
             afternoon_keywords = [

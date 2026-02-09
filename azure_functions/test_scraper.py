@@ -5,7 +5,7 @@ import sys
 import time
 
 FUNCTION_APP_URL = "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net"
-FUNCTION_KEY = "QRn4YL31yW-bZBFHDlt8znrvRmlfbvD8owXwCBegfk7TAzFuLEZIFg=="
+FUNCTION_KEY = "aOKiG8tUDcQM6hq1muKl7ZR5NEHeeqg0fR-2ktMtCXjvAzFuvMWvXg=="
 
 SCRAPERS = {
     "cnbc": "cnbc_scraper_function",
@@ -64,7 +64,7 @@ def test_scraper(scraper_name):
         
         if response.status_code == 200:
             result = response.json()
-            print("✓ SUCCESS!")
+            print("[OK] SUCCESS!")
             print()
             print("Results:")
             print(f"  Status: {result.get('status', 'unknown')}")
@@ -84,13 +84,13 @@ def test_scraper(scraper_name):
             
             print()
             if result.get('results', {}).get('articles_saved', 0) > 0:
-                print("✓✓✓ DATA SUCCESSFULLY SAVED TO DATABASE! ✓✓✓")
+                print("[OK][OK][OK] DATA SUCCESSFULLY SAVED TO DATABASE! [OK][OK][OK]")
                 return True
             else:
-                print("⚠ No articles saved (might be normal if no matches found)")
+                print("[WARN] No articles saved (might be normal if no matches found)")
                 return True
         else:
-            print("✗ FAILED!")
+            print("[FAIL] FAILED!")
             print()
             print("Response:")
             try:
@@ -101,28 +101,69 @@ def test_scraper(scraper_name):
             return False
             
     except requests.exceptions.Timeout:
-        print("✗ Request timed out (>180s)")
+        print("[FAIL] Request timed out (>180s)")
         print("The function might still be running. Check Azure Portal logs.")
         return False
     except Exception as e:
-        print(f"✗ Error: {e}")
+        print(f"[FAIL] Error: {e}")
         return False
     finally:
         print()
         print("=" * 70)
 
 
+def test_all_scrapers():
+    """Test all scraper functions"""
+    print("=" * 70)
+    print("TESTING ALL SCRAPERS")
+    print("=" * 70)
+    print()
+    
+    results = {}
+    for name in SCRAPERS.keys():
+        print(f"\n>>> Testing {name}...")
+        success = test_scraper(name)
+        results[name] = "[OK] SUCCESS" if success else "[FAIL] FAILED"
+        print()
+    
+    # Print summary
+    print("\n" + "=" * 70)
+    print("TEST SUMMARY")
+    print("=" * 70)
+    
+    success_count = sum(1 for v in results.values() if "SUCCESS" in v)
+    total = len(results)
+    
+    for name, result in results.items():
+        print(f"  {name}: {result}")
+    
+    print()
+    print(f"Total: {success_count}/{total} passed")
+    print("=" * 70)
+    
+    return success_count == total
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python test_scraper.py <scraper_name>")
+        print("Usage: python test_scraper.py <scraper_name|all>")
         print()
         print("Available scrapers:")
         for name in sorted(SCRAPERS.keys()):
             print(f"  - {name}")
         print()
+        print("  - all  (test all scrapers)")
+        print()
         print("Example: python test_scraper.py cnbc")
+        print("         python test_scraper.py all")
         sys.exit(1)
     
     scraper_name = sys.argv[1].lower()
-    success = test_scraper(scraper_name)
+    
+    if scraper_name == "all":
+        success = test_all_scrapers()
+    else:
+        success = test_scraper(scraper_name)
+    
     sys.exit(0 if success else 1)
+

@@ -288,5 +288,20 @@ def get_logger(name: str) -> logging.Logger:
     return logging.getLogger(name)
 
 
+# Alias for backward compatibility with existing scrapers
+def setup_logging(name: str) -> logging.Logger:
+    """
+    Alias for get_logger - provides backward compatibility.
+    
+    Args:
+        name: Logger name (usually __name__)
+        
+    Returns:
+        Configured Logger instance
+    """
+    configure_root_logging()
+    return logging.getLogger(name)
+
+
 # Initialize root logging when module is imported
 configure_root_logging()

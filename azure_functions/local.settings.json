@@ -12,6 +12,7 @@
     "COPILOT_API_KEY": "***REMOVED-GEMINI-KEY***",
     "AZURE_KEY_VAULT_URL": "",
     "BLOB_STORAGE_CONNECTION_STRING": "",
+    "BPS_API_KEY": "8199b1a60c76d284ee3d2228a51b3743",
     "ENVIRONMENT": "development"
   },
   "Host": {

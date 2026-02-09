@@ -42,7 +42,8 @@ class BPSScraper(BaseNewsScraper):
                 rate_limit_delay=1,
                 max_retries=3,
                 timeout=15,
-                headers={}
+                headers={},
+                selectors={}
             )
         
         super().__init__(config)

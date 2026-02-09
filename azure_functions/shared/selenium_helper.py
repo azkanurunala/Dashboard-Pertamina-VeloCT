@@ -82,13 +82,19 @@ class SeleniumHelper:
         options.add_argument(f"--user-agent={self.user_agent}")
         options.add_argument("--disable-blink-features=AutomationControlled")
         options.add_argument("--disable-infobars")
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--no-sandbox")
+        # Azure Functions Sandbox Stability
+        options.add_argument("--disable-dev-shm-usage") # Overcome limited resource problems
+        options.add_argument("--no-sandbox") # Bypass OS security model
         options.add_argument("--disable-gpu")
         options.add_argument("--disable-extensions")
         options.add_argument("--disable-popup-blocking")
         options.add_argument("--ignore-certificate-errors")
         options.add_argument("--disable-notifications")
+        options.add_argument("--dns-prefetch-disable")
+        options.add_argument("--remote-debugging-port=9222")
+        options.add_argument("--disable-ipv6") # Force IPv4
+        options.add_argument("--no-zygote") # Improve stability in container
+        # options.add_argument("--single-process") # Risky but saves memory, enable if crashes persist
         
         # Window size (important for screenshots and responsive sites)
         options.add_argument("--window-size=1920,1080")
@@ -117,15 +123,24 @@ class SeleniumHelper:
         try:
             # Try using webdriver-manager
             if ChromeDriverManager:
-                service = Service(ChromeDriverManager().install())
-                driver = webdriver.Chrome(service=service, options=options)
-            else:
-                # Fallback to system Chrome
-                driver = webdriver.Chrome(options=options)
-        except WebDriverException as e:
-            logger.error(f"Failed to create Chrome driver: {e}")
-            # Try with just options (assumes chromedriver in PATH)
+                try:
+                    logger.info("Attempting to install/update ChromeDriver using webdriver-manager...")
+                    driver_path = ChromeDriverManager().install()
+                    service = Service(driver_path)
+                    driver = webdriver.Chrome(service=service, options=options)
+                    logger.info("Successfully created Chrome driver with webdriver-manager")
+                    return driver
+                except Exception as wdm_error:
+                    logger.warning(f"webdriver-manager failed: {wdm_error}. Falling back to system ChromeDriver.")
+            
+            # Fallback to system Chrome
+            logger.info("Attempting to create Chrome driver using system default...")
             driver = webdriver.Chrome(options=options)
+            return driver
+            
+        except Exception as e:
+            logger.error(f"FATAL: Failed to create Chrome driver: {e}")
+            raise
         
         # Configure timeouts
         driver.set_page_load_timeout(self.page_load_timeout)

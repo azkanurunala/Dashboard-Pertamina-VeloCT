@@ -59,12 +59,20 @@ class BaseNewsScraper(INewsScraperFunction, ABC):
         
         # Default headers
         self._default_headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
+            'Sec-Ch-Ua': '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Ch-Ua-Platform': '"Windows"',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Cache-Control': 'max-age=0',
         }
         self._default_headers.update(config.headers)
         
@@ -94,11 +102,20 @@ class BaseNewsScraper(INewsScraperFunction, ABC):
     async def _ensure_session(self):
         """Ensure HTTP session is initialized."""
         if self._session is None or self._session.closed:
+            # Force IPv4 and disable SSL verification for stability
+            import socket
+            connector = aiohttp.TCPConnector(
+                family=socket.AF_INET,
+                ssl=False, 
+                limit=10, 
+                limit_per_host=5
+            )
+            
             timeout = aiohttp.ClientTimeout(total=self.config.timeout)
             self._session = aiohttp.ClientSession(
                 headers=self._default_headers,
                 timeout=timeout,
-                connector=aiohttp.TCPConnector(limit=10, limit_per_host=5)
+                connector=connector
             )
 
     async def close(self):
@@ -138,6 +155,36 @@ class BaseNewsScraper(INewsScraperFunction, ABC):
         self._last_request_time = time.time()
         self._request_count += 1
 
+    async def _create_session(self) -> aiohttp.ClientSession:
+        """Create a new aiohttp session with optimized settings for Azure Environment."""
+        if self._session and not self._session.closed:
+            return self._session
+            
+        import socket
+        # Force IPv4 and disable SSL verification for stability in Azure Sandbox
+        # Use a smaller pool limit to avoid overwhelming the restricted environment
+        connector = aiohttp.TCPConnector(
+            family=socket.AF_INET,
+            ssl=False,
+            limit=5,
+            force_close=True,
+            enable_cleanup_closed=True
+        )
+        
+        timeout = aiohttp.ClientTimeout(
+            total=self.config.timeout,
+            connect=10,
+            sock_connect=10,
+            sock_read=self.config.timeout
+        )
+        
+        self._session = aiohttp.ClientSession(
+            connector=connector,
+            timeout=timeout,
+            headers=self._default_headers
+        )
+        return self._session
+
     async def _make_request(self, url: str, method: str = 'GET', **kwargs) -> aiohttp.ClientResponse:
         """
         Make an HTTP request with retry logic and error handling.
@@ -155,7 +202,6 @@ class BaseNewsScraper(INewsScraperFunction, ABC):
             RateLimitError: If rate limited by server
         """
         await self._ensure_session()
-        await self.handle_rate_limiting()
         
         for attempt in range(self.config.max_retries + 1):
             try:

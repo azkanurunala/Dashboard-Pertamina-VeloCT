@@ -1,79 +1,33 @@
 """
-CNBC News Scraper Azure Function.
-HTTP-triggered function for scraping CNBC news articles with keyword filtering and date range support.
+Azure Function for CNBC scraper.
+HTTP-triggered function.
 """
 
+import azure.functions as func
 import logging
 import json
-import asyncio
-from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional
-import azure.functions as func
-import sys
 import os
+import asyncio
+from datetime import datetime
+from typing import Dict, Any
+import sys
 
-# Add parent directory to Python path for absolute imports
+# Add parent directory to Python path for absolute imports in Azure Functions
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
-# Detailed import error logging with absolute imports
-try:
-    from scrapers.cnbc_scraper import CNBCNewsScraper
-    logging.info("✓ Successfully imported CNBCNewsScraper")
-except Exception as e:
-    logging.error(f"✗ IMPORT ERROR - CNBCNewsScraper: {str(e)}", exc_info=True)
-    raise
+from scrapers.cnbc_scraper import CNBCNewsScraper
+from shared.azure_logging import AzureLoggingManager
+from shared.database_handler import DatabaseHandler
+from shared.config import config_manager
+from shared.models import NewsArticle
 
-try:
-    from shared.models import NewsArticle
-    logging.info("✓ Successfully imported NewsArticle")
-except Exception as e:
-    logging.error(f"✗ IMPORT ERROR - NewsArticle: {str(e)}", exc_info=True)
-    raise
-
-try:
-    from shared.database_handler import DatabaseHandler
-    logging.info("✓ Successfully imported DatabaseHandler")
-except Exception as e:
-    logging.error(f"✗ IMPORT ERROR - DatabaseHandler: {str(e)}", exc_info=True)
-    raise
-
-try:
-    from shared.config import get_database_connection_string
-    logging.info("✓ Successfully imported get_database_connection_string")
-except Exception as e:
-    logging.error(f"✗ IMPORT ERROR - get_database_connection_string: {str(e)}", exc_info=True)
-    raise
-
-try:
-    from shared.logging_config import configure_root_logging
-    logging.info("✓ Successfully imported configure_root_logging")
-except Exception as e:
-    logging.error(f"✗ IMPORT ERROR - configure_root_logging: {str(e)}", exc_info=True)
-    raise
-
-try:
-    from shared.azure_logging import AzureLoggingManager
-    logging.info("✓ Successfully imported AzureLoggingManager")
-except Exception as e:
-    logging.error(f"✗ IMPORT ERROR - AzureLoggingManager: {str(e)}", exc_info=True)
-    raise
-
-logging.info("✓✓✓ ALL IMPORTS SUCCESSFUL FOR CNBC SCRAPER ✓✓✓")
+SOURCE_NAME = "CNBC"
 
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
-    """
-    Main Azure Function entry point for CNBC news scraping.
-    
-    Expected parameters:
-    - keywords: List of keywords to search for (optional)
-    - start_date: Start date in YYYY-MM-DD format (optional, defaults to 7 days ago)
-    - end_date: End date in YYYY-MM-DD format (optional, defaults to today)
-    - save_to_db: Whether to save results to database (optional, defaults to true)
-    """
-    # Initialize comprehensive logging
+    """Azure Function entry point."""
     correlation_id = req.headers.get('x-correlation-id')
     log_manager = AzureLoggingManager(
         function_name="cnbc_scraper_function",
@@ -81,55 +35,22 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     )
     
     try:
-        # Parse request parameters
         params = _parse_request_parameters(req)
+        log_manager.log_function_start(trigger_type="http", parameters={k: str(v) for k, v in params.items()})
         
-        # Log function start
-        log_manager.log_function_start(
-            trigger_type="http",
-            parameters={
-                "keywords": params['keywords'],
-                "start_date": params['start_date'].isoformat(),
-                "end_date": params['end_date'].isoformat(),
-                "save_to_db": params['save_to_db']
-            }
-        )
+        # Run async scraping
+        result = asyncio.run(_scrape_data(params, log_manager))
         
-        # Run the scraping operation
-        result = asyncio.run(_scrape_cnbc_news(params, log_manager))
+        log_manager.log_function_end(status="success", result_summary={"count": result.get("results", {}).get("articles_found", 0)})
         
-        # Log function completion
-        log_manager.log_function_end(
-            status="success",
-            result_summary={
-                "articles_found": result['results']['articles_found'],
-                "articles_saved": result['results']['articles_saved'],
-                "execution_time_seconds": result['execution_time_seconds']
-            }
-        )
-        
-        # Return successful response
         return func.HttpResponse(
-            json.dumps(result, indent=2, default=str),
+            json.dumps(result, ensure_ascii=False, indent=2, default=str),
             status_code=200,
             mimetype="application/json"
         )
         
     except ValueError as e:
-        # Log parameter validation error
-        log_manager.log_error(
-            error=e,
-            context_data={
-                "error_type": "parameter_validation",
-                "operation": "parse_parameters"
-            }
-        )
-        
-        log_manager.log_function_end(
-            status="failed",
-            result_summary={"error": "Invalid parameters", "message": str(e)}
-        )
-        
+        log_manager.log_function_end(status="failed", result_summary={"error": str(e)})
         return func.HttpResponse(
             json.dumps({
                 "status": "error",
@@ -144,33 +65,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         )
         
     except Exception as e:
-        # Log unexpected error
-        log_manager.log_error(
-            error=e,
-            context_data={
-                "error_type": "unexpected_error",
-                "operation": "scraping",
-                "parameters": params if 'params' in locals() else {}
-            }
-        )
-        
-        log_manager.log_function_end(
-            status="failed",
-            result_summary={"error": "Internal server error", "message": str(e)}
-        )
-        
-        # Get detailed error info
-        import traceback
-        error_traceback = traceback.format_exc()
-        
+        log_manager.log_error(error=e, context_data={"operation": "scraping"})
         return func.HttpResponse(
             json.dumps({
                 "status": "error",
-                "error": "Internal server error",
-                "message": str(e),
+                "source": SOURCE_NAME,
+                "error": str(e),
                 "error_type": type(e).__name__,
                 "execution_id": log_manager.execution_id,
-                "traceback": error_traceback.split('\n')[-5:],  # Last 5 lines
                 "timestamp": datetime.utcnow().isoformat()
             }),
             status_code=500,
@@ -179,67 +81,34 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
 
 def _parse_request_parameters(req: func.HttpRequest) -> Dict[str, Any]:
-    """
-    Parse and validate request parameters.
+    """Parse request parameters from body or query string."""
+    try:
+        body = req.get_json()
+    except:
+        body = {}
     
-    Args:
-        req: HTTP request object
-        
-    Returns:
-        Dictionary of parsed parameters
-        
-    Raises:
-        ValueError: If parameters are invalid
-    """
-    # Get parameters from query string or JSON body
-    if req.method == "GET":
-        keywords_str = req.params.get('keywords', '')
-        start_date_str = req.params.get('start_date', '')
-        end_date_str = req.params.get('end_date', '')
-        save_to_db_str = req.params.get('save_to_db', 'true')
+    # Get keywords from body or query params
+    keywords_param = body.get('keywords') or req.params.get('keywords', '')
+    if isinstance(keywords_param, list):
+        keywords = keywords_param
     else:
-        try:
-            req_body = req.get_json()
-            if not req_body:
-                req_body = {}
-        except ValueError:
-            req_body = {}
-        
-        keywords_str = req_body.get('keywords', '')
-        start_date_str = req_body.get('start_date', '')
-        end_date_str = req_body.get('end_date', '')
-        save_to_db_str = req_body.get('save_to_db', 'true')
+        keywords = [k.strip() for k in keywords_param.split(',') if k.strip()] if keywords_param else []
     
-    # Parse keywords
-    keywords = []
-    if keywords_str:
-        if isinstance(keywords_str, str):
-            keywords = [kw.strip() for kw in keywords_str.split(',') if kw.strip()]
-        elif isinstance(keywords_str, list):
-            keywords = [str(kw).strip() for kw in keywords_str if str(kw).strip()]
+    # Get dates
+    start_date_str = body.get('start_date') or req.params.get('start_date')
+    end_date_str = body.get('end_date') or req.params.get('end_date')
+    save_to_db = str(body.get('save_to_db', req.params.get('save_to_db', 'true'))).lower() == 'true'
     
     # Parse dates
-    end_date = datetime.utcnow().replace(hour=23, minute=59, second=59, microsecond=0)
-    start_date = end_date - timedelta(days=7)  # Default to last 7 days
-    
     if start_date_str:
-        try:
-            start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
-        except ValueError:
-            raise ValueError(f"Invalid start_date format. Expected YYYY-MM-DD, got: {start_date_str}")
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+    else:
+        start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     
     if end_date_str:
-        try:
-            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
-        except ValueError:
-            raise ValueError(f"Invalid end_date format. Expected YYYY-MM-DD, got: {end_date_str}")
-    
-    # Validate date range
-    if start_date > end_date:
-        raise ValueError("start_date cannot be after end_date")
-    
-    # Parse save_to_db flag
-    save_to_db = str(save_to_db_str).lower() in ('true', '1', 'yes', 'on')
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+    else:
+        end_date = datetime.now().replace(hour=23, minute=59, second=59, microsecond=999999)
     
     return {
         'keywords': keywords,
@@ -249,177 +118,98 @@ def _parse_request_parameters(req: func.HttpRequest) -> Dict[str, Any]:
     }
 
 
-async def _scrape_cnbc_news(params: Dict[str, Any], log_manager: AzureLoggingManager) -> Dict[str, Any]:
-    """
-    Perform CNBC news scraping operation.
-    
-    Args:
-        params: Parsed request parameters
-        log_manager: Azure logging manager instance
-        
-    Returns:
-        Dictionary with scraping results
-    """
+async def _scrape_data(params: Dict[str, Any], log_manager: AzureLoggingManager) -> Dict[str, Any]:
+    """Perform scraping operation."""
     start_time = datetime.utcnow()
     
-    # Log scraping start
-    log_manager.log_scraping_start(
-        source="CNBC",
-        keywords=params['keywords'],
-        date_range={
-            'start': params['start_date'].isoformat(),
-            'end': params['end_date'].isoformat()
-        }
-    )
+    scraper = CNBCNewsScraper()
     
     try:
-        # Start scraping operation
-        operation_id = log_manager.log_operation_start(
-            operation_name="scrape_articles",
-            details={
-                "source": "CNBC",
-                "keywords_count": len(params['keywords']),
-                "date_range_days": (params['end_date'] - params['start_date']).days
-            }
-        )
+        # Try different scraping methods based on what the scraper supports
+        articles = []
         
-        # Initialize scraper
-        async with CNBCNewsScraper() as scraper:
-            # Scrape articles
+        if hasattr(scraper, 'scrape_news'):
             articles = await scraper.scrape_news(
-                keywords=params['keywords'],
-                start_date=params['start_date'],
-                end_date=params['end_date']
+                keywords=params.get('keywords', []),
+                start_date=params.get('start_date'),
+                end_date=params.get('end_date')
             )
-            
-            # Log articles found
-            log_manager.log_scraping_articles_found(
-                count=len(articles),
-                parsing_success_rate=100.0 if articles else 0.0
+        elif hasattr(scraper, 'scrape'):
+            articles = await scraper.scrape(
+                keywords=params.get('keywords', []),
+                start_date=params.get('start_date'),
+                end_date=params.get('end_date')
             )
-            
-            # Save to database if requested
-            saved_count = 0
-            if params['save_to_db'] and articles:
-                try:
-                    db_start = datetime.utcnow()
-                    connection_string = get_database_connection_string()
-                    
-                    async with DatabaseHandler(connection_string) as db:
-                        saved_count = await db.save_articles(articles)
-                        
-                    db_duration = (datetime.utcnow() - db_start).total_seconds() * 1000
-                    
-                    # Log database operation
-                    log_manager.log_database_operation(
-                        operation="INSERT",
-                        table="news_articles",
-                        row_count=saved_count,
-                        duration_ms=db_duration
-                    )
-                    
-                    # Log articles saved
-                    log_manager.log_scraping_articles_saved(
-                        saved_count=saved_count,
-                        duplicate_count=len(articles) - saved_count,
-                        duration_ms=db_duration
-                    )
-                    
-                except Exception as e:
-                    # Log database error
-                    log_manager.log_database_error(
-                        error=e,
-                        query_type="INSERT",
-                        table="news_articles"
-                    )
-                    # Continue without failing the entire operation
-            
-            # Calculate execution time
-            execution_time = (datetime.utcnow() - start_time).total_seconds()
-            execution_time_ms = execution_time * 1000
-            
-            # Log scraping end
-            log_manager.log_scraping_end(
-                articles_scraped=len(articles),
-                articles_saved=saved_count,
-                duration_ms=execution_time_ms
-            )
-            
-            # Log operation end
-            log_manager.log_operation_end(
-                operation_id=operation_id,
-                status="success",
-                metrics={
-                    "articles_found": len(articles),
-                    "articles_saved": saved_count,
-                    "execution_time_ms": execution_time_ms
-                }
-            )
-            
-            # Prepare response
-            return {
-                "status": "success",
-                "source": "CNBC",
-                "execution_time_seconds": execution_time,
-                "execution_id": log_manager.execution_id,
-                "correlation_id": log_manager.correlation_id,
-                "parameters": {
-                    "keywords": params['keywords'],
-                    "start_date": params['start_date'].isoformat(),
-                    "end_date": params['end_date'].isoformat(),
-                    "save_to_db": params['save_to_db']
-                },
-                "results": {
-                    "articles_found": len(articles),
-                    "articles_saved": saved_count,
-                    "articles": [_serialize_article(article) for article in articles[:10]]  # Return first 10 for preview
-                },
-                "timestamp": datetime.utcnow().isoformat()
-            }
-            
-    except Exception as e:
+        elif hasattr(scraper, 'scrape_data'):
+            articles = await scraper.scrape_data()
+        
         execution_time = (datetime.utcnow() - start_time).total_seconds()
         
-        # Log error
-        log_manager.log_error(
-            error=e,
-            context_data={
-                "operation": "scraping",
-                "source": "CNBC",
-                "execution_time_seconds": execution_time
+        # Convert articles to serializable format and prepare for DB
+        articles_data = []
+        news_articles = []
+        
+        for a in (articles if articles else []):
+            # Extract data safely
+            title = getattr(a, 'title', str(a)) if hasattr(a, 'title') else str(a)
+            url = getattr(a, 'url', '') if hasattr(a, 'url') else ''
+            content = getattr(a, 'content', '') if hasattr(a, 'content') else ''
+            pub_date = getattr(a, 'published_date', None) if hasattr(a, 'published_date') else None
+            
+            if not pub_date:
+                pub_date = datetime.now()
+            
+            # For JSON response
+            article_snippet = {
+                "title": title,
+                "url": url,
+                "source": getattr(a, 'source', SOURCE_NAME) if hasattr(a, 'source') else SOURCE_NAME,
+                "published_date": pub_date.isoformat() if hasattr(pub_date, 'isoformat') else str(pub_date)
             }
-        )
+            articles_data.append(article_snippet)
+            
+            # For Database persistence
+            news_articles.append(NewsArticle(
+                title=title,
+                content=content or "No content available",
+                url=url,
+                source=SOURCE_NAME,
+                published_date=pub_date,
+                keywords=params.get('keywords', [])
+            ))
         
-        # Log operation end with failure
-        if 'operation_id' in locals():
-            log_manager.log_operation_end(
-                operation_id=operation_id,
-                status="failed",
-                metrics={"execution_time_seconds": execution_time}
-            )
+        # Save to database if requested
+        articles_saved = 0
+        if params.get('save_to_db') and news_articles:
+            try:
+                db_config = await config_manager.get_database_config()
+                db_handler = DatabaseHandler(db_config)
+                await db_handler.save_articles(news_articles)
+                articles_saved = len(news_articles)
+                log_manager.log_info(f"Successfully saved {articles_saved} articles to database")
+            except Exception as db_error:
+                log_manager.log_error(error=db_error, context_data={"operation": "database_persistence"})
         
-        raise
-
-
-def _serialize_article(article: NewsArticle) -> Dict[str, Any]:
-    """
-    Serialize NewsArticle object for JSON response.
-    
-    Args:
-        article: NewsArticle object
+        return {
+            "status": "success",
+            "source": SOURCE_NAME,
+            "execution_time_seconds": execution_time,
+            "execution_id": log_manager.execution_id,
+            "results": {
+                "articles_found": len(articles_data),
+                "articles_saved": articles_saved,
+                "articles": articles_data[:10]  # Limit to 10 in response
+            },
+            "parameters": {
+                "keywords": params.get('keywords', []),
+                "start_date": params['start_date'].isoformat() if params.get('start_date') else None,
+                "end_date": params['end_date'].isoformat() if params.get('end_date') else None
+            }
+        }
         
-    Returns:
-        Dictionary representation of article
-    """
-    return {
-        "title": article.title,
-        "url": article.url,
-        "source": article.source,
-        "published_date": article.published_date.isoformat() if article.published_date else None,
-        "scraped_date": article.scraped_date.isoformat() if article.scraped_date else None,
-        "keywords": article.keywords,
-        "language": article.language,
-        "author": article.author,
-        "category": article.category,
-        "content_preview": article.content[:200] + "..." if len(article.content) > 200 else article.content
-    }
+    finally:
+        if hasattr(scraper, 'close'):
+            try:
+                await scraper.close()
+            except:
+                pass

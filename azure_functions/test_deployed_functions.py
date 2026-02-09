@@ -31,7 +31,7 @@ class AzureFunctionTester:
         self.results = []
         
         # Default parameters
-        self.start_date = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+        self.start_date = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
         self.end_date = datetime.now().strftime('%Y-%m-%d')
         self.keywords_en = "energy,oil,gas"
         self.keywords_id = "energi,minyak,gas"
@@ -141,7 +141,7 @@ class AzureFunctionTester:
                     "keywords": self.keywords_en,
                     "start_date": self.start_date,
                     "end_date": self.end_date,
-                    "save_to_db": "false"
+                    "save_to_db": "true"
                 }
             },
             {
@@ -150,7 +150,8 @@ class AzureFunctionTester:
                     "keywords": self.keywords_en,
                     "start_date": self.start_date,
                     "end_date": self.end_date,
-                    "max_articles": "10"
+                    "max_articles": "10",
+                    "save_to_db": "true"    
                 }
             },
             {
@@ -159,7 +160,7 @@ class AzureFunctionTester:
                     "keywords": self.keywords_en,
                     "start_date": self.start_date,
                     "end_date": self.end_date,
-                    "save_to_db": "false"
+                    "save_to_db": "true"
                 }
             },
             {
@@ -168,7 +169,8 @@ class AzureFunctionTester:
                     "keywords": self.keywords_en,
                     "start_date": self.start_date,
                     "end_date": self.end_date,
-                    "max_articles": "10"
+                    "max_articles": "10",
+                    "save_to_db": "true"
                 }
             },
             {
@@ -177,7 +179,8 @@ class AzureFunctionTester:
                     "keywords": self.keywords_en,
                     "start_date": self.start_date,
                     "end_date": self.end_date,
-                    "max_articles": "10"
+                    "max_articles": "10",
+                    "save_to_db": "true"
                 }
             },
             {
@@ -186,7 +189,8 @@ class AzureFunctionTester:
                     "keywords": self.keywords_id,
                     "start_date": self.start_date,
                     "end_date": self.end_date,
-                    "max_articles": "10"
+                    "max_articles": "10",
+                    "save_to_db": "true"
                 }
             },
             {
@@ -195,7 +199,8 @@ class AzureFunctionTester:
                     "keywords": self.keywords_id,
                     "start_date": self.start_date,
                     "end_date": self.end_date,
-                    "max_articles": "10"
+                    "max_articles": "10",
+                    "save_to_db": "true"
                 }
             },
             {
@@ -204,7 +209,8 @@ class AzureFunctionTester:
                     "keywords": self.keywords_id,
                     "start_date": self.start_date,
                     "end_date": self.end_date,
-                    "max_articles": "10"
+                    "max_articles": "10",
+                    "save_to_db": "true"
                 }
             },
             {
@@ -213,7 +219,8 @@ class AzureFunctionTester:
                     "keywords": self.keywords_id,
                     "start_date": self.start_date,
                     "end_date": self.end_date,
-                    "max_articles": "10"
+                    "max_articles": "10",
+                    "save_to_db": "true"
                 }
             },
             {
@@ -222,7 +229,8 @@ class AzureFunctionTester:
                     "keywords": self.keywords_id,
                     "start_date": self.start_date,
                     "end_date": self.end_date,
-                    "max_articles": "10"
+                    "max_articles": "10",
+                    "save_to_db": "true"
                 }
             },
             {
@@ -230,7 +238,179 @@ class AzureFunctionTester:
                 "params": {
                     "indicators": "inflation,gdp",
                     "start_date": self.start_date,
-                    "end_date": self.end_date
+                    "end_date": self.end_date,
+                    "save_to_db": "true"
+                }
+            },
+            # --- Newly Added Scrapers ---
+            {
+                "name": "bank_indonesia_scraper_function",
+                "params": {
+                    "keywords": self.keywords_id,
+                    "start_date": self.start_date,
+                    "end_date": self.end_date,
+                    "max_articles": "10",
+                    "save_to_db": "true"
+                }
+            },
+            {
+                "name": "biodiesel_esdm_scraper_function",
+                "params": {
+                    "keywords": self.keywords_id,
+                    "start_date": self.start_date,
+                    "end_date": self.end_date,
+                    "max_articles": "10",
+                    "save_to_db": "true"
+                }
+            },
+            {
+                "name": "bioenergytimes_scraper_function",
+                "params": {
+                    "keywords": self.keywords_en,
+                    "start_date": self.start_date,
+                    "end_date": self.end_date,
+                    "max_articles": "10",
+                    "save_to_db": "true"
+                }
+            },
+            {
+                "name": "bioetanol_esdm_scraper_function",
+                "params": {
+                    "keywords": self.keywords_id,
+                    "start_date": self.start_date,
+                    "end_date": self.end_date,
+                    "max_articles": "10",
+                    "save_to_db": "true"
+                }
+            },
+            {
+                "name": "bloomberg_technoz_scraper_function",
+                "params": {
+                    "keywords": self.keywords_id,
+                    "start_date": self.start_date,
+                    "end_date": self.end_date,
+                    "max_articles": "10",
+                    "save_to_db": "true"
+                }
+            },
+            {
+                "name": "cpo_scraper_function",
+                "params": {
+                    "keywords": self.keywords_en,
+                    "start_date": self.start_date,
+                    "end_date": self.end_date,
+                    "max_articles": "10",
+                    "save_to_db": "true"
+                }
+            },
+            {
+                "name": "energiesmedia_scraper_function",
+                "params": {
+                    "keywords": self.keywords_en,
+                    "start_date": self.start_date,
+                    "end_date": self.end_date,
+                    "max_articles": "10",
+                    "save_to_db": "true"
+                }
+            },
+            {
+                "name": "google_news_scraper_function",
+                "params": {
+                    "keywords": self.keywords_en,
+                    "start_date": self.start_date,
+                    "end_date": self.end_date,
+                    "max_articles": "10",
+                    "save_to_db": "true"
+                }
+            },
+            {
+                "name": "iaea_pris_scraper_function",
+                "params": {
+                    "keywords": self.keywords_en,
+                    "start_date": self.start_date,
+                    "end_date": self.end_date,
+                    "max_articles": "10",
+                    "save_to_db": "true"
+                }
+            },
+            {
+                "name": "kontan_bbm_scraper_function",
+                "params": {
+                    "keywords": "bbm",
+                    "start_date": self.start_date,
+                    "end_date": self.end_date,
+                    "max_articles": "10",
+                    "save_to_db": "true"
+                }
+            },
+            {
+                "name": "kontan_biodiesel_scraper_function",
+                "params": {
+                    "keywords": "biodiesel",
+                    "start_date": self.start_date,
+                    "end_date": self.end_date,
+                    "max_articles": "10",
+                    "save_to_db": "true"
+                }
+            },
+            {
+                "name": "migas_eia_scraper_function",
+                "params": {
+                    "keywords": "oil",
+                    "start_date": self.start_date,
+                    "end_date": self.end_date,
+                    "max_articles": "10",
+                    "save_to_db": "true"
+                }
+            },
+            {
+                "name": "migas_esdm_scraper_function",
+                "params": {
+                    "keywords": "migas",
+                    "start_date": self.start_date,
+                    "end_date": self.end_date,
+                    "max_articles": "10",
+                    "save_to_db": "true"
+                }
+            },
+            {
+                "name": "sandp_data_scraper_function",
+                "params": {
+                    "keywords": "energy",
+                    "start_date": self.start_date,
+                    "end_date": self.end_date,
+                    "max_articles": "10",
+                    "save_to_db": "true"
+                }
+            },
+            {
+                "name": "sandp_news_scraper_function",
+                "params": {
+                    "keywords": "energy",
+                    "start_date": self.start_date,
+                    "end_date": self.end_date,
+                    "max_articles": "10",
+                    "save_to_db": "true"
+                }
+            },
+            {
+                "name": "scmp_scraper_function",
+                "params": {
+                    "keywords": self.keywords_en,
+                    "start_date": self.start_date,
+                    "end_date": self.end_date,
+                    "max_articles": "10",
+                    "save_to_db": "true"
+                }
+            },
+            {
+                "name": "sipsn_scraper_function",
+                "params": {
+                    "keywords": "waste",
+                    "start_date": self.start_date,
+                    "end_date": self.end_date,
+                    "max_articles": "10",
+                    "save_to_db": "true"
                 }
             },
         ]

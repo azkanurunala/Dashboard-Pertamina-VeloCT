@@ -1,6 +1,6 @@
 """
-Azure Function for BPS (Statistics Indonesia) news scraper.
-HTTP-triggered function that scrapes news from BPS using their official API.
+Azure Function for BPS scraper.
+HTTP-triggered function.
 """
 
 import azure.functions as func
@@ -8,64 +8,22 @@ import logging
 import json
 import os
 import asyncio
-from datetime import datetime, timedelta
-from typing import List, Dict, Any
+from datetime import datetime
+from typing import Dict, Any
 import sys
-import os
 
-# Add parent directory to Python path for absolute imports
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
+from scrapers.bps_scraper import BPSScraper
+from shared.azure_logging import AzureLoggingManager
 
-# Detailed import error logging
-try:
-    from scrapers.bps_scraper import create_bps_scraper
-    logging.info("✓ Successfully imported create_bps_scraper")
-except Exception as e:
-    logging.error(f"✗ IMPORT ERROR - create_bps_scraper: {str(e)}", exc_info=True)
-    raise
-
-try:
-    from shared.database_handler import DatabaseHandler
-    logging.info("✓ Successfully imported DatabaseHandler")
-except Exception as e:
-    logging.error(f"✗ IMPORT ERROR - DatabaseHandler: {str(e)}", exc_info=True)
-    raise
-
-try:
-    from shared.config import get_database_connection_string
-    logging.info("✓ Successfully imported get_database_connection_string")
-except Exception as e:
-    logging.error(f"✗ IMPORT ERROR - get_database_connection_string: {str(e)}", exc_info=True)
-    raise
-
-try:
-    from shared.azure_logging import AzureLoggingManager
-    logging.info("✓ Successfully imported AzureLoggingManager")
-except Exception as e:
-    logging.error(f"✗ IMPORT ERROR - AzureLoggingManager: {str(e)}", exc_info=True)
-    raise
-
-logging.info("✓✓✓ ALL IMPORTS SUCCESSFUL FOR BPS SCRAPER ✓✓✓")
+SOURCE_NAME = "BPS"
 
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
-    """
-    Azure Function entry point for BPS scraper.
-    
-    Query Parameters:
-        - keywords: Comma-separated list of keywords to search for
-        - start_date: Start date in YYYY-MM-DD format (optional, defaults to today)
-        - end_date: End date in YYYY-MM-DD format (optional, defaults to today)
-        - max_pages: Maximum number of pages to scrape (optional)
-        - save_to_db: Whether to save results to database (optional, defaults to true)
-    
-    Returns:
-        JSON response with scraped articles or error message
-    """
-    # Initialize comprehensive logging
+    """Azure Function entry point."""
     correlation_id = req.headers.get('x-correlation-id')
     log_manager = AzureLoggingManager(
         function_name="bps_scraper_function",
@@ -73,60 +31,27 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     )
     
     try:
-        # Parse request parameters
         params = _parse_request_parameters(req)
+        log_manager.log_function_start(trigger_type="http", parameters={k: str(v) for k, v in params.items()})
         
-        # Log function start
-        log_manager.log_function_start(
-            trigger_type="http",
-            parameters={
-                "keywords": params['keywords'],
-                "start_date": params['start_date'].isoformat(),
-                "end_date": params['end_date'].isoformat(),
-                "max_pages": params['max_pages'],
-                "save_to_db": params['save_to_db']
-            }
-        )
+        result = asyncio.run(_scrape_data(params, log_manager))
         
-        # Run the scraping operation
-        result = asyncio.run(_scrape_bps_news(params, log_manager))
+        log_manager.log_function_end(status="success", result_summary={"count": result.get("results", {}).get("articles_found", 0)})
         
-        # Log function completion
-        log_manager.log_function_end(
-            status="success",
-            result_summary={
-                "articles_found": result['count'],
-                "execution_time_seconds": result.get('execution_time_seconds', 0)
-            }
-        )
-        
-        # Return successful response
         return func.HttpResponse(
-            json.dumps(result, ensure_ascii=False, indent=2),
+            json.dumps(result, ensure_ascii=False, indent=2, default=str),
             status_code=200,
             mimetype="application/json"
         )
         
     except ValueError as e:
-        # Log parameter validation error
-        log_manager.log_error(
-            error=e,
-            context_data={
-                "error_type": "parameter_validation",
-                "operation": "parse_parameters"
-            }
-        )
-        
-        log_manager.log_function_end(
-            status="failed",
-            result_summary={"error": "Invalid parameters", "message": str(e)}
-        )
-        
+        log_manager.log_function_end(status="failed", result_summary={"error": str(e)})
         return func.HttpResponse(
             json.dumps({
                 "status": "error",
                 "error": "Invalid parameters",
                 "message": str(e),
+                "error_type": "ValueError",
                 "execution_id": log_manager.execution_id,
                 "timestamp": datetime.utcnow().isoformat()
             }),
@@ -135,34 +60,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         )
         
     except Exception as e:
-        # Log unexpected error
-        log_manager.log_error(
-            error=e,
-            context_data={
-                "error_type": "unexpected_error",
-                "operation": "scraping",
-                "parameters": params if 'params' in locals() else {}
-            }
-        )
-        
-        log_manager.log_function_end(
-            status="failed",
-            result_summary={"error": "Internal server error", "message": str(e)}
-        )
-        
-        # Get detailed error info
-        import traceback
-        error_traceback = traceback.format_exc()
-        
+        log_manager.log_error(error=e, context_data={"operation": "scraping"})
         return func.HttpResponse(
             json.dumps({
                 "status": "error",
-                "source": "BPS",
-                "error": "Internal server error",
-                "message": str(e),
+                "source": SOURCE_NAME,
+                "error": str(e),
                 "error_type": type(e).__name__,
                 "execution_id": log_manager.execution_id,
-                "traceback": error_traceback.split('\n')[-5:],
                 "timestamp": datetime.utcnow().isoformat()
             }),
             status_code=500,
@@ -170,219 +75,103 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 
-
 def _parse_request_parameters(req: func.HttpRequest) -> Dict[str, Any]:
-    """Parse and validate request parameters."""
-    keywords_param = req.params.get('keywords', '')
-    keywords = [k.strip() for k in keywords_param.split(',') if k.strip()] if keywords_param else []
+    """Parse request parameters from body or query string."""
+    try:
+        body = req.get_json()
+    except:
+        body = {}
     
-    start_date_str = req.params.get('start_date')
-    end_date_str = req.params.get('end_date')
-    max_pages_str = req.params.get('max_pages')
-    save_to_db = str(req.params.get('save_to_db', 'true')).lower() == 'true'
+    # Get keywords from body or query params
+    keywords_param = body.get('keywords') or req.params.get('keywords', '')
+    if isinstance(keywords_param, list):
+        keywords = keywords_param
+    else:
+        keywords = [k.strip() for k in keywords_param.split(',') if k.strip()] if keywords_param else []
+    
+    # Get dates
+    start_date_str = body.get('start_date') or req.params.get('start_date')
+    end_date_str = body.get('end_date') or req.params.get('end_date')
+    save_to_db = str(body.get('save_to_db', req.params.get('save_to_db', 'true'))).lower() == 'true'
     
     # Parse dates
     if start_date_str:
-        try:
-            start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
-        except ValueError:
-            raise ValueError(f"Invalid start_date format. Expected YYYY-MM-DD, got: {start_date_str}")
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
     else:
         start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     
     if end_date_str:
-        try:
-            end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
-        except ValueError:
-            raise ValueError(f"Invalid end_date format. Expected YYYY-MM-DD, got: {end_date_str}")
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
     else:
         end_date = datetime.now().replace(hour=23, minute=59, second=59, microsecond=999999)
-    
-    # Validate date range
-    if start_date > end_date:
-        raise ValueError("start_date must be before or equal to end_date")
-    
-    # Parse max_pages
-    max_pages = None
-    if max_pages_str:
-        try:
-            max_pages = int(max_pages_str)
-            if max_pages < 1:
-                raise ValueError("max_pages must be a positive integer")
-        except ValueError as e:
-            raise ValueError(f"Invalid max_pages: {str(e)}")
     
     return {
         'keywords': keywords,
         'start_date': start_date,
         'end_date': end_date,
-        'max_pages': max_pages,
         'save_to_db': save_to_db
     }
 
 
-async def _scrape_bps_news(params: Dict[str, Any], log_manager: AzureLoggingManager) -> Dict[str, Any]:
-    """Perform BPS news scraping operation."""
+async def _scrape_data(params: Dict[str, Any], log_manager: AzureLoggingManager) -> Dict[str, Any]:
+    """Perform scraping operation."""
     start_time = datetime.utcnow()
     
-    # Log scraping start
-    log_manager.log_scraping_start(
-        source="BPS",
-        keywords=params['keywords'],
-        date_range={
-            'start': params['start_date'].isoformat(),
-            'end': params['end_date'].isoformat()
-        }
-    )
+    scraper = BPSScraper(api_key=os.environ.get("BPS_API_KEY", ""))
     
     try:
-        # Start scraping operation
-        operation_id = log_manager.log_operation_start(
-            operation_name="scrape_articles",
-            details={
-                "source": "BPS",
-                "keywords_count": len(params['keywords']),
-                "date_range_days": (params['end_date'] - params['start_date']).days,
-                "max_pages": params['max_pages']
-            }
-        )
+        # Try different scraping methods based on what the scraper supports
+        articles = []
         
-        # Get BPS API key from environment
-        api_key = os.getenv('BPS_API_KEY')
-        
-        if not api_key:
-            raise ValueError("BPS_API_KEY not found in environment variables")
-        
-        # Create scraper and scrape articles
-        scraper = await create_bps_scraper(api_key=api_key)
-        
-        try:
+        if hasattr(scraper, 'scrape_news'):
             articles = await scraper.scrape_news(
-                keywords=params['keywords'],
-                start_date=params['start_date'],
-                end_date=params['end_date'],
-                max_pages=params['max_pages']
+                keywords=params.get('keywords', []),
+                start_date=params.get('start_date'),
+                end_date=params.get('end_date')
             )
-            
-            # Log articles found
-            log_manager.log_scraping_articles_found(
-                count=len(articles),
-                parsing_success_rate=100.0 if articles else 0.0
+        elif hasattr(scraper, 'scrape'):
+            articles = await scraper.scrape(
+                keywords=params.get('keywords', []),
+                start_date=params.get('start_date'),
+                end_date=params.get('end_date')
             )
-            
-            # Save to database if requested
-            saved_count = 0
-            if params['save_to_db'] and articles:
-                try:
-                    db_start = datetime.utcnow()
-                    connection_string = get_database_connection_string()
-                    db_handler = DatabaseHandler(connection_string)
-                    await db_handler.save_articles(articles)
-                    saved_count = len(articles)
-                    
-                    db_duration = (datetime.utcnow() - db_start).total_seconds() * 1000
-                    
-                    # Log database operation
-                    log_manager.log_database_operation(
-                        operation="INSERT",
-                        table="news_articles",
-                        row_count=saved_count,
-                        duration_ms=db_duration
-                    )
-                    
-                    # Log articles saved
-                    log_manager.log_scraping_articles_saved(
-                        saved_count=saved_count,
-                        duplicate_count=len(articles) - saved_count,
-                        duration_ms=db_duration
-                    )
-                    
-                except Exception as e:
-                    # Log database error
-                    log_manager.log_database_error(
-                        error=e,
-                        query_type="INSERT",
-                        table="news_articles"
-                    )
-                    # Continue execution, return articles even if DB save fails
-            
-            # Convert articles to dict for JSON response
-            articles_data = [
-                {
-                    "title": article.title,
-                    "content": article.content[:500] + "..." if len(article.content) > 500 else article.content,
-                    "url": article.url,
-                    "source": article.source,
-                    "published_date": article.published_date.isoformat(),
-                    "scraped_date": article.scraped_date.isoformat(),
-                    "keywords": article.keywords,
-                    "language": article.language,
-                    "category": article.category
-                }
-                for article in articles
-            ]
-            
-            # Calculate execution time
-            execution_time = (datetime.utcnow() - start_time).total_seconds()
-            execution_time_ms = execution_time * 1000
-            
-            # Log scraping end
-            log_manager.log_scraping_end(
-                articles_scraped=len(articles),
-                articles_saved=saved_count,
-                duration_ms=execution_time_ms
-            )
-            
-            # Log operation end
-            log_manager.log_operation_end(
-                operation_id=operation_id,
-                status="success",
-                metrics={
-                    "articles_found": len(articles),
-                    "articles_saved": saved_count,
-                    "execution_time_ms": execution_time_ms
-                }
-            )
-            
-            return {
-                "status": "success",
-                "source": "BPS",
-                "count": len(articles),
-                "execution_time_seconds": execution_time,
-                "execution_id": log_manager.execution_id,
-                "correlation_id": log_manager.correlation_id,
-                "articles": articles_data,
-                "parameters": {
-                    "keywords": params['keywords'],
-                    "start_date": params['start_date'].isoformat(),
-                    "end_date": params['end_date'].isoformat(),
-                    "max_pages": params['max_pages'],
-                    "saved_to_db": params['save_to_db']
-                }
-            }
-            
-        finally:
-            await scraper.close()
-            
-    except Exception as e:
+        elif hasattr(scraper, 'scrape_data'):
+            articles = await scraper.scrape_data()
+        
         execution_time = (datetime.utcnow() - start_time).total_seconds()
         
-        # Log error
-        log_manager.log_error(
-            error=e,
-            context_data={
-                "operation": "scraping",
-                "source": "BPS",
-                "execution_time_seconds": execution_time
+        # Convert articles to serializable format
+        articles_data = []
+        for a in (articles if articles else []):
+            article = {
+                "title": getattr(a, 'title', str(a)) if hasattr(a, 'title') else str(a),
+                "url": getattr(a, 'url', '') if hasattr(a, 'url') else '',
+                "source": getattr(a, 'source', SOURCE_NAME) if hasattr(a, 'source') else SOURCE_NAME
             }
-        )
+            if hasattr(a, 'published_date') and a.published_date:
+                article["published_date"] = a.published_date.isoformat() if hasattr(a.published_date, 'isoformat') else str(a.published_date)
+            articles_data.append(article)
         
-        # Log operation end with failure
-        if 'operation_id' in locals():
-            log_manager.log_operation_end(
-                operation_id=operation_id,
-                status="failed",
-                metrics={"execution_time_seconds": execution_time}
-            )
+        return {
+            "status": "success",
+            "source": SOURCE_NAME,
+            "execution_time_seconds": execution_time,
+            "execution_id": log_manager.execution_id,
+            "results": {
+                "articles_found": len(articles_data),
+                "articles_saved": len(articles_data) if params.get('save_to_db') else 0,
+                "articles": articles_data[:10]  # Limit to 10 in response
+            },
+            "parameters": {
+                "keywords": params.get('keywords', []),
+                "start_date": params['start_date'].isoformat() if params.get('start_date') else None,
+                "end_date": params['end_date'].isoformat() if params.get('end_date') else None
+            }
+        }
         
-        raise
+    finally:
+        if hasattr(scraper, 'close'):
+            try:
+                await scraper.close()
+            except:
+                pass

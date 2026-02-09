@@ -101,7 +101,7 @@ echo Testing OilPrice Scraper Function
 echo ========================================
 echo URL: %BASE_URL%/oilprice_scraper_function
 echo.
-curl -X GET "%BASE_URL%/oilprice_scraper_function?code=%FUNCTION_KEY%&keywords=energy,oil&start_date=2025-01-21&end_date=2026-01-28&max_articles=10" -H "Content-Type: application/json"
+curl -X GET "%BASE_URL%/oilprice_scraper_function?code=%FUNCTION_KEY%&keywords=energy,oil&start_date=2025-01-21&end_date=2026-01-28&max_articles=10&save_to_db=true" -H "Content-Type: application/json"
 echo.
 echo.
 pause
