@@ -1,5 +1,3 @@
-"""Generate Azure Function HTTP trigger directories for ALL scrapers with CORRECT class names."""
-
 import os
 
 FUNCTION_JSON = """{
@@ -10,7 +8,10 @@ FUNCTION_JSON = """{
       "type": "httpTrigger",
       "direction": "in",
       "name": "req",
-      "methods": ["get", "post"]
+      "methods": [
+        "get",
+        "post"
+      ]
     },
     {
       "type": "http",
@@ -18,11 +19,48 @@ FUNCTION_JSON = """{
       "name": "$return"
     }
   ]
-}
-"""
+}"""
 
-def generate_init_py(scraper_file, class_name, source_name, has_keywords=True):
+SCRAPERS = [
+    # (scraper_file_name without .py, class_name, source_display_name)
+    ("bank_indonesia_scraper", "BankIndonesiaScraper", "Bank Indonesia"),
+    ("biodiesel_esdm_scraper", "BiodieselESDMScraper", "ESDM Biodiesel"),
+    ("bioenergytimes_scraper", "BioenergyTimesScraper", "Bioenergy Times"),
+    ("bioetanol_esdm_scraper", "BioetanolESDMScraper", "ESDM Bioetanol"),
+    ("bisnis_indonesia_scraper", "BisnisIndonesiaNewsScraper", "Bisnis Indonesia"),
+    ("bloomberg_technoz_scraper", "BloombergTechnozScraper", "Bloomberg Technoz"),
+    ("bps_scraper", "BPSScraper", "BPS"),
+    ("cnbc_indonesia_scraper", "CNBCIndonesiaNewsScraper", "CNBC Indonesia"),
+    ("cnbc_scraper", "CNBCNewsScraper", "CNBC"),
+    ("cnn_scraper", "CNNNewsScraper", "CNN"),
+    ("cpo_scraper", "CPOPriceScraper", "CPO Price"),
+    ("energiesmedia_scraper", "EnergiesMediaScraper", "Energies Media"),
+    ("google_news_scraper", "GoogleNewsScraper", "Google News"),
+    ("iaea_pris_scraper", "IAEAPRISScraper", "IAEA PRIS"),
+    ("kompas_scraper", "KompasNewsScraper", "Kompas"),
+    ("kontan_bbm_scraper", "KontanBBMScraper", "Kontan BBM"),
+    ("kontan_biodiesel_scraper", "KontanBiodieselScraper", "Kontan Biodiesel"),
+    ("kontan_scraper", "KontanNewsScraper", "Kontan"),
+    ("migas_eia_scraper", "MigasEIAScraper", "Migas EIA"),
+    ("migas_esdm_scraper", "MigasESDMScraper", "Migas ESDM"),
+    ("oilprice_scraper", "OilPriceNewsScraper", "Oil Price"),
+    ("reuters_scraper", "ReutersNewsScraper", "Reuters"),
+    ("sandp_data_scraper", "SAndPDataScraper", "S&P Data"),
+    ("sandp_news_scraper", "SAndPNewsScraper", "S&P News"),
+    ("scmp_scraper", "SCMPScraper", "SCMP"),
+    ("sipsn_scraper", "SIPSNDataScraper", "SIPSN"),
+    ("tempo_scraper", "TempoNewsScraper", "Tempo"),
+    ("theguardian_scraper", "TheGuardianNewsScraper", "The Guardian")
+]
+
+def generate_init_py(scraper_file, class_name, source_name):
     """Generate __init__.py for a scraper function."""
+    
+    # Handle specific constructor requirements
+    if class_name == "BPSScraper":
+        scraper_init = f"{class_name}(api_key=os.getenv('BPS_API_KEY', ''))"
+    else:
+        scraper_init = f"{class_name}()"
     
     return f'''"""
 Azure Function for {source_name} scraper.
@@ -38,6 +76,7 @@ from datetime import datetime
 from typing import Dict, Any
 import sys
 
+# Ensure parent directory is in path for imports
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
@@ -49,7 +88,6 @@ from shared.config import config_manager
 from shared.models import NewsArticle
 
 SOURCE_NAME = "{source_name}"
-
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     """Azure Function entry point."""
@@ -63,6 +101,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         params = _parse_request_parameters(req)
         log_manager.log_function_start(trigger_type="http", parameters={{k: str(v) for k, v in params.items()}})
         
+        # Run the async scraper
         result = asyncio.run(_scrape_data(params, log_manager))
         
         log_manager.log_function_end(status="success", result_summary={{"count": result.get("results", {{}}).get("articles_found", 0)}})
@@ -70,21 +109,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps(result, ensure_ascii=False, indent=2, default=str),
             status_code=200,
-            mimetype="application/json"
-        )
-        
-    except ValueError as e:
-        log_manager.log_function_end(status="failed", result_summary={{"error": str(e)}})
-        return func.HttpResponse(
-            json.dumps({{
-                "status": "error",
-                "error": "Invalid parameters",
-                "message": str(e),
-                "error_type": "ValueError",
-                "execution_id": log_manager.execution_id,
-                "timestamp": datetime.utcnow().isoformat()
-            }}),
-            status_code=400,
             mimetype="application/json"
         )
         
@@ -102,7 +126,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500,
             mimetype="application/json"
         )
-
 
 def _parse_request_parameters(req: func.HttpRequest) -> Dict[str, Any]:
     """Parse request parameters from body or query string."""
@@ -124,15 +147,18 @@ def _parse_request_parameters(req: func.HttpRequest) -> Dict[str, Any]:
     save_to_db = str(body.get('save_to_db', req.params.get('save_to_db', 'true'))).lower() == 'true'
     
     # Parse dates
-    if start_date_str:
-        start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
-    else:
-        start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    
-    if end_date_str:
-        end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
-    else:
-        end_date = datetime.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+    try:
+        if start_date_str:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+        else:
+            start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        if end_date_str:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+        else:
+            end_date = datetime.now()
+    except Exception as e:
+         raise ValueError(f"Invalid date format. Use YYYY-MM-DD. Error: {{str(e)}}")
     
     return {{
         'keywords': keywords,
@@ -141,58 +167,51 @@ def _parse_request_parameters(req: func.HttpRequest) -> Dict[str, Any]:
         'save_to_db': save_to_db
     }}
 
-
 async def _scrape_data(params: Dict[str, Any], log_manager: AzureLoggingManager) -> Dict[str, Any]:
-    """Perform scraping operation."""
+    """Perform scraping operation and persist to database."""
     start_time = datetime.utcnow()
     
-    scraper = {class_name}()
+    # Initialize scraper
+    scraper = {scraper_init}
     
     try:
-        # Try different scraping methods based on what the scraper supports
-        articles = []
+        # Perform scraping
+        articles = await scraper.scrape_news(
+            keywords=params.get('keywords', []),
+            start_date=params.get('start_date'),
+            end_date=params.get('end_date')
+        )
         
-        if hasattr(scraper, 'scrape_news'):
-            articles = await scraper.scrape_news(
-                keywords=params.get('keywords', []),
-                start_date=params.get('start_date'),
-                end_date=params.get('end_date')
-            )
-        elif hasattr(scraper, 'scrape'):
-            articles = await scraper.scrape(
-                keywords=params.get('keywords', []),
-                start_date=params.get('start_date'),
-                end_date=params.get('end_date')
-            )
-        elif hasattr(scraper, 'scrape_data'):
-            articles = await scraper.scrape_data()
-        
-        execution_time = (datetime.utcnow() - start_time).total_seconds()
-        
-        # Convert articles to serializable format and prepare for DB
-        articles_data = []
+        # Convert to NewsArticle model
         news_articles = []
-        
         for a in (articles if articles else []):
-            # Extract data safely
-            title = getattr(a, 'title', str(a)) if hasattr(a, 'title') else str(a)
-            url = getattr(a, 'url', '') if hasattr(a, 'url') else ''
-            content = getattr(a, 'content', '') if hasattr(a, 'content') else ''
-            pub_date = getattr(a, 'published_date', None) if hasattr(a, 'published_date') else None
+            # Handle both dict and object types
+            title = getattr(a, 'title', '') or (a.get('title', '') if isinstance(a, dict) else '')
+            content = getattr(a, 'content', '') or (a.get('content', '') if isinstance(a, dict) else '')
+            url = getattr(a, 'url', '') or (a.get('url', '') if isinstance(a, dict) else '')
+            pub_date = getattr(a, 'published_date', None) or (a.get('published_date', None) if isinstance(a, dict) else None)
             
+            # Fallback for data-type scrapers that might nest data
+            if not title and isinstance(a, dict) and 'type' in a:
+                title = f"{{SOURCE_NAME}} {{a.get('type')}} Data"
+                if not content:
+                    content = json.dumps(a.get('data', a))
+            
+            # Robust defaults
             if not pub_date:
-                pub_date = datetime.now()
+                pub_date = datetime.utcnow()
+            elif not isinstance(pub_date, datetime):
+                try:
+                    pub_date = datetime.fromisoformat(str(pub_date))
+                except:
+                    pub_date = datetime.utcnow()
             
-            # For JSON response
-            article_snippet = {{
-                "title": title,
-                "url": url,
-                "source": getattr(a, 'source', SOURCE_NAME) if hasattr(a, 'source') else SOURCE_NAME,
-                "published_date": pub_date.isoformat() if hasattr(pub_date, 'isoformat') else str(pub_date)
-            }}
-            articles_data.append(article_snippet)
+            if not title:
+                title = f"{{SOURCE_NAME}} Data Entry - {{pub_date.strftime('%Y-%m-%d')}}"
             
-            # For Database persistence
+            if not url:
+                url = f"https://local.internal/{{SOURCE_NAME.lower().replace(' ', '_')}}/{{pub_date.timestamp()}}"
+
             news_articles.append(NewsArticle(
                 title=title,
                 content=content or "No content available",
@@ -201,18 +220,22 @@ async def _scrape_data(params: Dict[str, Any], log_manager: AzureLoggingManager)
                 published_date=pub_date,
                 keywords=params.get('keywords', [])
             ))
-        
+
         # Save to database if requested
         articles_saved = 0
+        persistence_error = None
         if params.get('save_to_db') and news_articles:
             try:
                 db_config = await config_manager.get_database_config()
                 db_handler = DatabaseHandler(db_config)
                 await db_handler.save_articles(news_articles)
                 articles_saved = len(news_articles)
-                log_manager.log_info(f"Successfully saved {{articles_saved}} articles to database")
+                log_manager.info(f"Successfully saved {{articles_saved}} articles to database")
             except Exception as db_error:
+                persistence_error = str(db_error)
                 log_manager.log_error(error=db_error, context_data={{"operation": "database_persistence"}})
+        
+        execution_time = (datetime.utcnow() - start_time).total_seconds()
         
         return {{
             "status": "success",
@@ -220,14 +243,15 @@ async def _scrape_data(params: Dict[str, Any], log_manager: AzureLoggingManager)
             "execution_time_seconds": execution_time,
             "execution_id": log_manager.execution_id,
             "results": {{
-                "articles_found": len(articles_data),
+                "articles_found": len(news_articles),
                 "articles_saved": articles_saved,
-                "articles": articles_data[:10]  # Limit to 10 in response
+                "persistence_error": persistence_error,
+                "articles": [a.to_dict() for a in news_articles[:5]]
             }},
             "parameters": {{
                 "keywords": params.get('keywords', []),
-                "start_date": params['start_date'].isoformat() if params.get('start_date') else None,
-                "end_date": params['end_date'].isoformat() if params.get('end_date') else None
+                "start_date": params['start_date'].isoformat(),
+                "end_date": params['end_date'].isoformat()
             }}
         }}
         
@@ -238,40 +262,6 @@ async def _scrape_data(params: Dict[str, Any], log_manager: AzureLoggingManager)
             except:
                 pass
 '''
-
-
-# ALL scrapers with CORRECT class names (from grep search)
-SCRAPERS = [
-    # (scraper_file_name without .py, class_name, source_display_name)
-    ("bank_indonesia_scraper", "BankIndonesiaScraper", "BankIndonesia"),
-    ("biodiesel_esdm_scraper", "BiodieselESDMScraper", "BiodieselESDM"),
-    ("bioetanol_esdm_scraper", "BioetanolESDMScraper", "BioetanolESDM"),
-    ("bioenergytimes_scraper", "BioenergyTimesScraper", "BioenergyTimes"),
-    ("bisnis_indonesia_scraper", "BisnisIndonesiaNewsScraper", "BisnisIndonesia"),
-    ("bloomberg_technoz_scraper", "BloombergTechnozScraper", "BloombergTechnoz"),
-    ("bps_scraper", "BPSScraper", "BPS"),
-    ("cnbc_indonesia_scraper", "CNBCIndonesiaNewsScraper", "CNBCIndonesia"),
-    ("cnbc_scraper", "CNBCNewsScraper", "CNBC"),
-    ("cnn_scraper", "CNNNewsScraper", "CNN"),
-    ("cpo_scraper", "CPOPriceScraper", "CPOPrice"),
-    ("energiesmedia_scraper", "EnergiesMediaScraper", "EnergiesMedia"),
-    ("google_news_scraper", "GoogleNewsScraper", "GoogleNews"),
-    ("iaea_pris_scraper", "IAEAPRISScraper", "IAEA_PRIS"),
-    ("kompas_scraper", "KompasNewsScraper", "Kompas"),
-    ("kontan_bbm_scraper", "KontanBBMScraper", "KontanBBM"),
-    ("kontan_biodiesel_scraper", "KontanBiodieselScraper", "KontanBiodiesel"),
-    ("kontan_scraper", "KontanNewsScraper", "Kontan"),
-    ("migas_eia_scraper", "MigasEIAScraper", "MigasEIA"),
-    ("migas_esdm_scraper", "MigasESDMScraper", "MigasESDM"),
-    ("oilprice_scraper", "OilPriceNewsScraper", "OilPrice"),
-    ("reuters_scraper", "ReutersNewsScraper", "Reuters"),
-    ("sandp_data_scraper", "SAndPDataScraper", "SAndPData"),
-    ("sandp_news_scraper", "SAndPNewsScraper", "SAndPNews"),
-    ("scmp_scraper", "SCMPScraper", "SCMP"),
-    ("sipsn_scraper", "SIPSNDataScraper", "SIPSN"),
-    ("tempo_scraper", "TempoNewsScraper", "Tempo"),
-    ("theguardian_scraper", "TheGuardianNewsScraper", "TheGuardian"),
-]
 
 def main():
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -289,12 +279,10 @@ def main():
         with open(os.path.join(func_dir, "__init__.py"), "w") as f:
             f.write(generate_init_py(scraper_file, class_name, source_name))
         
-        print(f"Created/Updated {scraper_file}_function/")
+        print(f"Created/Updated {{scraper_file}}_function/")
         created += 1
     
-    print(f"\nGenerated/Updated {created} function directories!")
-    print("Now run: func azure functionapp publish pei-dashboard --python")
-
+    print(f"\\nGenerated/Updated {{created}} function directories!")
 
 if __name__ == "__main__":
     main()

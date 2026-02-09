@@ -20,7 +20,7 @@ if parent_dir not in sys.path:
 
 from shared.database_handler import DatabaseHandler, create_database_handler
 from shared.models import DatabaseConfig, ExecutionResult, FunctionStatus
-from shared.config import get_database_config
+from shared.config import config_manager
 from shared.logging_config import get_logger
 from shared.interfaces import DatabaseError
 
@@ -54,7 +54,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
     
     try:
         # Initialize database handler
-        db_config = await get_database_config()
+        db_config = await config_manager.get_database_config()
         db_handler = await create_database_handler(db_config)
         
         # Perform deduplication

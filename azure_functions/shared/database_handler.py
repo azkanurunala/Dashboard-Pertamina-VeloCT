@@ -132,18 +132,15 @@ class DatabaseHandler(IDatabaseHandler):
                 cursor = conn.cursor()
                 
                 try:
+                    self.logger.info(f"💾 save_articles: Starting batch save for {len(articles)} articles")
                     # Filter out articles that already exist in the database (based on URL)
-                    # unique constraint is generally on URL
                     
                     if not articles:
                         return 0
 
                     # 1. Get List of URLs from input
                     input_urls = [a.url for a in articles]
-                    
-                    # 2. Check which ones exist
-                    # Handle large lists by chunking if necessary, but for now simple IN clause
-                    # SQL Server parameter limit is around 2100, so we should be careful if batch is huge
+                    self.logger.info(f"🔍 save_articles: Checking for existing URLs in {len(input_urls)} articles")
                     
                     existing_urls = set()
                     
@@ -154,21 +151,26 @@ class DatabaseHandler(IDatabaseHandler):
                         placeholders = ','.join(['?' for _ in chunk_urls])
                         
                         check_query = f"SELECT url FROM news_articles WHERE url IN ({placeholders})"
+                        self.logger.info(f"📡 save_articles: Executing duplicate check query for chunk {i//chunk_size + 1}")
                         cursor.execute(check_query, chunk_urls)
                         
-                        for row in cursor.fetchall():
+                        rows = cursor.fetchall()
+                        self.logger.info(f"✅ save_articles: Found {len(rows)} existing URLs in chunk")
+                        for row in rows:
                             existing_urls.add(row[0])
                     
                     # 3. Filter articles
                     new_articles = [a for a in articles if a.url not in existing_urls]
+                    self.logger.info(f"✨ save_articles: {len(new_articles)} new articles found after deduplication")
                     
                     if not new_articles:
                         self.logger.info("No new articles to save (all duplicates)")
                         return 0
 
                     saved_count = 0
-                    for article in new_articles:
+                    for index, article in enumerate(new_articles):
                         try:
+                            self.logger.info(f"📝 save_articles: Saving article {index+1}/{len(new_articles)}: {article.title[:50]}...")
                             # Get or create source
                             source_id = self._get_or_create_source_sync(cursor, article.source)
                             
@@ -199,12 +201,13 @@ class DatabaseHandler(IDatabaseHandler):
                             
                             saved_count += 1
                         except Exception as inner_e:
-                            self.logger.warning(f"Failed to save individual article {article.url}: {inner_e}")
+                            self.logger.error(f"❌ save_articles: Failed to save individual article {article.url}: {inner_e}")
                             # Continue to next article
                             pass
                     
+                    self.logger.info(f"💾 save_articles: Committing transaction for {saved_count} articles")
                     conn.commit()
-                    self.logger.info(f"Successfully saved {saved_count} new articles (skipped {len(articles) - len(new_articles)} duplicates)")
+                    self.logger.info(f"🚀 save_articles: Successfully saved {saved_count} new articles")
                     return saved_count
                     
                 except Exception as e:

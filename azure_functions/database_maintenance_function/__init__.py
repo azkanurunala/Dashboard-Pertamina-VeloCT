@@ -14,14 +14,14 @@ from typing import Dict, Any
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from shared.database_handler import DatabaseHandler
+from shared.database_handler import DatabaseHandler, create_database_handler
 from shared.database_optimization import DatabaseOptimizer
 from shared.database_maintenance_scheduler import (
     DatabaseMaintenanceScheduler, 
     create_maintenance_scheduler
 )
 from shared.models import DatabaseConfig
-from shared.config import get_database_config
+from shared.config import config_manager
 
 
 async def main(req: func.HttpRequest) -> func.HttpResponse:
@@ -73,8 +73,8 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             )
         
         # Initialize database handler
-        db_config = get_database_config()
-        db_handler = DatabaseHandler(db_config)
+        db_config = await config_manager.get_database_config()
+        db_handler = await create_database_handler(db_config)
         
         # Execute requested operation
         if operation == "health_check":

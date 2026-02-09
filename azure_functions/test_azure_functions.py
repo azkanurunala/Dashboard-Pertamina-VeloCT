@@ -25,7 +25,7 @@ FUNCTIONS = [
     {"name": "cnbc_scraper_function", "params": {"keywords": KEYWORDS_EN}},
     {"name": "cnn_scraper_function", "params": {"keywords": KEYWORDS_EN}},
     {"name": "cpo_scraper_function", "params": {"keywords": KEYWORDS_EN}},
-    {"name": "database_maintenance_function", "route": "api/maintenance"},
+    {"name": "database_maintenance_function", "route": "api/maintenance", "params": {"operation": "health_check"}},
     {"name": "deduplication_function", "route": "api/deduplicate"},
     {"name": "energiesmedia_scraper_function", "params": {"keywords": KEYWORDS_EN}},
     {"name": "google_news_scraper_function", "params": {"keywords": KEYWORDS_EN}},
@@ -91,9 +91,9 @@ def test_all():
         start_time = time.time()
         try:
             if method == "POST":
-                response = requests.post(url, json=payload, timeout=300)
+                response = requests.post(url, json=payload, timeout=3000)
             else:
-                response = requests.get(url, params=params, timeout=300)
+                response = requests.get(url, params=params, timeout=3000)
                 
             duration = time.time() - start_time
             

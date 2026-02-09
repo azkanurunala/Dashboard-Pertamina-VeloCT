@@ -348,6 +348,18 @@ class AzureLoggingManager:
             
             del self.operations[operation_id]
     
+    def info(self, message: str, data: Optional[Dict[str, Any]] = None) -> None:
+        """Log info message."""
+        self._log("INFO", message, data=data)
+
+    def warning(self, message: str, data: Optional[Dict[str, Any]] = None) -> None:
+        """Log warning message."""
+        self._log("WARNING", message, data=data)
+
+    def debug(self, message: str, data: Optional[Dict[str, Any]] = None) -> None:
+        """Log debug message."""
+        self._log("DEBUG", message, data=data)
+
     def log_error(self, error: Exception, context_data: Dict[str, Any]) -> None:
         """Log error with full context and stack trace."""
         self._log(
