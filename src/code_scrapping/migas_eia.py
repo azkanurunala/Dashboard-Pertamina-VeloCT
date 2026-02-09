@@ -19,7 +19,7 @@ from helpers.onedrive_helper import (
 
 load_dotenv()
 
-_API_KEY = "kODFA7mKVrNKWrGyFiIk5fIdlC1AKGXzba5lJxzY"
+_API_KEY = os.getenv("EIA_API_KEY")
 _BASE_API_URL = "https://api.eia.gov/v2/steo/data/"
 ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_DATA_PATH", "/results/(Terstruktur)Data Scrapping.xlsx")
 _SHEET_NAME = "(Data)eia"
