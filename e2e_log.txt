@@ -1,0 +1,28 @@
+2026-02-09 17:36:14.333603 - DEBUG: Script started
+2026-02-09 17:36:14.333603 - DEBUG: Loading environment...
+2026-02-09 17:36:14.339476 - DEBUG: Environment loaded.
+2026-02-09 17:36:14.340486 - DEBUG: SQL_SERVER_CONNECTION_STRING set: Yes
+2026-02-09 17:36:14.340486 - DEBUG: COPILOT_API_KEY set: Yes
+2026-02-09 17:36:15.689258 - DEBUG: Entering run_e2e_test
+2026-02-09 17:36:15.689831 - --- Starting End-to-End Pipeline Test ---
+2026-02-09 17:36:15.689831 - 
+[Step 1] Initializing Database Handler...
+2026-02-09 17:36:16.005592 - SUCCESS: Database connected.
+2026-02-09 17:36:16.005592 - 
+[Step 2] Scraping News (Tempo)...
+2026-02-09 17:36:16.006126 - Scraping for keywords: ['Pertamina', 'Indonesia', 'Energy']
+2026-02-09 17:37:50.305329 - SUCCESS: Found 0 real articles from Tempo.
+2026-02-09 17:37:50.305850 - 
+[!] Scraping found 0 articles. Injecting MOCK DATA for testing persistence...
+2026-02-09 17:37:50.305850 - SUCCESS: Injected 2 mock articles.
+2026-02-09 17:37:50.305850 - 
+[Step 3] Saving Articles to Database...
+2026-02-09 17:37:50.524261 - SUCCESS: Saved 2 articles to DB.
+2026-02-09 17:37:50.524261 - 
+[Step 4] Fetching Articles for Analysis...
+2026-02-09 17:37:50.781426 - SUCCESS: Retrieved 2 target articles from DB.
+2026-02-09 17:37:50.781947 - 
+[Step 5] Running Sentiment Analysis (GEMINI)...
+2026-02-09 17:40:27.928132 - DEBUG: Closed AI provider session.
+2026-02-09 17:40:27.928132 - 
+--- End-to-End Pipeline Test Completed ---

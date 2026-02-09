@@ -45,8 +45,8 @@ class EnvironmentConfigurationManager(IConfigurationManager):
         
         # Copilot configuration
         self._cache["copilot"] = {
-            "api_endpoint": os.getenv("COPILOT_API_ENDPOINT", ""),
-            "model_name": os.getenv("COPILOT_MODEL_NAME", "gpt-4"),
+            "api_endpoint": os.getenv("COPILOT_API_ENDPOINT", os.getenv("GEMINI_API_ENDPOINT", "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent")),
+            "model_name": os.getenv("COPILOT_MODEL_NAME", os.getenv("GEMINI_MODEL_NAME", "gemini-pro")),
             "max_tokens": int(os.getenv("COPILOT_MAX_TOKENS", "4000")),
             "temperature": float(os.getenv("COPILOT_TEMPERATURE", "0.3")),
             "rate_limit_requests_per_minute": int(os.getenv("COPILOT_RATE_LIMIT", "60")),
@@ -188,15 +188,32 @@ class EnvironmentConfigurationManager(IConfigurationManager):
         return DatabaseConfig(**config_data)
     
     async def get_secret(self, secret_name: str) -> str:
-        """Get a secret value from environment variables."""
-        # In a full implementation, this would integrate with Azure Key Vault
-        # For now, we'll use environment variables
-        secret_value = os.getenv(secret_name)
+        """
+        Get a secret value from environment variables or Key Vault.
         
-        if secret_value is None:
-            raise ConfigurationError(f"Secret '{secret_name}' not found")
+        Args:
+            secret_name: Name of the secret
+            
+        Returns:
+            Secret value
+        """
+        # Try direct environment variable first
+        value = os.getenv(secret_name)
         
-        return secret_value
+        # If not in environment, or placeholder, or KV reference, check Key Vault
+        if not value or value == "PLACEHOLDER-WILL-BE-CONFIGURED-LATER" or str(value).startswith("@Microsoft.KeyVault"):
+            kv_secret = _get_key_vault_secret(secret_name)
+            if kv_secret:
+                value = kv_secret
+                
+        if value is None:
+            raise ConfigurationError(f"Secret '{secret_name}' not found in environment or Key Vault")
+            
+        return str(value)
+
+    def reload(self) -> None:
+        """Reload configuration from environment."""
+        self._load_environment_config()
     
     async def update_configuration(self, key: str, value: Any) -> None:
         """Update a configuration value in cache."""
@@ -363,27 +380,25 @@ def get_copilot_api_key() -> str:
     Get Copilot API key from environment variables or Key Vault.
     
     Priority order:
-    1. Direct environment variable (CopilotApiKey)
+    1. Direct environment variable (CopilotApiKey or COPILOT_API_KEY)
     2. Azure Key Vault (using Managed Identity)
-    3. Fallback environment variables
     """
-    # Try direct environment variable first
-    api_key = os.getenv("CopilotApiKey")
+    # Try direct environment variables first
+    api_key = os.getenv("CopilotApiKey") or os.getenv("COPILOT_API_KEY")
     
-    # If not found or is a Key Vault reference, try to get from Key Vault directly
-    if not api_key or api_key.startswith("@Microsoft.KeyVault"):
-        kv_secret = _get_key_vault_secret("CopilotApiKey")
-        if kv_secret:
-            api_key = kv_secret
-    
-    # Fallback
-    if not api_key:
-        api_key = os.getenv("COPILOT_API_KEY")
+    # If not found, or placeholder, or Key Vault reference, try to get from Key Vault directly
+    if not api_key or api_key == "PLACEHOLDER-WILL-BE-CONFIGURED-LATER" or api_key.startswith("@Microsoft.KeyVault"):
+        # Try both names in Key Vault
+        for name in ["CopilotApiKey", "COPILOT_API_KEY"]:
+            kv_secret = _get_key_vault_secret(name)
+            if kv_secret:
+                api_key = kv_secret
+                break
     
     if not api_key or api_key == "PLACEHOLDER-WILL-BE-CONFIGURED-LATER":
         raise ConfigurationError(
             "Copilot API key not configured. "
-            "Please set CopilotApiKey environment variable."
+            "Please set CopilotApiKey or COPILOT_API_KEY environment variable."
         )
     
     return api_key
@@ -394,27 +409,25 @@ def get_copilot_endpoint() -> str:
     Get Copilot API endpoint from environment variables or Key Vault.
     
     Priority order:
-    1. Direct environment variable (CopilotEndpoint)
+    1. Direct environment variable (CopilotEndpoint or COPILOT_API_ENDPOINT)
     2. Azure Key Vault (using Managed Identity)
-    3. Fallback environment variables
     """
-    # Try direct environment variable first
-    endpoint = os.getenv("CopilotEndpoint")
+    # Try direct environment variables first
+    endpoint = os.getenv("CopilotEndpoint") or os.getenv("COPILOT_API_ENDPOINT")
     
-    # If not found or is a Key Vault reference, try to get from Key Vault directly
-    if not endpoint or endpoint.startswith("@Microsoft.KeyVault"):
-        kv_secret = _get_key_vault_secret("CopilotEndpoint")
-        if kv_secret:
-            endpoint = kv_secret
-    
-    # Fallback
-    if not endpoint:
-        endpoint = os.getenv("COPILOT_API_ENDPOINT")
+    # If not found, or placeholder, or Key Vault reference, try to get from Key Vault directly
+    if not endpoint or endpoint == "PLACEHOLDER-WILL-BE-CONFIGURED-LATER" or endpoint.startswith("@Microsoft.KeyVault"):
+        # Try both names in Key Vault
+        for name in ["CopilotEndpoint", "COPILOT_API_ENDPOINT"]:
+            kv_secret = _get_key_vault_secret(name)
+            if kv_secret:
+                endpoint = kv_secret
+                break
     
     if not endpoint or endpoint == "PLACEHOLDER-WILL-BE-CONFIGURED-LATER":
         raise ConfigurationError(
             "Copilot API endpoint not configured. "
-            "Please set CopilotEndpoint environment variable."
+            "Please set CopilotEndpoint or COPILOT_API_ENDPOINT environment variable."
         )
     
     return endpoint

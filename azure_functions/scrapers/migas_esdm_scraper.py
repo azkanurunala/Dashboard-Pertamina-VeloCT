@@ -332,6 +332,22 @@ class MigasESDMScraper(BaseNewsScraper):
             raise ScrapingError(f"Failed to scrape Migas ESDM: {str(e)}", source=self.source_name)
 
 
+    async def scrape_news(
+        self, 
+        keywords: List[str], 
+        start_date: datetime, 
+        end_date: datetime, 
+        **kwargs
+    ) -> List[Dict[str, Any]]:
+        """
+        Override base scrape_news to bypass object validation.
+        The Migas ESDM scraper returns structured data, not standard articles.
+        """
+        return await self._scrape_articles_from_source(
+            keywords, start_date, end_date, **kwargs
+        )
+
+
 async def scrape_migas_esdm_icp(
     last_year: Optional[int] = None,
     last_month: Optional[int] = None,

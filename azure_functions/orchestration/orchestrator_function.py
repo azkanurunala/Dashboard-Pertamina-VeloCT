@@ -27,6 +27,7 @@ from shared.models import (
 from shared.config import config_manager
 from shared.database_handler import DatabaseHandler
 from shared.copilot_integration import CopilotIntegration
+from shared.blob_storage_integration import BlobStorageIntegration
 from shared.logging_config import setup_logging
 
 # Import scrapers
@@ -83,6 +84,7 @@ class OrchestratorFunction(IOrchestratorFunction):
         """Initialize the orchestrator function with required dependencies."""
         self.db_handler: IDatabaseHandler = None
         self.copilot_integration: ICopilotIntegration = None
+        self.blob_integration: BlobStorageIntegration = None
         self._initialized = False
         self.max_concurrent_scrapers = 5
         self.scraper_timeout_seconds = 300  # 5 minutes
@@ -99,6 +101,10 @@ class OrchestratorFunction(IOrchestratorFunction):
                 # Initialize Copilot integration
                 copilot_config = await config_manager.get_copilot_config()
                 self.copilot_integration = CopilotIntegration(copilot_config)
+                
+                # Initialize Blob Storage integration
+                self.blob_integration = BlobStorageIntegration()
+                await self.blob_integration.initialize()
                 
                 self._initialized = True
                 logger.info("Orchestrator function initialized successfully")
@@ -532,6 +538,23 @@ class OrchestratorFunction(IOrchestratorFunction):
                     articles_data.append(article_dict)
                 
                 logger.info(f"Scraping completed for {source}: {len(articles_data)} articles found")
+                
+                # Store articles in blob storage for backup/archiving
+                if articles_data and self.blob_integration:
+                    try:
+                        # Convert data dicts back to NewsArticle for the integration method
+                        articles_obj_list = []
+                        for art in articles:
+                            articles_obj_list.append(art)
+                        
+                        blob_name = await self.blob_integration.store_scraped_data_temporarily(
+                            articles=articles_obj_list,
+                            source_name=source,
+                            execution_id=execution_id
+                        )
+                        logger.info(f"Scraped data archived to blob: {blob_name}")
+                    except Exception as blob_err:
+                        logger.warning(f"Failed to archive scraped data to blob storage: {str(blob_err)}")
                 
                 return {
                     "source": source,

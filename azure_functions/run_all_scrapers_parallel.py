@@ -44,7 +44,7 @@ async def run_scraper(session, scraper_name, payload):
     start_time = time.time()
     
     try:
-        async with session.post(url, json=payload, timeout=300) as response:
+        async with session.post(url, json=payload, timeout=600) as response:
             status = response.status
             try:
                 result = await response.json()

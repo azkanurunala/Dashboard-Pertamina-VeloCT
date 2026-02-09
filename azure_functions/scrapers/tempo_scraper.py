@@ -180,6 +180,83 @@ class TempoNewsScraper(BaseNewsScraper):
             self.logger.warning(f"Failed to extract article info: {e}")
             return None
 
+    def _extract_article_info_from_sitemap_robust(self, url_tag) -> Optional[Dict[str, Any]]:
+        """
+        Extract article information from sitemap URL entry, robustly handling ET, Tag, or HTML tr.
+        """
+        try:
+            url = None
+            date = ''
+            
+            # Case 1: HTML <tr> from Tempo's visual sitemaps
+            if hasattr(url_tag, 'name') and url_tag.name == 'tr':
+                tds = url_tag.find_all('td')
+                if len(tds) >= 3:
+                    a_tag = tds[0].find('a')
+                    if a_tag and a_tag.get('href'):
+                        url = a_tag.get('href').strip()
+                    
+                    date_text = tds[2].get_text(strip=True)
+                    if date_text:
+                        # Format "2026-02-09 18:25 Z" -> "2026-02-09"
+                        date = date_text[:10]
+            
+            # Case 2: ET style or Standard BeautifulSoup Tag
+            elif hasattr(url_tag, 'find'):
+                loc = url_tag.find('{http://www.sitemaps.org/schemas/sitemap/0.9}loc')
+                if loc is not None:
+                    url = loc.text.strip()
+                    lastmod = url_tag.find('{http://www.sitemaps.org/schemas/sitemap/0.9}lastmod')
+                    date = lastmod.text.strip()[:10] if lastmod is not None and lastmod.text else ''
+                else:
+                    # Try BeautifulSoup style or direct tag find
+                    loc = url_tag.find('loc')
+                    if loc is None or not loc.text:
+                        # Try direct access for ET without namespace if BS
+                        url = url_tag.get_text().strip() if hasattr(url_tag, 'get_text') else None
+                        if not url or not url.startswith('http'): return None
+                        date = ''
+                    else:
+                        url = loc.text.strip()
+                        lastmod = url_tag.find('lastmod')
+                        date = lastmod.text.strip()[:10] if lastmod is not None and lastmod.text else ''
+            
+            if not url or not url.startswith('http'):
+                return None
+
+            url_keywords = self._extract_keywords_from_url(url)
+            
+            # Case 1: Title from HTML <tr> (usually in the link text)
+            title = ''
+            if hasattr(url_tag, 'name') and url_tag.name == 'tr':
+                tds = url_tag.find_all('td')
+                a_tag = tds[0].find('a')
+                if a_tag:
+                    title = a_tag.get_text(strip=True)
+
+            # Case 2: XML news:title or title tag
+            if not title and hasattr(url_tag, 'find'):
+                title_tag = url_tag.find('{http://www.google.com/schemas/sitemap-news/0.9}title')
+                if title_tag is None:
+                    title_tag = url_tag.find('news:title')
+                if title_tag is None:
+                    title_tag = url_tag.find('title')
+                
+                title = title_tag.text.strip() if title_tag is not None and title_tag.text else ''
+            
+            if not title:
+                title = ' '.join([k.capitalize() for k in url_keywords]) if url_keywords else url.split('/')[-1]
+            
+            return {
+                'title': title,
+                'url': url,
+                'date': date,
+                'url_keywords': url_keywords
+            }
+        except Exception as e:
+            self.logger.warning(f"Robust extraction failed: {e}")
+            return None
+
     async def _extract_article_content(self, url: str) -> str:
         """
         Extract article content from Tempo article page.
@@ -263,12 +340,48 @@ class TempoNewsScraper(BaseNewsScraper):
         
         try:
             # Parse XML
-            root = ET.fromstring(content)
-            namespaces = {'sm': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
+            try:
+                # Force XML headers for aiohttp request
+                headers = {'Accept': 'application/xml, text/xml, */*'}
+                response = await self._make_request(sitemap_url, headers=headers)
+                content = await response.read()
+
+                root = ET.fromstring(content)
+                namespaces = {'sm': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
+                url_tags = root.findall('.//sm:url', namespaces)
+            except Exception as e:
+                self.logger.warning(f"XML parsing failed for {sitemap_url}, trying BeautifulSoup fallback: {e}")
+                
+                # Save failed content for diagnostics as requested by user
+                try:
+                    sitemap_filename = sitemap_url.split('/')[-1]
+                    # Save to project root (2 levels up from azure_functions/scrapers/)
+                    root_dir = os.path.abspath(os.path.join(os.path.dirname(__get_file__ if '__get_file__' in locals() else __file__), '..', '..'))
+                    failed_log_path = os.path.join(root_dir, f"failed_{sitemap_filename}")
+                    with open(failed_log_path, 'wb') as f:
+                        f.write(content)
+                    self.logger.info(f"Saved failed sitemap content to {failed_log_path} for analysis")
+                except Exception as log_e:
+                    self.logger.error(f"Failed to save diagnostic sitemap file: {log_e}")
+
+                soup = BeautifulSoup(content, 'xml') # Try XML parser first
+                url_tags = soup.find_all('url')
+                
+                if not url_tags:
+                    # Fallback to HTML table parsing (observed in Tempo's visual sitemaps)
+                    soup = BeautifulSoup(content, 'html.parser')
+                    # Look for rows in table#sitemap
+                    table = soup.find('table', id='sitemap')
+                    if table:
+                        # Skip header row if it exists (usually <thead> or first <tr>)
+                        url_tags = table.find_all('tr')[1:] 
+                        self.logger.info(f"Detected HTML table sitemap. Found {len(url_tags)} rows.")
+                    else:
+                        url_tags = soup.find_all('url') # Last resort
             
             articles = []
-            for url_tag in root.findall('.//sm:url', namespaces):
-                article_info = self._extract_article_info_from_sitemap(url_tag, namespaces)
+            for url_tag in url_tags:
+                article_info = self._extract_article_info_from_sitemap_robust(url_tag)
                 if not article_info:
                     continue
                 
@@ -276,7 +389,9 @@ class TempoNewsScraper(BaseNewsScraper):
                 if keywords:
                     keyword_match = False
                     for keyword in keywords:
-                        if self._check_keyword_match(article_info['url_keywords'], keyword):
+                        k_lower = keyword.lower()
+                        if self._check_keyword_match(article_info['url_keywords'], keyword) or \
+                           (article_info['title'] and k_lower in article_info['title'].lower()):
                             keyword_match = True
                             break
                     

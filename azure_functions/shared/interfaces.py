@@ -253,6 +253,37 @@ class ICopilotIntegration(ABC):
         pass
 
 
+class IAIProvider(ABC):
+    """
+    Interface for AI providers (Gemini, OpenAI, etc.)
+    """
+
+    @abstractmethod
+    async def chat_completion(self, 
+                            system_prompt: str, 
+                            user_content: str,
+                            max_tokens: Optional[int] = None,
+                            temperature: Optional[float] = None) -> str:
+        """
+        Get a chat completion from the AI provider.
+        
+        Args:
+            system_prompt: System prompt defining the role
+            user_content: User content to analyze
+            max_tokens: Maximum tokens in response
+            temperature: Sampling temperature
+            
+        Returns:
+            Generated response text
+        """
+        pass
+
+    @abstractmethod
+    async def close(self) -> None:
+        """Close any resources (sessions, etc.) used by the provider."""
+        pass
+
+
 class ISchedulerFunction(ABC):
     """
     Interface for scheduler functions.
