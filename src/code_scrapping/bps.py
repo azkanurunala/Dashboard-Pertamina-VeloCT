@@ -171,6 +171,6 @@ def main_bps(api_key, query=None, filter_tanggal=None, max_pages=None, output_fi
     return df
 
 if __name__ == "__main__":
-    API_KEY = "eb8b64853b0c18e0f6784eb8cf9a76cd"
+    API_KEY = os.getenv("BPS_API_KEY")
     main_bps(API_KEY, query="ekonomi", filter_tanggal="2025-11-17")
     print(main_bps)
