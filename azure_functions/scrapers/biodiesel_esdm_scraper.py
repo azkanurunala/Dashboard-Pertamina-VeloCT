@@ -239,7 +239,7 @@ class BiodieselESDMScraper(BaseNewsScraper):
                 await asyncio.sleep(0.5)
             
             results = [{
-                'type': 'biodiesel_hip',
+                'type': 'data_biodiesel_hip',
                 'data': all_data,
                 'fetch_date': datetime.now().isoformat(),
                 'articles_processed': len(filtered_articles)

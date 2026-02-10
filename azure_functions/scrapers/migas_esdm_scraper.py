@@ -319,7 +319,7 @@ class MigasESDMScraper(BaseNewsScraper):
                     await asyncio.sleep(1.0)
             
             results = [{
-                'type': 'icp_prices',
+                'type': 'data_oil_prices',
                 'data': all_data,
                 'fetch_date': datetime.now().isoformat(),
                 'pdfs_processed': total_pdfs

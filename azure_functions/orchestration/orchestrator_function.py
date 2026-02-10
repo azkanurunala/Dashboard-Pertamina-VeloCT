@@ -70,6 +70,16 @@ SCRAPER_REGISTRY = {
     'sandp_data': SAndPDataScraper
 }
 
+# Data sources that return structured dictionaries instead of NewsArticle objects
+DATA_SOURCES = {
+    'iaea_pris', 'migas_eia', 'cpo', 'sipsn', 
+    'biodiesel_esdm', 'bioetanol_esdm', 'migas_esdm', 'sandp_data',
+    'iaea_electrical', 'iaea_nuclear_capacity', 'kapasitas_ebt', 'ruptl',
+    'wte_komposisi', 'wte_sumber', 'wte_timbulan', 'geopolitik', 'volatilitas',
+    'kurs', 'fossil_prediction', 'fosil', 'saf', 'biodesel', 'bioetanol',
+    'crackspread_bbm', 'crackspread_non_bbm'
+}
+
 
 class OrchestratorFunction(IOrchestratorFunction):
     """
@@ -503,18 +513,9 @@ class OrchestratorFunction(IOrchestratorFunction):
             logger.info(f"Starting scraping for source: {source}")
             
             try:
-                # Get scraper class from registry
+                # Check if this is a data source
                 source_key = source.lower().replace(' ', '_').replace('-', '_')
-                scraper_class = SCRAPER_REGISTRY.get(source_key)
-                
-                if not scraper_class:
-                    logger.warning(f"No scraper found for source: {source}")
-                    return {
-                        "source": source,
-                        "success": False,
-                        "error": f"No scraper registered for source: {source}",
-                        "articles": []
-                    }
+                is_data_source = any(ds in source_key for ds in DATA_SOURCES)
                 
                 # Initialize and run the scraper
                 async with scraper_class() as scraper:
@@ -524,20 +525,25 @@ class OrchestratorFunction(IOrchestratorFunction):
                         end_date=date_range.end_date
                     )
                 
-                # Convert NewsArticle objects to dict format
+                # Process results based on type
                 articles_data = []
-                for article in articles:
-                    article_dict = {
-                        "title": article.title,
-                        "content": article.content,
-                        "url": article.url,
-                        "source": article.source,
-                        "published_date": article.published_date,
-                        "keywords": keywords[:2]
-                    }
-                    articles_data.append(article_dict)
+                if is_data_source:
+                    # For data sources, articles is already a list of dicts or structured data
+                    articles_data = articles if isinstance(articles, list) else [articles]
+                else:
+                    # Convert NewsArticle objects to dict format
+                    for article in articles:
+                        article_dict = {
+                            "title": article.title,
+                            "content": article.content,
+                            "url": article.url,
+                            "source": article.source,
+                            "published_date": article.published_date,
+                            "keywords": keywords[:2]
+                        }
+                        articles_data.append(article_dict)
                 
-                logger.info(f"Scraping completed for {source}: {len(articles_data)} articles found")
+                logger.info(f"Scraping completed for {source}: {len(articles_data)} items found")
                 
                 # Store articles in blob storage for backup/archiving
                 if articles_data and self.blob_integration:
@@ -596,29 +602,42 @@ class OrchestratorFunction(IOrchestratorFunction):
         all_articles = []
         
         for result in scraping_results:
+            source = result["source"]
+            source_key = source.lower().replace(' ', '_').replace('-', '_')
+            is_data_source = any(ds in source_key for ds in DATA_SOURCES)
+            
             if result["success"]:
                 successful_sources += 1
-                articles = result["articles"]
-                total_articles += len(articles)
+                items = result["articles"]
+                total_articles += len(items)
                 
-                # Convert to NewsArticle objects and save to database
                 try:
-                    news_articles = []
-                    for article_data in articles:
-                        article = NewsArticle(
-                            title=article_data["title"],
-                            content=article_data["content"],
-                            url=article_data["url"],
-                            source=article_data["source"],
-                            published_date=article_data["published_date"],
-                            keywords=article_data["keywords"]
-                        )
-                        news_articles.append(article)
-                    
-                    # Save articles to database
-                    await self.db_handler.save_articles(news_articles)
-                    articles_saved += len(news_articles)
-                    all_articles.extend(news_articles)
+                    if is_data_source:
+                        # Process structured data
+                        for item in items:
+                            table_name = item.get('type')
+                            data_list = item.get('data')
+                            if table_name and data_list:
+                                await self.db_handler.save_structured_data(table_name, data_list)
+                                articles_saved += len(data_list)
+                    else:
+                        # Convert to NewsArticle objects and save to database
+                        news_articles = []
+                        for article_data in items:
+                            article = NewsArticle(
+                                title=article_data["title"],
+                                content=article_data["content"],
+                                url=article_data["url"],
+                                source=article_data["source"],
+                                published_date=article_data["published_date"],
+                                keywords=article_data["keywords"]
+                            )
+                            news_articles.append(article)
+                        
+                        # Save articles to database
+                        await self.db_handler.save_articles(news_articles)
+                        articles_saved += len(news_articles)
+                        all_articles.extend(news_articles)
                     
                 except Exception as e:
                     logger.error(f"Failed to save articles from {result['source']}: {str(e)}")

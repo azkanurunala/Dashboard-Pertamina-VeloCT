@@ -469,7 +469,7 @@ class SAndPDataScraper(BaseNewsScraper):
                 if df is not None and not df.empty:
                     df_pivoted = self.pivot_bbm_forecast(df, is_short_term=True)
                     results.append({
-                        'type': 'bbm_forecast_short',
+                        'type': 'data_fossil_prediction',
                         'data': df_pivoted.to_dict('records'),
                         'period': f"{year}-{month:02d}"
                     })
@@ -482,7 +482,7 @@ class SAndPDataScraper(BaseNewsScraper):
                 if df is not None and not df.empty:
                     df_pivoted = self.pivot_bbm_forecast(df, is_short_term=False)
                     results.append({
-                        'type': 'bbm_forecast_long',
+                        'type': 'data_fossil_prediction',
                         'data': df_pivoted.to_dict('records'),
                         'period': str(year)
                     })
@@ -506,7 +506,7 @@ class SAndPDataScraper(BaseNewsScraper):
                 
                 if all_data:
                     results.append({
-                        'type': 'petrochemical',
+                        'type': 'data_petrochemical_prices',
                         'data': all_data,
                         'period': f"{year}-{month:02d}"
                     })
@@ -521,7 +521,7 @@ class SAndPDataScraper(BaseNewsScraper):
                 
                 if df is not None and not df.empty:
                     results.append({
-                        'type': 'historical',
+                        'type': 'data_oil_prices',
                         'data': df.to_dict('records'),
                         'period': f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"
                     })

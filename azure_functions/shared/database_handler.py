@@ -510,6 +510,36 @@ class DatabaseHandler(IDatabaseHandler):
                     raise DatabaseError(f"Failed to deduplicate articles: {str(e)}")
         
         return await self._execute_with_retry(_deduplicate_operation)
+
+    async def save_structured_data(self, table_name: str, data: List[Dict[str, Any]]) -> int:
+        """Save generic structured data to the specified table."""
+        if not data:
+            return 0
+            
+        async def _save_operation():
+            async with self._get_connection() as conn:
+                cursor = conn.cursor()
+                try:
+                    columns = list(data[0].keys())
+                    placeholders = ', '.join(['?' for _ in columns])
+                    column_names = ', '.join(columns)
+                    
+                    insert_query = f"INSERT INTO {table_name} ({column_names}) VALUES ({placeholders})"
+                    
+                    rows = [tuple(item[col] for col in columns) for item in data]
+                    
+                    self.logger.info(f"💾 save_structured_data: Saving {len(data)} rows to {table_name}")
+                    cursor.executemany(insert_query, rows)
+                    
+                    conn.commit()
+                    self.logger.info(f"🚀 save_structured_data: Successfully saved {len(data)} rows to {table_name}")
+                    return len(data)
+                except Exception as e:
+                    conn.rollback()
+                    self.logger.error(f"❌ save_structured_data: Failed to save to {table_name}: {e}")
+                    raise DatabaseError(f"Failed to save structured data to {table_name}: {str(e)}")
+                    
+        return await self._execute_with_retry(_save_operation)
     
     async def execute_query(self, query: str, params: Optional[Dict[str, Any]] = None) -> Any:
         """Execute a raw SQL query."""

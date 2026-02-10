@@ -325,7 +325,7 @@ class CPOPriceScraper(BaseNewsScraper):
                 await asyncio.sleep(1.0)
             
             results = [{
-                'type': 'cpo_prices',
+                'type': 'data_cpo_prices',
                 'data': all_data,
                 'fetch_date': datetime.now().isoformat(),
                 'articles_count': len(new_articles)

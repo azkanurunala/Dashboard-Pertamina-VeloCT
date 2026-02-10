@@ -138,7 +138,7 @@ class IAEAPRISScraper(BaseNewsScraper):
             
             # Convert to structured results
             results = [{
-                'type': 'nuclear_capacity',
+                'type': 'data_nuclear',
                 'data': data,
                 'fetch_date': datetime.now().isoformat(),
                 'source': 'IAEA PRIS',

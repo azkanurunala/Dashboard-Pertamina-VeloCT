@@ -270,7 +270,7 @@ class MigasEIAScraper(BaseNewsScraper):
             transformed = self.transform_data(all_data, next_release_str)
             
             results = [{
-                'type': 'eia_steo',
+                'type': 'data_eia_market',
                 'data': transformed,
                 'period': f"{start_str} to {end_str}",
                 'fetch_date': datetime.now().isoformat(),

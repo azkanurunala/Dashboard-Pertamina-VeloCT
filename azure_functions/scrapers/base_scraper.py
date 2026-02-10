@@ -718,6 +718,70 @@ class BaseNewsScraper(INewsScraperFunction, ABC):
         
         return text_elements
 
+    async def _extract_article_content(self, url: str) -> str:
+        """
+        Standardized article content extraction using configured selectors.
+        
+        Args:
+            url: Article URL
+            
+        Returns:
+            Extracted text content
+            
+        Raises:
+            ContentExtractionError: If content cannot be extracted
+        """
+        try:
+            html = await self._fetch_content(url)
+            soup = BeautifulSoup(html, 'html.parser')
+            
+            # Remove unwanted elements
+            unwanted_selector = self.config.selectors.get("unwanted")
+            if unwanted_selector:
+                for unwanted in soup.select(unwanted_selector):
+                    unwanted.decompose()
+            
+            # Try to find the main content element
+            content_selector = self.config.selectors.get("article_content") or self.config.selectors.get("content")
+            content_elements = []
+            
+            if content_selector:
+                # Support comma-separated selectors
+                selectors = [s.strip() for s in content_selector.split(',')]
+                for selector in selectors:
+                    elements = soup.select(selector)
+                    if elements:
+                        for elem in elements:
+                            # Extract text from paragraphs within the element
+                            paragraphs = elem.find_all('p')
+                            if paragraphs:
+                                content_elements.extend([p.get_text().strip() for p in paragraphs if p.get_text().strip()])
+                            else:
+                                text = elem.get_text().strip()
+                                if text:
+                                    content_elements.append(text)
+                        if content_elements:
+                            break
+            
+            # Fallback: extract all paragraphs if no content found via selectors
+            if not content_elements:
+                self.logger.debug(f"No content found with selectors for {url}, falling back to all paragraphs")
+                content_elements = [p.get_text().strip() for p in soup.find_all('p') if p.get_text().strip()]
+            
+            # Join and clean content
+            content = "\n\n".join(content_elements)
+            content = self._clean_text(content)
+            
+            if not content:
+                raise ContentExtractionError(f"No content extracted from {url}", source=self.source_name)
+                
+            return content
+            
+        except ContentExtractionError:
+            raise
+        except Exception as e:
+            raise ContentExtractionError(f"Failed to extract content from {url}: {str(e)}", source=self.source_name)
+
     async def validate_article(self, article: NewsArticle) -> bool:
         """
         Validate a scraped article for completeness and quality.

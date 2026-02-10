@@ -139,7 +139,7 @@ class SIPSNDataScraper(BaseNewsScraper):
                 return []
             
             results = [{
-                'type': 'sipsn_waste_data',
+                'type': 'data_wte_waste',
                 'year': tahun,
                 'data': all_data,
                 'fetch_date': datetime.now().isoformat(),
