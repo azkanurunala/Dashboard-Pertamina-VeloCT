@@ -6,3 +6,4 @@ __pycache__/
 azure_functions/account-deploy.json
 azure_functions/.python_packages/
 azure_functions/.venv/
+azure_functions/references/*

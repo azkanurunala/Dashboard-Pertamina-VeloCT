@@ -1,0 +1,1 @@
+Get-Content -Path 'c:\RunningProjects\Dashboard-Pertamina-VeloCT\azure_functions\references\data\(Data)CPO.csv' -Head 5
