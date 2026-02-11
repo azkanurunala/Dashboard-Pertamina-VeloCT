@@ -90,8 +90,8 @@ class GeminiProvider(IAIProvider):
         base_url = os.getenv("GEMINI_API_ENDPOINT") or self.config.api_endpoint
         url = f"{base_url}?key={self.api_key}"
         
-        max_retries = 5
-        retry_delay = 5
+        max_retries = 8
+        retry_delay = 10
         
         for attempt in range(max_retries + 1):
             try:

@@ -54,10 +54,10 @@ class BlobStorageManager(IBlobStorageManager):
         """Initialize the blob service client and ensure containers exist."""
         try:
             if self.connection_string:
-                self._client = BlobServiceClient.from_connection_string(self.connection_string)
+                self._client = BlobServiceClient.from_connection_string(self.connection_string, api_version="2023-11-03")
             elif self.account_url:
                 credential = DefaultAzureCredential()
-                self._client = BlobServiceClient(account_url=self.account_url, credential=credential)
+                self._client = BlobServiceClient(account_url=self.account_url, credential=credential, api_version="2023-11-03")
             else:
                 raise ConfigurationError("Either connection_string or account_url must be provided")
             
