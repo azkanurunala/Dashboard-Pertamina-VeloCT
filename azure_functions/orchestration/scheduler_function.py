@@ -451,32 +451,27 @@ class SchedulerFunction(ISchedulerFunction):
                                        date_range: DateRange,
                                        execution_id: str) -> Dict[str, Any]:
         """
-        Execute scraping workflow for specified sources and keywords.
-        
-        Args:
-            sources: List of news sources to scrape
-            keywords: Keywords to search for
-            date_range: Date range for scraping
-            execution_id: Execution identifier for tracking
-            
-        Returns:
-            Dictionary with scraping results
+        Execute scraping workflow for specified sources and keywords using the orchestrator.
         """
         logger.info(f"Executing scraping workflow - Sources: {len(sources)}, Keywords: {len(keywords)}")
         
-        # In a full implementation, this would call the orchestrator function
-        # For now, we'll simulate the workflow
-        scraping_results = {
-            "sources_attempted": len(sources),
-            "sources_successful": len(sources) - 1,  # Simulate one failure
-            "total_articles_found": len(sources) * 10,  # Simulate articles found
-            "articles_saved": len(sources) * 9,  # Simulate some duplicates removed
-            "execution_time_seconds": 45,
-            "errors": ["Rate limit exceeded for one source"]
-        }
+        orchestrator = OrchestratorFunction()
+        result = await orchestrator.orchestrate_scraping(
+            sources=sources,
+            keywords=keywords,
+            date_range=date_range
+        )
         
-        logger.info(f"Scraping workflow completed - Articles saved: {scraping_results['articles_saved']}")
-        return scraping_results
+        if result.status == FunctionStatus.FAILED:
+            logger.error(f"Scraping workflow failed: {result.error_message}")
+            return {
+                "success": False,
+                "error": result.error_message,
+                "articles_saved": 0
+            }
+            
+        logger.info(f"Scraping workflow completed - Articles saved: {result.output_summary.get('articles_saved', 0)}")
+        return result.output_summary
     
     async def _execute_analysis_workflow(self, 
                                        date_range: DateRange,

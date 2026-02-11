@@ -19,7 +19,12 @@
     "AZURE_KEY_VAULT_URL": "",
     "BLOB_STORAGE_CONNECTION_STRING": "",
     "BPS_API_KEY": "8199b1a60c76d284ee3d2228a51b3743",
-    "ENVIRONMENT": "development"
+    "ENVIRONMENT": "development",
+    "FUNCTIONS_WORKER_PYTHON_PATH": "c:\\RunningProjects\\Dashboard-Pertamina-VeloCT\\azure_functions\\.venv\\Scripts\\python.exe",
+    "MORNING_TIMER_SCHEDULE": "0 */10 * * * *",
+    "AFTERNOON_TIMER_SCHEDULE": "0 */10 * * * *",
+    "WEEKLY_TIMER_SCHEDULE": "0 */10 * * * *",
+    "MONTHLY_TIMER_SCHEDULE": "0 */10 * * * *"
   },
   "Host": {
     "LocalHttpPort": 7071,

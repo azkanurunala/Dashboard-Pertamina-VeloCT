@@ -6,7 +6,7 @@
       "name": "timer",
       "type": "timerTrigger",
       "direction": "in",
-      "schedule": "0 0 9 1 * *",
+      "schedule": "%MONTHLY_TIMER_SCHEDULE%",
       "runOnStartup": false,
       "useMonitor": true
     }
