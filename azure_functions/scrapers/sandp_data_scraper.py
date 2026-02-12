@@ -42,6 +42,12 @@ class SAndPDataScraper(BaseNewsScraper):
         'PCAAS00': 'Brent'
     }
     
+    # Symbol mappings for SAF/UCO
+    SAF_SYMBOLS = {
+        'UCFCC00': 'UCO',
+        'SFSMR00': 'SAF'
+    }
+    
     # Petrochemical products configuration
     PETROCHEMICAL_PRODUCTS = [
         {"name": "Paraxylene", "basis": "Spot CFR China"},
@@ -389,14 +395,14 @@ class SAndPDataScraper(BaseNewsScraper):
 
     def pivot_bbm_forecast(self, df: pd.DataFrame, is_short_term: bool = True) -> pd.DataFrame:
         """
-        Pivot BBM forecast data and calculate crackspreads.
+        Pivot BBM forecast data and calculate crackspreads with Metric Ton conversions.
         
         Args:
             df: Raw forecast DataFrame
             is_short_term: Whether data is short-term (includes month) or long-term
             
         Returns:
-            Pivoted DataFrame with crackspreads
+            Pivoted DataFrame with crackspreads and MT values
         """
         df['suffix'] = df['priceSymbol'].map(self.BBM_SYMBOLS)
         
@@ -409,10 +415,32 @@ class SAndPDataScraper(BaseNewsScraper):
             aggfunc='first'
         ).reset_index()
         
-        # Rename columns
+        # Rename columns to price_ prefixed
         price_cols = [col for col in df_price.columns if col not in index_cols]
         rename_map = {col: f'price_{col}' for col in price_cols}
         df_price = df_price.rename(columns=rename_map)
+        
+        # Calculate Metric Ton (MT) values
+        # Conversion factors according to legacy script:
+        # RON: * 0.120, JetKero: * 0.127, GO (Gas Oil): * 0.134, Brent: * 0.134
+        # FO05: remains as provided in MT
+        
+        conversion_map = {
+            'price_RON92': 0.120,
+            'price_RON95': 0.120,
+            'price_RON97': 0.120,
+            'price_JetKero': 0.127,
+            'price_GO50': 0.134,
+            'price_GO2500': 0.134,
+            'price_Brent': 0.134
+        }
+        
+        for col, factor in conversion_map.items():
+            if col in df_price.columns:
+                df_price[f'{col}_MT'] = df_price[col] * factor
+        
+        if 'price_FO05' in df_price.columns:
+            df_price['price_FO05_MT'] = df_price['price_FO05']
         
         # Calculate crackspreads if Brent is available
         if 'price_Brent' in df_price.columns:
@@ -420,11 +448,60 @@ class SAndPDataScraper(BaseNewsScraper):
             for product in products:
                 price_col = f'price_{product}'
                 if price_col in df_price.columns:
+                    # BBL Crackspread
                     df_price[f'price_{product}_crackspread'] = (
                         df_price[price_col] - df_price['price_Brent']
                     )
+                    
+                    # MT Crackspread
+                    mt_col = f'{price_col}_MT'
+                    if mt_col in df_price.columns and 'price_Brent_MT' in df_price.columns:
+                        df_price[f'{mt_col}_crackspread'] = (
+                            df_price[mt_col] - df_price['price_Brent_MT']
+                        )
         
         return df_price.sort_values(index_cols)
+
+    def pivot_saf_uco_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Pivot SAF and UCO market data.
+        
+        Args:
+            df: Raw historical/current data
+            
+        Returns:
+            Pivoted DataFrame
+        """
+        df['suffix'] = df['symbol'].map(self.SAF_SYMBOLS)
+        
+        # Pivot values
+        df_value = df.pivot_table(
+            index='assessDate',
+            columns='suffix',
+            values='value',
+            aggfunc='first'
+        ).reset_index()
+        df_value.columns = ['assessDate'] + [f'value_{col}' for col in df_value.columns if col != 'assessDate']
+        
+        # Pivot modification dates
+        df_mod = df.pivot_table(
+            index='assessDate',
+            columns='suffix',
+            values='modDate',
+            aggfunc='first'
+        ).reset_index()
+        df_mod.columns = ['assessDate'] + [f'modDate_{col}' for col in df_mod.columns if col != 'assessDate']
+        
+        # Merge
+        df_final = df_value.merge(df_mod, on='assessDate', how='outer')
+        
+        # Ensure standard column order
+        cols = ['assessDate', 'value_UCO', 'value_SAF', 'modDate_UCO', 'modDate_SAF']
+        for col in cols:
+            if col not in df_final.columns:
+                df_final[col] = None
+                
+        return df_final[cols].sort_values('assessDate')
 
     async def _scrape_articles_from_source(
         self, 
@@ -511,6 +588,22 @@ class SAndPDataScraper(BaseNewsScraper):
                         'period': f"{year}-{month:02d}"
                     })
             
+            elif data_type == 'saf':
+                # Fetch recent SAF and UCO data (last 30 days by default if historical)
+                symbols = list(self.SAF_SYMBOLS.keys())
+                start_date_str = (end_date - timedelta(days=30)).strftime('%Y-%m-%d')
+                end_date_str = end_date.strftime('%Y-%m-%d')
+                
+                df = await self.get_historical_data(symbols, start_date_str, end_date_str)
+                
+                if df is not None and not df.empty:
+                    df_pivoted = self.pivot_saf_uco_data(df)
+                    results.append({
+                        'type': 'data_saf_uco_prices',
+                        'data': df_pivoted.to_dict('records'),
+                        'period': f"{start_date_str} to {end_date_str}"
+                    })
+            
             elif data_type == 'historical':
                 symbols = kwargs.get('symbols', list(self.BBM_SYMBOLS.keys()))
                 df = await self.get_historical_data(
@@ -587,4 +680,15 @@ async def scrape_sandp_historical(
             [], start_date, end_date,
             data_type='historical',
             symbols=symbols
+        )
+
+
+async def scrape_sandp_saf(end_date: Optional[datetime] = None) -> List[Dict]:
+    """Fetch S&P SAF and UCO market data."""
+    if end_date is None:
+        end_date = datetime.now()
+    async with SAndPDataScraper() as scraper:
+        return await scraper._scrape_articles_from_source(
+            [], datetime.now(), end_date,
+            data_type='saf'
         )

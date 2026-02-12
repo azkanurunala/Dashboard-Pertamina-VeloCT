@@ -85,7 +85,7 @@ class MigasESDMScraper(BaseNewsScraper):
         if not HAS_OCR:
             return None
         if self._reader is None:
-            self._reader = easyocr.Reader(['id', 'en'], gpu=False)
+            self._reader = easyocr.Reader(['id', 'en'], gpu=False, verbose=False)
         return self._reader
 
     async def _fetch_icp_page(self) -> Optional[str]:

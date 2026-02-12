@@ -176,32 +176,68 @@ class GoogleNewsScraper(BaseNewsScraper):
     async def _resolve_google_url(self, google_url: str) -> Optional[str]:
         """
         Resolve Google News redirect URL to actual article URL.
-        
-        Args:
-            google_url: Google News redirect URL
-            
-        Returns:
-            Resolved article URL or None
+        Includes Base64 decoding strategy and JS redirect parsing.
         """
+        import base64
+        import functools
+
         try:
-            # Try to fetch and get final URL
+            # Strategy 1: Simple Base64 decoding (works for some old formats)
+            # The ID part is base64 encoded. 
+            # https://news.google.com/rss/articles/CBMi...
+            try:
+                # Remove prefix
+                prefix = "https://news.google.com/rss/articles/"
+                if google_url.startswith(prefix):
+                    encoded = google_url[len(prefix):].split('?')[0]
+                    # Add padding
+                    padded = encoded + '=' * (-len(encoded) % 4)
+                    decoded_bytes = base64.urlsafe_b64decode(padded)
+                    decoded_str = decoded_bytes.decode('latin1') # binary mishmash
+                    
+                    # Extract URL from decoded string using regex
+                    # Often starts with http...
+                    url_match = re.search(r'(https?://[a-zA-Z0-9\-._~:/?#\[\]@!$&\'()*+,;=]+)', decoded_str)
+                    if url_match:
+                        # cleanup common binary artifacts
+                        candidate = url_match.group(1)
+                        # Basic validation
+                        if '.' in candidate and 'google.com' not in candidate:
+                             return candidate
+            except Exception:
+                pass
+
+            # Strategy 2: Fetch and find Redirect
             content = await self._fetch_content(google_url, use_selenium=False)
+            if not content:
+                return None
             
-            # Look for canonical URL or redirect
             soup = BeautifulSoup(content, 'html.parser')
             
-            # Check for canonical link
+            # 2a. Canonical
             canonical = soup.find('link', rel='canonical')
             if canonical and canonical.get('href'):
                 return canonical['href']
             
-            # Check for meta refresh
+            # 2b. Meta Refresh
             meta_refresh = soup.find('meta', attrs={'http-equiv': 'refresh'})
             if meta_refresh:
                 content_attr = meta_refresh.get('content', '')
                 match = re.search(r'url=([^"\']+)', content_attr, re.IGNORECASE)
                 if match:
                     return match.group(1)
+            
+            # 2c. Javascript Redirect (window.location)
+            # Google often puts it in a script tag: window.location.replace("...");
+            script_text = soup.get_text()
+            js_match = re.search(r'window\.location\.replace\("([^"]+)"\)', str(content))
+            if js_match:
+                return js_match.group(1)
+
+            # 2d. Anchor tag in "Opening..." page
+            a_tag = soup.find('a', href=True)
+            if a_tag and a_tag['href'].startswith('http') and 'google.com' not in a_tag['href']:
+                return a_tag['href']
             
             return None
             

@@ -175,6 +175,9 @@ class EnvironmentConfigurationManager(IConfigurationManager):
         
         if not config_data["api_endpoint"]:
             raise ConfigurationError("Copilot API endpoint not configured")
+            
+        # Add API key to config
+        config_data["api_key"] = get_ai_api_key()
         
         return CopilotConfig(**config_data)
     
@@ -375,21 +378,22 @@ def get_storage_connection_string() -> str:
     return connection_string
 
 
-def get_copilot_api_key() -> str:
+def get_ai_api_key() -> str:
     """
-    Get Copilot API key from environment variables or Key Vault.
+    Get Copilot/AI API key from environment variables or Key Vault.
     
     Priority order:
-    1. Direct environment variable (CopilotApiKey or COPILOT_API_KEY)
-    2. Azure Key Vault (using Managed Identity)
+    1. Direct environment variable (AI_API_KEY)
+    2. Direct environment variable (CopilotApiKey - Legacy)
+    3. Azure Key Vault (using Managed Identity)
     """
     # Try direct environment variables first
-    api_key = os.getenv("CopilotApiKey") or os.getenv("COPILOT_API_KEY")
+    api_key = os.getenv("AI_API_KEY") or os.getenv("CopilotApiKey")
     
     # If not found, or placeholder, or Key Vault reference, try to get from Key Vault directly
     if not api_key or api_key == "PLACEHOLDER-WILL-BE-CONFIGURED-LATER" or api_key.startswith("@Microsoft.KeyVault"):
         # Try both names in Key Vault
-        for name in ["CopilotApiKey", "COPILOT_API_KEY"]:
+        for name in ["AI_API_KEY", "CopilotApiKey"]:
             kv_secret = _get_key_vault_secret(name)
             if kv_secret:
                 api_key = kv_secret
@@ -397,8 +401,8 @@ def get_copilot_api_key() -> str:
     
     if not api_key or api_key == "PLACEHOLDER-WILL-BE-CONFIGURED-LATER":
         raise ConfigurationError(
-            "Copilot API key not configured. "
-            "Please set CopilotApiKey or COPILOT_API_KEY environment variable."
+            "AI API key not configured. "
+            "Please set AI_API_KEY environment variable."
         )
     
     return api_key

@@ -165,58 +165,35 @@ class MigasEIAScraper(BaseNewsScraper):
         all_data: Dict[str, List], 
         next_release_str: Optional[str] = None
     ) -> List[Dict]:
-        """Transform raw API data to structured format."""
-        period_data = {}
+        """Transform raw API data to structured format matching data_eia_market table."""
+        rows = []
         
         for series_id, records in all_data.items():
+            # Get human readable name
+            series_name = self.SERIES_IDS.get(series_id, series_id)
+            
             for record in records:
                 period = record.get('period')
                 value = record.get('value')
                 
                 if period and value and value != 'w':
-                    if period not in period_data:
-                        period_data[period] = {}
                     try:
-                        period_data[period][series_id] = round(float(value), 2)
-                    except (ValueError, TypeError):
-                        period_data[period][series_id] = None
-        
-        rows = []
-        for period in sorted(period_data.keys()):
-            year, month = period.split('-')
-            year = int(year)
-            month = int(month)
-            
-            world_total_prod = period_data[period].get('PAPR_WORLD')
-            opec = period_data[period].get('PAPR_OPEC')
-            non_opec = period_data[period].get('PAPR_NONOPEC')
-            crude_oil = period_data[period].get('COPR_WORLD')
-            world_total_cons = period_data[period].get('PATC_WORLD')
-            oecd = period_data[period].get('PATC_OECD')
-            
-            # Calculate derived fields
-            other_liquids = None
-            if world_total_prod is not None and crude_oil is not None:
-                other_liquids = round(world_total_prod - crude_oil, 2)
-            
-            non_oecd = None
-            if world_total_cons is not None and oecd is not None:
-                non_oecd = round(world_total_cons - oecd, 2)
-            
-            row = {
-                'Bulan': self.NUMBER_TO_MONTH.get(month, f'Month-{month}'),
-                'Tahun': year,
-                'Next Release Date': next_release_str,
-                'World Total Production': world_total_prod,
-                'OPEC': opec,
-                'Non-OPEC': non_opec,
-                'Crude Oil': crude_oil,
-                'Other Liquids': other_liquids,
-                'World Total Consumption': world_total_cons,
-                'OECD': oecd,
-                'Non-OECD': non_oecd
-            }
-            rows.append(row)
+                        # Parse date from period "YYYY-MM"
+                        year, month = map(int, period.split('-'))
+                        report_date = datetime(year, month, 1).strftime('%Y-%m-%d')
+                        
+                        float_value = round(float(value), 2)
+                        
+                        row = {
+                            'report_date': report_date,
+                            'series_id': series_name,
+                            'value': float_value,
+                            'uom': 'million barrels/day' # Standard unit for these EIA series
+                        }
+                        rows.append(row)
+                    except (ValueError, TypeError) as e:
+                        self.logger.warning(f"Skipping record due to error: {e}")
+                        continue
         
         return rows
 

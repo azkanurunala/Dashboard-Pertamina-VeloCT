@@ -90,9 +90,17 @@ class SIPSNDataScraper(BaseNewsScraper):
                 'tahun': tahun
             }
             
+            headers = {
+                'X-Requested-With': 'XMLHttpRequest',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Referer': 'https://sipsn.kemenlh.go.id/sipsn/',
+                'Origin': 'https://sipsn.kemenlh.go.id',
+                'Accept': 'application/json, text/javascript, */*; q=0.01'
+            }
+            
             self.logger.info(f"Fetching {jenis} data for year {tahun}")
             
-            async with self._session.post(url, data=payload,
+            async with self._session.post(url, data=payload, headers=headers,
                                           timeout=aiohttp.ClientTimeout(total=60)) as response:
                 response.raise_for_status()
                 data = await response.json()

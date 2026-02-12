@@ -114,7 +114,7 @@ The system uses environment variables for configuration:
 
 - `SQL_SERVER_CONNECTION_STRING`: Database connection string
 - `COPILOT_API_ENDPOINT`: Microsoft Copilot API endpoint
-- `COPILOT_API_KEY`: Copilot API authentication key
+- `AI_API_KEY`: Copilot API authentication key
 - `AZURE_KEY_VAULT_URL`: Azure Key Vault URL
 - `BLOB_STORAGE_CONNECTION_STRING`: Blob storage connection
 - `APPINSIGHTS_INSTRUMENTATIONKEY`: Application Insights key

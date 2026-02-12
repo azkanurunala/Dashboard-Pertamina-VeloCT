@@ -176,6 +176,7 @@ class CopilotConfig:
     Configuration model for Microsoft Copilot API integration.
     """
     api_endpoint: str
+    api_key: str
     model_name: str = "gpt-4"
     max_tokens: int = 4000
     temperature: float = 0.3

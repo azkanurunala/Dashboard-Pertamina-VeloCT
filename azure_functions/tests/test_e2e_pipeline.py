@@ -53,7 +53,7 @@ load_env()
 # AI_TYPE will be pulled from environment variables loaded above
 log("DEBUG: Checking critical environment variables...")
 log(f"DEBUG: SQL_SERVER_CONNECTION_STRING set: {'Yes' if os.environ.get('SQL_SERVER_CONNECTION_STRING') else 'No'}")
-log(f"DEBUG: COPILOT_API_KEY set: {'Yes' if os.environ.get('COPILOT_API_KEY') else 'No'}")
+log(f"DEBUG: AI_API_KEY set: {'Yes' if os.environ.get('AI_API_KEY') else 'No'}")
 log(f"DEBUG: AI_TYPE: {os.environ.get('AI_TYPE', 'Default (Gemini)')}")
 log(f"DEBUG: COPILOT_MODEL_NAME: {os.environ.get('COPILOT_MODEL_NAME', 'N/A')}")
 

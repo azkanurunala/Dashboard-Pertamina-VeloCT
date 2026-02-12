@@ -68,6 +68,11 @@ class GeminiProvider(IAIProvider):
                             user_content: str,
                             max_tokens: Optional[int] = None,
                             temperature: Optional[float] = None) -> str:
+        
+        # Add random jitter to desynchronize parallel function triggers
+        import random
+        await asyncio.sleep(random.uniform(0.5, 3.0))
+        
         await self.rate_limiter.acquire()
         await self._ensure_session()
         
@@ -268,8 +273,8 @@ class AIProviderFactory:
         
         # Helper to get secret with fallbacks and KV support
         async def get_ai_secret(type_name: str) -> Optional[str]:
-            # Try specific env vars first, then generic AI_API_KEY, then legacy COPILOT_API_KEY
-            potential_keys = [f"{type_name}_API_KEY", "AI_API_KEY", "COPILOT_API_KEY", "CopilotApiKey"]
+            # Try specific env vars first, then generic AI_API_KEY, then legacy AI_API_KEY
+            potential_keys = [f"{type_name}_API_KEY", "AI_API_KEY", "AI_API_KEY", "CopilotApiKey"]
             if type_name == "GEMINI":
                 potential_keys.append("GeminiApiKey")
             elif type_name == "OPENAI":

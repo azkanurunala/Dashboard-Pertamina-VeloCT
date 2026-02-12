@@ -134,7 +134,7 @@ python tests/test_database_connection.py
 
 2. **Update Function App settings**:
    ```bash
-   az functionapp config appsettings set --name "newscraper-dev-func-xxxxx" --resource-group "rg-newscraper-dev" --settings "COPILOT_API_KEY=@Microsoft.KeyVault(VaultName=newscraper-dev-kv-xxxxx;SecretName=copilot-api-key)"
+   az functionapp config appsettings set --name "newscraper-dev-func-xxxxx" --resource-group "rg-newscraper-dev" --settings "AI_API_KEY=@Microsoft.KeyVault(VaultName=newscraper-dev-kv-xxxxx;SecretName=copilot-api-key)"
    ```
 
 ## Verification

@@ -74,7 +74,12 @@ class BlobStorageIntegration:
                 "source": source_name,
                 "execution_id": execution_id,
                 "article_count": len(articles),
-                "articles": [article.to_dict() if hasattr(article, 'to_dict') else article.__dict__ for article in articles]
+                "articles": [
+                    article if isinstance(article, dict) else 
+                    article.to_dict() if hasattr(article, 'to_dict') else 
+                    article.__dict__ 
+                    for article in articles
+                ]
             }
             
             json_content = safe_json_serialize(articles_data)

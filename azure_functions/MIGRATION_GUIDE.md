@@ -233,7 +233,7 @@ az keyvault secret set \
 az keyvault secret set \
   --vault-name PeiDashboard \
   --name CopilotApiKey \
-  --value "[COPILOT_API_KEY]"
+  --value "[AI_API_KEY]"
 
 # Copilot Endpoint (akan diisi nanti)
 az keyvault secret set \

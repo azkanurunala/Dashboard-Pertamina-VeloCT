@@ -518,7 +518,18 @@ class OrchestratorFunction(IOrchestratorFunction):
                 is_data_source = any(ds in source_key for ds in DATA_SOURCES)
                 
                 # Initialize and run the scraper
-                async with scraper_class() as scraper:
+                scraper_class = SCRAPER_REGISTRY.get(source)
+                if not scraper_class:
+                     raise ValueError(f"No scraper registered for source: {source}")
+
+                # Handle special instantiation for BPS
+                if source == 'bps':
+                    bps_api_key = os.getenv("BPS_API_KEY", "")
+                    scraper_context = scraper_class(api_key=bps_api_key)
+                else:
+                    scraper_context = scraper_class()
+
+                async with scraper_context as scraper:
                     articles = await scraper.scrape_news(
                         keywords=keywords,
                         start_date=date_range.start_date,

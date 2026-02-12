@@ -1,2 +1,0 @@
-ERROR: Value for default option cannot be empty.
-Type "WHERE /?" for usage.

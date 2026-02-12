@@ -96,11 +96,15 @@ def _parse_request_parameters(req: func.HttpRequest) -> Dict[str, Any]:
     except Exception as e:
          raise ValueError(f"Invalid date format. Use YYYY-MM-DD. Error: {str(e)}")
     
+    # Get data type (e.g. bbm_forecast_short, petrochemical, saf)
+    data_type = body.get('data_type') or req.params.get('data_type', 'bbm_forecast_short')
+    
     return {
         'keywords': keywords,
         'start_date': start_date,
         'end_date': end_date,
-        'save_to_db': save_to_db
+        'save_to_db': save_to_db,
+        'data_type': data_type
     }
 
 async def _scrape_data(params: Dict[str, Any], log_manager: AzureLoggingManager) -> Dict[str, Any]:
@@ -111,62 +115,37 @@ async def _scrape_data(params: Dict[str, Any], log_manager: AzureLoggingManager)
     scraper = SAndPDataScraper()
     
     try:
-        # Perform scraping
-        articles = await scraper.scrape_news(
+        # Perform scraping with specific data type support
+        results = await scraper.scrape_news(
             keywords=params.get('keywords', []),
             start_date=params.get('start_date'),
-            end_date=params.get('end_date')
+            end_date=params.get('end_date'),
+            data_type=params.get('data_type')
         )
         
-        # Convert to NewsArticle model
-        news_articles = []
-        for a in (articles if articles else []):
-            # Handle both dict and object types
-            title = getattr(a, 'title', '') or (a.get('title', '') if isinstance(a, dict) else '')
-            content = getattr(a, 'content', '') or (a.get('content', '') if isinstance(a, dict) else '')
-            url = getattr(a, 'url', '') or (a.get('url', '') if isinstance(a, dict) else '')
-            pub_date = getattr(a, 'published_date', None) or (a.get('published_date', None) if isinstance(a, dict) else None)
-            
-            # Fallback for data-type scrapers that might nest data
-            if not title and isinstance(a, dict) and 'type' in a:
-                title = f"{SOURCE_NAME} {a.get('type')} Data"
-                if not content:
-                    content = json.dumps(a.get('data', a))
-            
-            # Robust defaults
-            if not pub_date:
-                pub_date = datetime.utcnow()
-            elif not isinstance(pub_date, datetime):
-                try:
-                    pub_date = datetime.fromisoformat(str(pub_date))
-                except:
-                    pub_date = datetime.utcnow()
-            
-            if not title:
-                title = f"{SOURCE_NAME} Data Entry - {pub_date.strftime('%Y-%m-%d')}"
-            
-            if not url:
-                url = f"https://local.internal/{SOURCE_NAME.lower().replace(' ', '_')}/{pub_date.timestamp()}"
-
-            news_articles.append(NewsArticle(
-                title=title,
-                content=content or "No content available",
-                url=url,
-                source=SOURCE_NAME,
-                published_date=pub_date,
-                keywords=params.get('keywords', [])
-            ))
-
-        # Save to database if requested
-        articles_saved = 0
+        items_saved = 0
         persistence_error = None
-        if params.get('save_to_db') and news_articles:
+        structured_results = []
+
+        if params.get('save_to_db') and results:
             try:
                 db_config = await config_manager.get_database_config()
                 db_handler = DatabaseHandler(db_config)
-                await db_handler.save_articles(news_articles)
-                articles_saved = len(news_articles)
-                log_manager.info(f"Successfully saved {articles_saved} articles to database")
+                
+                # S&P Data scraper returns a list of dicts with 'type' and 'data'
+                for result in results:
+                    table_name = result.get('type')
+                    data_list = result.get('data')
+                    
+                    if table_name and data_list:
+                        await db_handler.save_structured_data(table_name, data_list)
+                        items_saved += len(data_list)
+                        structured_results.append({
+                            "table": table_name,
+                            "count": len(data_list)
+                        })
+                
+                log_manager.info(f"Successfully saved {items_saved} items to specialized tables")
             except Exception as db_error:
                 persistence_error = str(db_error)
                 log_manager.log_error(error=db_error, context_data={"operation": "database_persistence"})
@@ -176,13 +155,14 @@ async def _scrape_data(params: Dict[str, Any], log_manager: AzureLoggingManager)
         return {
             "status": "success",
             "source": SOURCE_NAME,
+            "data_type": params.get('data_type'),
             "execution_time_seconds": execution_time,
             "execution_id": log_manager.execution_id,
             "results": {
-                "articles_found": len(news_articles),
-                "articles_saved": articles_saved,
-                "persistence_error": persistence_error,
-                "articles": [a.to_dict() for a in news_articles[:5]]
+                "items_found": items_saved if not persistence_error else 0, # approximation if saved
+                "items_saved": items_saved,
+                "structured_summary": structured_results,
+                "persistence_error": persistence_error
             },
             "parameters": {
                 "keywords": params.get('keywords', []),
