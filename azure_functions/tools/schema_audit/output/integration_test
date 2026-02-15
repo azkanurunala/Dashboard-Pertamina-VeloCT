@@ -1,0 +1,534 @@
+# Schema Audit Report
+
+**Generated:** 2026-02-16 02:26:58
+**Total Mismatches:** 30
+
+## Summary
+
+- 🔴 **Critical:** 0 (will cause runtime errors)
+- 🟡 **Warning:** 0 (potential issues)
+- 🔵 **Info:** 30 (informational)
+
+**Tables Affected:** 30
+
+---
+
+## 🔵 Informational
+
+These are informational notices about schema differences.
+
+**Count:** 30
+
+### 1. EXTRA_TABLE
+
+- **Table:** `article_keywords`
+- **Expected:** `Table 'article_keywords' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'article_keywords' or remove from schema
+
+### 2. EXTRA_TABLE
+
+- **Table:** `configuration`
+- **Expected:** `Table 'configuration' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'configuration' or remove from schema
+
+### 3. EXTRA_TABLE
+
+- **Table:** `data_biodiesel_hip`
+- **Expected:** `Table 'data_biodiesel_hip' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_biodiesel_hip' or remove from schema
+
+### 4. EXTRA_TABLE
+
+- **Table:** `data_bioetanol_hip`
+- **Expected:** `Table 'data_bioetanol_hip' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_bioetanol_hip' or remove from schema
+
+### 5. EXTRA_TABLE
+
+- **Table:** `data_cpo_prices`
+- **Expected:** `Table 'data_cpo_prices' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_cpo_prices' or remove from schema
+
+### 6. EXTRA_TABLE
+
+- **Table:** `data_ebt_capacity`
+- **Expected:** `Table 'data_ebt_capacity' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_ebt_capacity' or remove from schema
+
+### 7. EXTRA_TABLE
+
+- **Table:** `data_ebt_prices`
+- **Expected:** `Table 'data_ebt_prices' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_ebt_prices' or remove from schema
+
+### 8. EXTRA_TABLE
+
+- **Table:** `data_eia_market`
+- **Expected:** `Table 'data_eia_market' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_eia_market' or remove from schema
+
+### 9. EXTRA_TABLE
+
+- **Table:** `data_fossil`
+- **Expected:** `Table 'data_fossil' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_fossil' or remove from schema
+
+### 10. EXTRA_TABLE
+
+- **Table:** `data_fossil_prediction`
+- **Expected:** `Table 'data_fossil_prediction' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_fossil_prediction' or remove from schema
+
+### 11. EXTRA_TABLE
+
+- **Table:** `data_geopolitical_risk_index`
+- **Expected:** `Table 'data_geopolitical_risk_index' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_geopolitical_risk_index' or remove from schema
+
+### 12. EXTRA_TABLE
+
+- **Table:** `data_iaea_electrical`
+- **Expected:** `Table 'data_iaea_electrical' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_iaea_electrical' or remove from schema
+
+### 13. EXTRA_TABLE
+
+- **Table:** `data_iaea_nuclear_capacity`
+- **Expected:** `Table 'data_iaea_nuclear_capacity' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_iaea_nuclear_capacity' or remove from schema
+
+### 14. EXTRA_TABLE
+
+- **Table:** `data_market_indicators`
+- **Expected:** `Table 'data_market_indicators' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_market_indicators' or remove from schema
+
+### 15. EXTRA_TABLE
+
+- **Table:** `data_oil_crackspreads`
+- **Expected:** `Table 'data_oil_crackspreads' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_oil_crackspreads' or remove from schema
+
+### 16. EXTRA_TABLE
+
+- **Table:** `data_oil_prices`
+- **Expected:** `Table 'data_oil_prices' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_oil_prices' or remove from schema
+
+### 17. EXTRA_TABLE
+
+- **Table:** `data_petrochemical_prices`
+- **Expected:** `Table 'data_petrochemical_prices' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_petrochemical_prices' or remove from schema
+
+### 18. EXTRA_TABLE
+
+- **Table:** `data_renewable_energy`
+- **Expected:** `Table 'data_renewable_energy' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_renewable_energy' or remove from schema
+
+### 19. EXTRA_TABLE
+
+- **Table:** `data_ruptl_projects`
+- **Expected:** `Table 'data_ruptl_projects' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_ruptl_projects' or remove from schema
+
+### 20. EXTRA_TABLE
+
+- **Table:** `data_saf_uco_prices`
+- **Expected:** `Table 'data_saf_uco_prices' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_saf_uco_prices' or remove from schema
+
+### 21. EXTRA_TABLE
+
+- **Table:** `data_volatility_index`
+- **Expected:** `Table 'data_volatility_index' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_volatility_index' or remove from schema
+
+### 22. EXTRA_TABLE
+
+- **Table:** `data_wte_komposisi`
+- **Expected:** `Table 'data_wte_komposisi' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_wte_komposisi' or remove from schema
+
+### 23. EXTRA_TABLE
+
+- **Table:** `data_wte_sumber`
+- **Expected:** `Table 'data_wte_sumber' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_wte_sumber' or remove from schema
+
+### 24. EXTRA_TABLE
+
+- **Table:** `data_wte_timbulan`
+- **Expected:** `Table 'data_wte_timbulan' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_wte_timbulan' or remove from schema
+
+### 25. EXTRA_TABLE
+
+- **Table:** `execution_logs`
+- **Expected:** `Table 'execution_logs' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'execution_logs' or remove from schema
+
+### 26. EXTRA_TABLE
+
+- **Table:** `keywords`
+- **Expected:** `Table 'keywords' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'keywords' or remove from schema
+
+### 27. EXTRA_TABLE
+
+- **Table:** `news_articles`
+- **Expected:** `Table 'news_articles' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'news_articles' or remove from schema
+
+### 28. EXTRA_TABLE
+
+- **Table:** `news_sources`
+- **Expected:** `Table 'news_sources' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'news_sources' or remove from schema
+
+### 29. EXTRA_TABLE
+
+- **Table:** `sentiment_analyses`
+- **Expected:** `Table 'sentiment_analyses' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'sentiment_analyses' or remove from schema
+
+### 30. EXTRA_TABLE
+
+- **Table:** `sentiment_analysis_articles`
+- **Expected:** `Table 'sentiment_analysis_articles' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'sentiment_analysis_articles' or remove from schema
+
+---
+
+## Mismatches by Table
+
+### Table: `article_keywords`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'article_keywords' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'article_keywords' or remove from schema
+
+
+### Table: `configuration`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'configuration' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'configuration' or remove from schema
+
+
+### Table: `data_biodiesel_hip`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_biodiesel_hip' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_biodiesel_hip' or remove from schema
+
+
+### Table: `data_bioetanol_hip`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_bioetanol_hip' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_bioetanol_hip' or remove from schema
+
+
+### Table: `data_cpo_prices`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_cpo_prices' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_cpo_prices' or remove from schema
+
+
+### Table: `data_ebt_capacity`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_ebt_capacity' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_ebt_capacity' or remove from schema
+
+
+### Table: `data_ebt_prices`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_ebt_prices' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_ebt_prices' or remove from schema
+
+
+### Table: `data_eia_market`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_eia_market' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_eia_market' or remove from schema
+
+
+### Table: `data_fossil`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_fossil' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_fossil' or remove from schema
+
+
+### Table: `data_fossil_prediction`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_fossil_prediction' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_fossil_prediction' or remove from schema
+
+
+### Table: `data_geopolitical_risk_index`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_geopolitical_risk_index' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_geopolitical_risk_index' or remove from schema
+
+
+### Table: `data_iaea_electrical`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_iaea_electrical' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_iaea_electrical' or remove from schema
+
+
+### Table: `data_iaea_nuclear_capacity`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_iaea_nuclear_capacity' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_iaea_nuclear_capacity' or remove from schema
+
+
+### Table: `data_market_indicators`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_market_indicators' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_market_indicators' or remove from schema
+
+
+### Table: `data_oil_crackspreads`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_oil_crackspreads' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_oil_crackspreads' or remove from schema
+
+
+### Table: `data_oil_prices`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_oil_prices' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_oil_prices' or remove from schema
+
+
+### Table: `data_petrochemical_prices`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_petrochemical_prices' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_petrochemical_prices' or remove from schema
+
+
+### Table: `data_renewable_energy`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_renewable_energy' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_renewable_energy' or remove from schema
+
+
+### Table: `data_ruptl_projects`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_ruptl_projects' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_ruptl_projects' or remove from schema
+
+
+### Table: `data_saf_uco_prices`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_saf_uco_prices' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_saf_uco_prices' or remove from schema
+
+
+### Table: `data_volatility_index`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_volatility_index' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_volatility_index' or remove from schema
+
+
+### Table: `data_wte_komposisi`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_wte_komposisi' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_wte_komposisi' or remove from schema
+
+
+### Table: `data_wte_sumber`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_wte_sumber' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_wte_sumber' or remove from schema
+
+
+### Table: `data_wte_timbulan`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_wte_timbulan' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_wte_timbulan' or remove from schema
+
+
+### Table: `execution_logs`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'execution_logs' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'execution_logs' or remove from schema
+
+
+### Table: `keywords`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'keywords' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'keywords' or remove from schema
+
+
+### Table: `news_articles`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'news_articles' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'news_articles' or remove from schema
+
+
+### Table: `news_sources`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'news_sources' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'news_sources' or remove from schema
+
+
+### Table: `sentiment_analyses`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'sentiment_analyses' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'sentiment_analyses' or remove from schema
+
+
+### Table: `sentiment_analysis_articles`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'sentiment_analysis_articles' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'sentiment_analysis_articles' or remove from schema
+

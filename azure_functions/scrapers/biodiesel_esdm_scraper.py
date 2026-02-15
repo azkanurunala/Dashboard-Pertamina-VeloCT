@@ -230,9 +230,9 @@ class BiodieselESDMScraper(BaseNewsScraper):
                 
                 if hip_value:
                     all_data.append({
-                        'Date': article.get('date'),
-                        'Bulan HIP': hip_month,
-                        'HIP Biodiesel IDR/L': int(hip_value * 1000)  # Convert to actual value
+                        'date': article.get('date'),
+                        'bulan_hip': hip_month,
+                        'hip_biodiesel_idr_l': int(hip_value * 1000)  # Convert to actual value
                     })
                     self.logger.info(f"Extracted HIP: {hip_value} for {hip_month}")
                 

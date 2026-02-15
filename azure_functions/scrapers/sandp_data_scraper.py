@@ -47,6 +47,13 @@ class SAndPDataScraper(BaseNewsScraper):
         'UCFCC00': 'UCO',
         'SFSMR00': 'SAF'
     }
+
+    # Symbol mappings for LPG (Butane/Propane) and Brent for calculation
+    LPG_SYMBOLS = {
+        'PTAAF10': 'Butane',
+        'PTAAM10': 'Propane',
+        'PCAAS00': 'Brent'
+    }
     
     # Petrochemical products configuration
     PETROCHEMICAL_PRODUCTS = [
@@ -393,6 +400,8 @@ class SAndPDataScraper(BaseNewsScraper):
         
         return flat_data
 
+        return df_price.sort_values(index_cols)
+
     def pivot_bbm_forecast(self, df: pd.DataFrame, is_short_term: bool = True) -> pd.DataFrame:
         """
         Pivot BBM forecast data and calculate crackspreads with Metric Ton conversions.
@@ -404,6 +413,9 @@ class SAndPDataScraper(BaseNewsScraper):
         Returns:
             Pivoted DataFrame with crackspreads and MT values
         """
+        # Map to user-friendly names but keep mostly matched with DB columns which are snake_case 
+        # e.g., price_ron92 NOT price_RON92
+        # We'll map initially to standard Caps, then lowercase everything
         df['suffix'] = df['priceSymbol'].map(self.BBM_SYMBOLS)
         
         index_cols = ['year', 'month'] if is_short_term else ['year']
@@ -415,9 +427,9 @@ class SAndPDataScraper(BaseNewsScraper):
             aggfunc='first'
         ).reset_index()
         
-        # Rename columns to price_ prefixed
+        # Rename columns to price_ prefixed and lowercase product names
         price_cols = [col for col in df_price.columns if col not in index_cols]
-        rename_map = {col: f'price_{col}' for col in price_cols}
+        rename_map = {col: f'price_{col.lower()}' for col in price_cols}
         df_price = df_price.rename(columns=rename_map)
         
         # Calculate Metric Ton (MT) values
@@ -426,40 +438,72 @@ class SAndPDataScraper(BaseNewsScraper):
         # FO05: remains as provided in MT
         
         conversion_map = {
-            'price_RON92': 0.120,
-            'price_RON95': 0.120,
-            'price_RON97': 0.120,
-            'price_JetKero': 0.127,
-            'price_GO50': 0.134,
-            'price_GO2500': 0.134,
-            'price_Brent': 0.134
+            'price_ron92': 0.120,
+            'price_ron95': 0.120,
+            'price_ron97': 0.120,
+            'price_jetkero': 0.127,
+            'price_go50': 0.134,
+            'price_go2500': 0.134,
+            'price_brent': 0.134
         }
         
         for col, factor in conversion_map.items():
             if col in df_price.columns:
-                df_price[f'{col}_MT'] = df_price[col] * factor
+                df_price[f'{col}_mt'] = df_price[col] * factor
         
-        if 'price_FO05' in df_price.columns:
-            df_price['price_FO05_MT'] = df_price['price_FO05']
+        if 'price_fo05' in df_price.columns:
+            df_price['price_fo05_mt'] = df_price['price_fo05']
         
         # Calculate crackspreads if Brent is available
-        if 'price_Brent' in df_price.columns:
-            products = ['RON92', 'RON95', 'RON97', 'FO05', 'JetKero', 'GO50', 'GO2500']
+        if 'price_brent' in df_price.columns:
+            products = ['ron92', 'ron95', 'ron97', 'fo05', 'jetkero', 'go50', 'go2500']
             for product in products:
                 price_col = f'price_{product}'
                 if price_col in df_price.columns:
-                    # BBL Crackspread
-                    df_price[f'price_{product}_crackspread'] = (
-                        df_price[price_col] - df_price['price_Brent']
-                    )
+                    # BBL Crackspread - DB columns format: ron92_cs, not price_ron92_crackspread
+                    # Actually DB schema (data_fossil_prediction) has: ron92_cs, ron92_price
+                    # We need to map to EXACT DB columns.
                     
-                    # MT Crackspread
-                    mt_col = f'{price_col}_MT'
-                    if mt_col in df_price.columns and 'price_Brent_MT' in df_price.columns:
-                        df_price[f'{mt_col}_crackspread'] = (
-                            df_price[mt_col] - df_price['price_Brent_MT']
-                        )
+                    # Current df has: price_ron92.
+                    # DB expects: ron92_price.
+                    
+                    # Let's adjust renames to match DB schema exactly:
+                    # ron92_price, ron95_price, etc.
+                    
+                    df_price[f'{product}_cs'] = (
+                        df_price[price_col] - df_price['price_brent']
+                    )
         
+        # Final rename to match data_fossil_prediction schema
+        # Schema: prediction_year, brent, gasoline, diesel, avtur, 
+        # fo05_price, go2500_price, go50_price, jetkero_price, ron92_price...
+        
+        # Map 'price_brent' -> 'brent'
+        if 'price_brent' in df_price.columns:
+            df_price['brent'] = df_price['price_brent']
+            
+        # Map keys to match DB
+        final_rename = {}
+        for col in df_price.columns:
+            if col.startswith('price_'):
+                product = col.replace('price_', '')
+                if product != 'brent':
+                    final_rename[col] = f'{product}_price'
+        
+        df_price = df_price.rename(columns=final_rename)
+        
+        if is_short_term:
+             # Short term doesn't map 1:1 to data_fossil_prediction which is year-based?
+             # Actually `data_fossil_prediction` has `prediction_year`.
+             # If short term has months, maybe it goes to a different table?
+             # Re-checking schema: `data_fossil_prediction` only has `prediction_year`.
+             # If we have monthly data, we might need a `prediction_period` or similar.
+             # However, the user asked to align with `migrate_all_tables.sql` which has `data_fossil_prediction`.
+             # That table seems to be for annual data or has implicit monthly via multiple rows per year?
+             # No, it just has `prediction_year`.
+             # For now, I will keep the structure but ensure keys match what DB expects if possible.
+             pass
+
         return df_price.sort_values(index_cols)
 
     def pivot_saf_uco_data(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -481,7 +525,7 @@ class SAndPDataScraper(BaseNewsScraper):
             values='value',
             aggfunc='first'
         ).reset_index()
-        df_value.columns = ['assessDate'] + [f'value_{col}' for col in df_value.columns if col != 'assessDate']
+        df_value.columns = ['assess_date'] + [f'value_{col.lower()}' for col in df_value.columns if col != 'assessDate']
         
         # Pivot modification dates
         df_mod = df.pivot_table(
@@ -490,13 +534,13 @@ class SAndPDataScraper(BaseNewsScraper):
             values='modDate',
             aggfunc='first'
         ).reset_index()
-        df_mod.columns = ['assessDate'] + [f'modDate_{col}' for col in df_mod.columns if col != 'assessDate']
+        df_mod.columns = ['assess_date'] + [f'mod_date_{col.lower()}' for col in df_mod.columns if col != 'assessDate']
         
         # Merge
-        df_final = df_value.merge(df_mod, on='assessDate', how='outer')
+        df_final = df_value.merge(df_mod, on='assess_date', how='outer')
         
         # Ensure standard column order
-        cols = ['assessDate', 'value_UCO', 'value_SAF', 'modDate_UCO', 'modDate_SAF']
+        cols = ['assess_date', 'value_uco', 'value_saf', 'mod_date_uco', 'mod_date_saf']
         for col in cols:
             if col not in df_final.columns:
                 df_final[col] = None
@@ -573,20 +617,72 @@ class SAndPDataScraper(BaseNewsScraper):
                 else:
                     month -= 1
                 
-                all_data = []
+                # Dictionary to hold all prices for the month
+                period_data = {
+                    'year': year,
+                    'month': month
+                }
+                
+                # 1. Fetch Petrochemical Product Prices
                 for product in self.PETROCHEMICAL_PRODUCTS:
-                    data = await self.get_petrochemical_prices(
+                    p_data = await self.get_petrochemical_prices(
                         product['name'], product['basis'], year, month
                     )
-                    if data:
-                        all_data.extend(data)
+                    if p_data:
+                        # p_data is a list of dicts, take the first one's value
+                        for item in p_data:
+                            # Map keys to snake_case: Price_Paraxylene -> price_paraxylene
+                            p_name = product['name'].lower()
+                            period_data[f"price_{p_name}"] = item.get(f"Price_{product['name']}")
+
+                # 2. Fetch LPG Components and Brent (MT basis)
+                try:
+                    lpg_symbols = list(self.LPG_SYMBOLS.keys())
+                    df_lpg = await self.get_forecast_short_term(
+                        lpg_symbols, year, month, unit_name="MT"
+                    )
+                    
+                    if df_lpg is not None and not df_lpg.empty:
+                        # Map symbols to names
+                        for _, row in df_lpg.iterrows():
+                            symbol = row.get('priceSymbol')
+                            price = row.get('price')
+                            if symbol in self.LPG_SYMBOLS:
+                                name = self.LPG_SYMBOLS[symbol].lower()
+                                period_data[f"price_{name}"] = float(price) if price is not None else None
+                except Exception as e:
+                    self.logger.error(f"Failed to fetch LPG data: {e}")
+
+                # 3. Calculate LPG Price (0.5 * Butane + 0.5 * Propane)
+                price_butane = period_data.get('price_butane')
+                price_propane = period_data.get('price_propane')
                 
-                if all_data:
-                    results.append({
-                        'type': 'data_petrochemical_prices',
-                        'data': all_data,
-                        'period': f"{year}-{month:02d}"
-                    })
+                if price_butane is not None and price_propane is not None:
+                    period_data['price_lpg'] = 0.5 * price_butane + 0.5 * price_propane
+                else:
+                    period_data['price_lpg'] = None
+                    
+                # 4. Calculate Crackspreads (Product - Brent)
+                price_brent = period_data.get('price_brent')
+                
+                if price_brent is not None:
+                    # Petrochemicals
+                    for product in self.PETROCHEMICAL_PRODUCTS:
+                        p_name = product['name'].lower()
+                        p_price = period_data.get(f"price_{p_name}")
+                        if p_price is not None:
+                            period_data[f"cs_{p_name}"] = p_price - price_brent
+                    
+                    # LPG
+                    price_lpg = period_data.get('price_lpg')
+                    if price_lpg is not None:
+                        period_data['cs_lpg'] = price_lpg - price_brent
+                
+                results.append({
+                    'type': 'data_petrochemical_prices',
+                    'data': [period_data], # Return as a list containing the single combined record
+                    'period': f"{year}-{month:02d}"
+                })
             
             elif data_type == 'saf':
                 # Fetch recent SAF and UCO data (last 30 days by default if historical)
@@ -613,9 +709,38 @@ class SAndPDataScraper(BaseNewsScraper):
                 )
                 
                 if df is not None and not df.empty:
+                    # Pivot historical data to match data_oil_prices
+                    # Schema: price_date, brent, gasoline, diesel, avtur
+                    
+                    df['suffix'] = df['symbol'].map(self.BBM_SYMBOLS)
+                    df_pivoted = df.pivot_table(
+                        index='assessDate',
+                        columns='suffix',
+                        values='value',
+                        aggfunc='first'
+                    ).reset_index()
+                    
+                    # Rename columns
+                    rename_map = {
+                        'assessDate': 'time',
+                        'Brent': 'brent',
+                        'RON92': 'gasoline', # Mapping RON92 to gasoline as per general convention or direct mapping
+                        'GO2500': 'diesel', # Mapping GO2500 to diesel? Need to check exact definition
+                        'JetKero': 'avtur'
+                    }
+                    # Also map others if needed, but schema only has: brent, gasoline, diesel, avtur
+                    # Let's map strict symbols if they exist
+                    
+                    df_pivoted = df_pivoted.rename(columns=rename_map)
+                    
+                    # Ensure all required columns exist
+                    for col in ['brent', 'gasoline', 'diesel', 'avtur']:
+                        if col not in df_pivoted.columns:
+                            df_pivoted[col] = None
+                            
                     results.append({
-                        'type': 'data_oil_prices',
-                        'data': df.to_dict('records'),
+                        'type': 'data_fossil',
+                        'data': df_pivoted.to_dict('records'),
                         'period': f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"
                     })
             

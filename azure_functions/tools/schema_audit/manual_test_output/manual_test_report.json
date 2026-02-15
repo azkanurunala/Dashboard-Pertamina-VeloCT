@@ -1,0 +1,114 @@
+{
+  "summary": {
+    "total": 17,
+    "passed": 17,
+    "failed": 0,
+    "warnings": 0,
+    "success_rate": "100.0%"
+  },
+  "tests": [
+    {
+      "test": "BACPAC file exists",
+      "status": "PASS",
+      "details": "Found: pei-dashboard.bacpac",
+      "timestamp": "2026-02-16T03:28:13.437034"
+    },
+    {
+      "test": "Schema extraction",
+      "status": "PASS",
+      "details": "Extracted 30 tables",
+      "timestamp": "2026-02-16T03:28:13.484410"
+    },
+    {
+      "test": "JSON export",
+      "status": "PASS",
+      "details": "Exported to azure_functions\\tools\\schema_audit\\manual_test_output\\extracted_schema.json",
+      "timestamp": "2026-02-16T03:28:13.496234"
+    },
+    {
+      "test": "Markdown documentation",
+      "status": "PASS",
+      "details": "Generated azure_functions\\tools\\schema_audit\\manual_test_output\\schema_documentation.md",
+      "timestamp": "2026-02-16T03:28:13.500272"
+    },
+    {
+      "test": "Structured data table identification",
+      "status": "PASS",
+      "details": "Found 27 structured data tables",
+      "timestamp": "2026-02-16T03:28:13.500272"
+    },
+    {
+      "test": "Azure Functions directory exists",
+      "status": "PASS",
+      "details": "Found: azure_functions",
+      "timestamp": "2026-02-16T03:28:13.501580"
+    },
+    {
+      "test": "Directory scanning",
+      "status": "PASS",
+      "details": "Scanned 262 Python files",
+      "timestamp": "2026-02-16T03:28:16.714675"
+    },
+    {
+      "test": "Operation detection",
+      "status": "PASS",
+      "details": "Found operations on 44 tables",
+      "timestamp": "2026-02-16T03:28:16.715833"
+    },
+    {
+      "test": "Scraper detection",
+      "status": "PASS",
+      "details": "Found 30 scraper files",
+      "timestamp": "2026-02-16T03:28:16.715833"
+    },
+    {
+      "test": "JSON report validity",
+      "status": "PASS",
+      "details": "Valid JSON with 30 tables",
+      "timestamp": "2026-02-16T03:28:16.729143"
+    },
+    {
+      "test": "Markdown report validity",
+      "status": "PASS",
+      "details": "Generated 14549 characters of documentation",
+      "timestamp": "2026-02-16T03:28:16.739948"
+    },
+    {
+      "test": "Dry-run mode",
+      "status": "PASS",
+      "details": "File not modified in dry-run mode",
+      "timestamp": "2026-02-16T03:28:16.742669"
+    },
+    {
+      "test": "Dry-run report generation",
+      "status": "PASS",
+      "details": "Generated report with 1 proposed fixes",
+      "timestamp": "2026-02-16T03:28:16.743668"
+    },
+    {
+      "test": "Backup creation",
+      "status": "PASS",
+      "details": "Created backup at backups\\backup_20260216_032816\\79f5c535\\test_backup.py",
+      "timestamp": "2026-02-16T03:28:16.763250"
+    },
+    {
+      "test": "Backup restoration",
+      "status": "PASS",
+      "details": "File successfully restored from backup",
+      "timestamp": "2026-02-16T03:28:16.766626"
+    },
+    {
+      "test": "Fixed code syntax validity",
+      "status": "PASS",
+      "details": "Fixed code has valid Python syntax",
+      "timestamp": "2026-02-16T03:28:16.771818"
+    },
+    {
+      "test": "Fixed code compilation",
+      "status": "PASS",
+      "details": "Fixed code compiles successfully",
+      "timestamp": "2026-02-16T03:28:16.772817"
+    }
+  ],
+  "timestamp": "2026-02-16T03:28:16.774319"
+}

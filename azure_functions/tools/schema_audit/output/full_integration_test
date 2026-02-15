@@ -1,0 +1,3148 @@
+# Schema Audit Report
+
+**Generated:** 2026-02-16 02:27:24
+**Total Mismatches:** 163
+
+## Summary
+
+- 🔴 **Critical:** 102 (will cause runtime errors)
+- 🟡 **Warning:** 53 (potential issues)
+- 🔵 **Info:** 8 (informational)
+
+**Tables Affected:** 60
+
+---
+
+## 🔴 Critical Issues
+
+These issues will cause runtime errors and must be fixed immediately.
+
+**Count:** 102
+
+### 1. MISSING_TABLE
+
+- **Table:** `<variable:table_name>`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table '<variable:table_name>' not found in reference`
+- **Locations:** 5 occurrence(s)
+  - `azure_functions\orchestration\orchestrator_function.py:632`
+  - `azure_functions\sandp_data_scraper_function\__init__.py:141`
+  - `azure_functions\scripts\seed_all_structured_data.py:100`
+  - ... and 2 more
+- **Fix Suggestion:** Verify table name or add '<variable:table_name>' to reference schema
+
+### 2. MISSING_TABLE
+
+- **Table:** `cte`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'cte' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\scripts\fix_fossil_duplicates.py:28`
+  - `azure_functions\scripts\fix_procedure.py:12`
+- **Fix Suggestion:** Verify table name or add 'cte' to reference schema
+
+### 3. MISSING_TABLE
+
+- **Table:** `data_new_table`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'data_new_table' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\tools\schema_audit\test_migration_auditor_integration.py:173`
+  - `azure_functions\tools\schema_audit\test_migration_auditor_integration.py:190`
+- **Fix Suggestion:** Verify table name or add 'data_new_table' to reference schema
+
+### 4. MISSING_TABLE
+
+- **Table:** `statement`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'statement' not found in reference`
+- **Locations:** 8 occurrence(s)
+  - `azure_functions\tools\schema_audit\code_auditor.py:306`
+  - `azure_functions\tools\schema_audit\code_auditor.py:329`
+  - `azure_functions\tools\schema_audit\code_auditor.py:360`
+  - ... and 5 more
+- **Fix Suggestion:** Verify table name or add 'statement' to reference schema
+
+### 5. MISSING_TABLE
+
+- **Table:** `data_test`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'data_test' not found in reference`
+- **Locations:** 8 occurrence(s)
+  - `azure_functions\tools\schema_audit\test_code_auditor.py:45`
+  - `azure_functions\tools\schema_audit\test_migration_auditor_basic.py:67`
+  - `azure_functions\tools\schema_audit\test_migration_auditor_basic.py:94`
+  - ... and 5 more
+- **Fix Suggestion:** Verify table name or add 'data_test' to reference schema
+
+### 6. MISSING_TABLE
+
+- **Table:** `test_table`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'test_table' not found in reference`
+- **Locations:** 8 occurrence(s)
+  - `azure_functions\tools\schema_audit\test_code_auditor.py:123`
+  - `azure_functions\tools\schema_audit\test_code_auditor.py:316`
+  - `azure_functions\tools\schema_audit\test_migration_auditor_basic.py:48`
+  - ... and 5 more
+- **Fix Suggestion:** Verify table name or add 'test_table' to reference schema
+
+### 7. MISSING_TABLE
+
+- **Table:** `data_harga_ebt`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'data_harga_ebt' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\tools\schema_audit\test_model_updater_integration.py:103`
+  - `azure_functions\tools\schema_audit\test_model_updater_integration.py:166`
+- **Fix Suggestion:** Verify table name or add 'data_harga_ebt' to reference schema
+
+### 8. MISSING_TABLE
+
+- **Table:** `data_table1`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'data_table1' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\tools\schema_audit\test_migration_auditor_integration.py:245`
+  - `azure_functions\tools\schema_audit\test_migration_auditor_integration.py:248`
+- **Fix Suggestion:** Verify table name or add 'data_table1' to reference schema
+
+### 9. MISSING_TABLE
+
+- **Table:** `from`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'from' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\tools\schema_audit\migration_auditor.py:266`
+  - `azure_functions\tools\schema_audit\migration_auditor.py:323`
+- **Fix Suggestion:** Verify table name or add 'from' to reference schema
+
+### 10. MISSING_TABLE
+
+- **Table:** `on`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'on' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\tools\schema_audit\migration_auditor.py:1094`
+  - `azure_functions\tools\schema_audit\migration_auditor.py:1094`
+- **Fix Suggestion:** Verify table name or add 'on' to reference schema
+
+### 11. MISSING_TABLE
+
+- **Table:** `statements`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'statements' not found in reference`
+- **Locations:** 9 occurrence(s)
+  - `azure_functions\tools\schema_audit\code_auditor.py:1`
+  - `azure_functions\tools\schema_audit\mismatch_detector.py:268`
+  - `azure_functions\tools\schema_audit\mismatch_detector.py:296`
+  - ... and 6 more
+- **Fix Suggestion:** Verify table name or add 'statements' to reference schema
+
+### 12. MISSING_TABLE
+
+- **Table:** `select`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'select' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tools\schema_audit\code_auditor.py:486`
+- **Fix Suggestion:** Verify table name or add 'select' to reference schema
+
+### 13. MISSING_TABLE
+
+- **Table:** `data_test_table`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'data_test_table' not found in reference`
+- **Locations:** 5 occurrence(s)
+  - `azure_functions\tools\schema_audit\test_model_updater.py:152`
+  - `azure_functions\tools\schema_audit\test_model_updater.py:377`
+  - `azure_functions\tools\schema_audit\test_model_updater.py:275`
+  - ... and 2 more
+- **Fix Suggestion:** Verify table name or add 'data_test_table' to reference schema
+
+### 14. MISSING_TABLE
+
+- **Table:** `operation`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'operation' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\tools\schema_audit\validator.py:581`
+  - `azure_functions\tools\schema_audit\validator.py:581`
+- **Fix Suggestion:** Verify table name or add 'operation' to reference schema
+
+### 15. MISSING_TABLE
+
+- **Table:** `biodiesel_hip`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'biodiesel_hip' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\direct_migrate_test.py:28`
+- **Fix Suggestion:** Verify table name or add 'biodiesel_hip' to reference schema
+
+### 16. MISSING_TABLE
+
+- **Table:** `sys`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'sys' not found in reference`
+- **Locations:** 21 occurrence(s)
+  - `azure_functions\scripts\fix_procedure.py:10`
+  - `azure_functions\scripts\migrate_iaea_tables.py:43`
+  - `azure_functions\scripts\migrate_wte_tables.py:45`
+  - ... and 18 more
+- **Fix Suggestion:** Verify table name or add 'sys' to reference schema
+
+### 17. MISSING_TABLE
+
+- **Table:** `typing`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'typing' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tools\schema_audit\validator.py:617`
+- **Fix Suggestion:** Verify table name or add 'typing' to reference schema
+
+### 18. MISSING_TABLE
+
+- **Table:** `test`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'test' not found in reference`
+- **Locations:** 3 occurrence(s)
+  - `azure_functions\tools\schema_audit\test_code_auditor.py:187`
+  - `azure_functions\tools\schema_audit\test_code_auditor.py:194`
+  - `azure_functions\tools\schema_audit\test_fix_integration.py:41`
+- **Fix Suggestion:** Verify table name or add 'test' to reference schema
+
+### 19. MISSING_TABLE
+
+- **Table:** `operations`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'operations' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\tools\schema_audit\code_auditor.py:702`
+  - `azure_functions\tools\schema_audit\migration_auditor.py:161`
+- **Fix Suggestion:** Verify table name or add 'operations' to reference schema
+
+### 20. MISSING_TABLE
+
+- **Table:** `information_schema`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'information_schema' not found in reference`
+- **Locations:** 32 occurrence(s)
+  - `azure_functions\scripts\apply_new_tables.py:53`
+  - `azure_functions\scripts\initialize-database.py:111`
+  - `azure_functions\scripts\initialize-database.py:127`
+  - ... and 29 more
+- **Fix Suggestion:** Verify table name or add 'information_schema' to reference schema
+
+### 21. MISSING_TABLE
+
+- **Table:** `data_python_test`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'data_python_test' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tools\schema_audit\test_migration_auditor_basic.py:114`
+- **Fix Suggestion:** Verify table name or add 'data_python_test' to reference schema
+
+### 22. MISSING_TABLE
+
+- **Table:** `test_generated`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'test_generated' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tools\schema_audit\test_migration_auditor_basic.py:166`
+- **Fix Suggestion:** Verify table name or add 'test_generated' to reference schema
+
+### 23. MISSING_TABLE
+
+- **Table:** `sql`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'sql' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tools\schema_audit\model_updater.py:423`
+- **Fix Suggestion:** Verify table name or add 'sql' to reference schema
+
+### 24. MISSING_TABLE
+
+- **Table:** `for`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'for' not found in reference`
+- **Locations:** 4 occurrence(s)
+  - `azure_functions\tools\schema_audit\migration_auditor.py:1077`
+  - `azure_functions\tools\schema_audit\migration_auditor.py:621`
+  - `azure_functions\tools\schema_audit\migration_auditor.py:1077`
+  - ... and 1 more
+- **Fix Suggestion:** Verify table name or add 'for' to reference schema
+
+### 25. MISSING_TABLE
+
+- **Table:** `users`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'users' not found in reference`
+- **Locations:** 13 occurrence(s)
+  - `azure_functions\tools\schema_audit\test_code_auditor.py:66`
+  - `azure_functions\tools\schema_audit\test_code_auditor.py:79`
+  - `azure_functions\tools\schema_audit\test_code_auditor.py:93`
+  - ... and 10 more
+- **Fix Suggestion:** Verify table name or add 'users' to reference schema
+
+### 26. MISSING_TABLE
+
+- **Table:** `the`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'the' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tools\schema_audit\validator.py:617`
+- **Fix Suggestion:** Verify table name or add 'the' to reference schema
+
+### 27. MISSING_TABLE
+
+- **Table:** `table`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'table' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tools\schema_audit\test_schema_fixer.py:405`
+- **Fix Suggestion:** Verify table name or add 'table' to reference schema
+
+### 28. MISSING_TABLE
+
+- **Table:** `data_table2`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'data_table2' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tools\schema_audit\test_migration_auditor_integration.py:251`
+- **Fix Suggestion:** Verify table name or add 'data_table2' to reference schema
+
+### 29. MISSING_TABLE
+
+- **Table:** `orders`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'orders' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\tools\schema_audit\test_new_methods.py:81`
+  - `azure_functions\tools\schema_audit\test_reporter.py:515`
+- **Fix Suggestion:** Verify table name or add 'orders' to reference schema
+
+### 30. MISSING_TABLE
+
+- **Table:** `migration_test_marker`
+- **Expected:** `Table should exist in reference schema`
+- **Actual:** `Table 'migration_test_marker' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\direct_migrate_test.py:17`
+- **Fix Suggestion:** Verify table name or add 'migration_test_marker' to reference schema
+
+### 31. MISSING_COLUMN
+
+- **Table:** `data_ebt_prices`
+- **Column:** `TOP 5 *`
+- **Expected:** `Column should exist in table 'data_ebt_prices'`
+- **Actual:** `Column 'TOP 5 *' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:29`
+- **Fix Suggestion:** Verify column name or add 'TOP 5 *' to table 'data_ebt_prices'
+
+### 32. MISSING_COLUMN
+
+- **Table:** `data_ebt_prices`
+- **Column:** `COUNT(*)`
+- **Expected:** `Column should exist in table 'data_ebt_prices'`
+- **Actual:** `Column 'COUNT(*)' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:36`
+- **Fix Suggestion:** Verify column name or add 'COUNT(*)' to table 'data_ebt_prices'
+
+### 33. MISSING_COLUMN
+
+- **Table:** `data_cpo_prices`
+- **Column:** `COUNT(*)`
+- **Expected:** `Column should exist in table 'data_cpo_prices'`
+- **Actual:** `Column 'COUNT(*)' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\check_cpo_rows.py:22`
+- **Fix Suggestion:** Verify column name or add 'COUNT(*)' to table 'data_cpo_prices'
+
+### 34. MISSING_COLUMN
+
+- **Table:** `data_fossil`
+- **Column:** `TOP 10 *`
+- **Expected:** `Column should exist in table 'data_fossil'`
+- **Actual:** `Column 'TOP 10 *' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\inspect_fossil.py:31`
+- **Fix Suggestion:** Verify column name or add 'TOP 10 *' to table 'data_fossil'
+
+### 35. MISSING_COLUMN
+
+- **Table:** `data_fossil`
+- **Column:** `1)`
+- **Expected:** `Column should exist in table 'data_fossil'`
+- **Actual:** `Column '1)' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_fossil_table.py:57`
+- **Fix Suggestion:** Verify column name or add '1)' to table 'data_fossil'
+
+### 36. MISSING_COLUMN
+
+- **Table:** `data_fossil`
+- **Column:** `TOP 1 *`
+- **Expected:** `Column should exist in table 'data_fossil'`
+- **Actual:** `Column 'TOP 1 *' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\inspect_fossil_table.py:37`
+- **Fix Suggestion:** Verify column name or add 'TOP 1 *' to table 'data_fossil'
+
+### 37. MISSING_COLUMN
+
+- **Table:** `data_fossil`
+- **Column:** `COUNT(DISTINCT`
+- **Expected:** `Column should exist in table 'data_fossil'`
+- **Actual:** `Column 'COUNT(DISTINCT' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\check_fossil_count.py:32`
+- **Fix Suggestion:** Verify column name or add 'COUNT(DISTINCT' to table 'data_fossil'
+
+### 38. MISSING_COLUMN
+
+- **Table:** `data_fossil`
+- **Column:** `COUNT(*)`
+- **Expected:** `Column should exist in table 'data_fossil'`
+- **Actual:** `Column 'COUNT(*)' not found in reference`
+- **Locations:** 4 occurrence(s)
+  - `azure_functions\scripts\check_fossil_count.py:27`
+  - `azure_functions\scripts\check_fossil_count.py:43`
+  - `azure_functions\scripts\fix_fossil_duplicates.py:40`
+  - ... and 1 more
+- **Fix Suggestion:** Verify column name or add 'COUNT(*)' to table 'data_fossil'
+
+### 39. MISSING_COLUMN
+
+- **Table:** `data_wte_sumber`
+- **Column:** `1)`
+- **Expected:** `Column should exist in table 'data_wte_sumber'`
+- **Actual:** `Column '1)' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_wte_tables.py:49`
+- **Fix Suggestion:** Verify column name or add '1)' to table 'data_wte_sumber'
+
+### 40. MISSING_COLUMN
+
+- **Table:** `data_wte_sumber`
+- **Column:** `SELECT`
+- **Expected:** `Column should exist in table 'data_wte_sumber'`
+- **Actual:** `Column 'SELECT' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_wte_tables.py:49`
+- **Fix Suggestion:** Verify column name or add 'SELECT' to table 'data_wte_sumber'
+
+### 41. MISSING_COLUMN
+
+- **Table:** `data_bioetanol_hip`
+- **Column:** `1)`
+- **Expected:** `Column should exist in table 'data_bioetanol_hip'`
+- **Actual:** `Column '1)' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_bioetanol_table.py:50`
+- **Fix Suggestion:** Verify column name or add '1)' to table 'data_bioetanol_hip'
+
+### 42. MISSING_COLUMN
+
+- **Table:** `data_bioetanol_hip`
+- **Column:** `COUNT(*)`
+- **Expected:** `Column should exist in table 'data_bioetanol_hip'`
+- **Actual:** `Column 'COUNT(*)' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\inspect_bioetanol_table.py:36`
+- **Fix Suggestion:** Verify column name or add 'COUNT(*)' to table 'data_bioetanol_hip'
+
+### 43. MISSING_COLUMN
+
+- **Table:** `data_bioetanol_hip`
+- **Column:** `TOP 5 *`
+- **Expected:** `Column should exist in table 'data_bioetanol_hip'`
+- **Actual:** `Column 'TOP 5 *' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\inspect_bioetanol_table.py:29`
+- **Fix Suggestion:** Verify column name or add 'TOP 5 *' to table 'data_bioetanol_hip'
+
+### 44. MISSING_COLUMN
+
+- **Table:** `data_eia_market`
+- **Column:** `1)`
+- **Expected:** `Column should exist in table 'data_eia_market'`
+- **Actual:** `Column '1)' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_eia_table.py:64`
+- **Fix Suggestion:** Verify column name or add '1)' to table 'data_eia_market'
+
+### 45. MISSING_COLUMN
+
+- **Table:** `data_eia_market`
+- **Column:** `COUNT(*)`
+- **Expected:** `Column should exist in table 'data_eia_market'`
+- **Actual:** `Column 'COUNT(*)' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\scripts\inspect_eia_table.py:57`
+  - `azure_functions\scripts\verify_eia.py:28`
+- **Fix Suggestion:** Verify column name or add 'COUNT(*)' to table 'data_eia_market'
+
+### 46. MISSING_COLUMN
+
+- **Table:** `data_eia_market`
+- **Column:** `TOP 1 *`
+- **Expected:** `Column should exist in table 'data_eia_market'`
+- **Actual:** `Column 'TOP 1 *' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\inspect_eia_table.py:41`
+- **Fix Suggestion:** Verify column name or add 'TOP 1 *' to table 'data_eia_market'
+
+### 47. MISSING_COLUMN
+
+- **Table:** `data_biodiesel_hip`
+- **Column:** `1)`
+- **Expected:** `Column should exist in table 'data_biodiesel_hip'`
+- **Actual:** `Column '1)' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tools\schema_audit\test_migration_auditor_integration.py:42`
+- **Fix Suggestion:** Verify column name or add '1)' to table 'data_biodiesel_hip'
+
+### 48. MISSING_COLUMN
+
+- **Table:** `sentiment_analysis_articles`
+- **Column:** `saa.article_id`
+- **Expected:** `Column should exist in table 'sentiment_analysis_articles'`
+- **Actual:** `Column 'saa.article_id' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tests\test_data_integrity_properties.py:214`
+- **Fix Suggestion:** Verify column name or add 'saa.article_id' to table 'sentiment_analysis_articles'
+
+### 49. MISSING_COLUMN
+
+- **Table:** `sentiment_analysis_articles`
+- **Column:** `a.url`
+- **Expected:** `Column should exist in table 'sentiment_analysis_articles'`
+- **Actual:** `Column 'a.url' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tests\test_data_integrity_properties.py:214`
+- **Fix Suggestion:** Verify column name or add 'a.url' to table 'sentiment_analysis_articles'
+
+### 50. MISSING_COLUMN
+
+- **Table:** `sentiment_analysis_articles`
+- **Column:** `article_id)`
+- **Expected:** `Column should exist in table 'sentiment_analysis_articles'`
+- **Actual:** `Column 'article_id)' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tests\setup_test_database.py:191`
+- **Fix Suggestion:** Verify column name or add 'article_id)' to table 'sentiment_analysis_articles'
+
+### 51. MISSING_COLUMN
+
+- **Table:** `sentiment_analysis_articles`
+- **Column:** `COUNT(*)`
+- **Expected:** `Column should exist in table 'sentiment_analysis_articles'`
+- **Actual:** `Column 'COUNT(*)' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tests\test_e2e_pipeline.py:181`
+- **Fix Suggestion:** Verify column name or add 'COUNT(*)' to table 'sentiment_analysis_articles'
+
+### 52. MISSING_COLUMN
+
+- **Table:** `sentiment_analysis_articles`
+- **Column:** `SELECT`
+- **Expected:** `Column should exist in table 'sentiment_analysis_articles'`
+- **Actual:** `Column 'SELECT' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tests\setup_test_database.py:191`
+- **Fix Suggestion:** Verify column name or add 'SELECT' to table 'sentiment_analysis_articles'
+
+### 53. MISSING_COLUMN
+
+- **Table:** `data_wte_komposisi`
+- **Column:** `1)`
+- **Expected:** `Column should exist in table 'data_wte_komposisi'`
+- **Actual:** `Column '1)' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_wte_tables.py:69`
+- **Fix Suggestion:** Verify column name or add '1)' to table 'data_wte_komposisi'
+
+### 54. MISSING_COLUMN
+
+- **Table:** `data_wte_komposisi`
+- **Column:** `SELECT`
+- **Expected:** `Column should exist in table 'data_wte_komposisi'`
+- **Actual:** `Column 'SELECT' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_wte_tables.py:69`
+- **Fix Suggestion:** Verify column name or add 'SELECT' to table 'data_wte_komposisi'
+
+### 55. MISSING_COLUMN
+
+- **Table:** `data_wte_timbulan`
+- **Column:** `1)`
+- **Expected:** `Column should exist in table 'data_wte_timbulan'`
+- **Actual:** `Column '1)' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_wte_tables.py:91`
+- **Fix Suggestion:** Verify column name or add '1)' to table 'data_wte_timbulan'
+
+### 56. MISSING_COLUMN
+
+- **Table:** `data_wte_timbulan`
+- **Column:** `SELECT`
+- **Expected:** `Column should exist in table 'data_wte_timbulan'`
+- **Actual:** `Column 'SELECT' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_wte_tables.py:91`
+- **Fix Suggestion:** Verify column name or add 'SELECT' to table 'data_wte_timbulan'
+
+### 57. MISSING_COLUMN
+
+- **Table:** `data_ebt_capacity`
+- **Column:** `1)`
+- **Expected:** `Column should exist in table 'data_ebt_capacity'`
+- **Actual:** `Column '1)' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_ebt_capacity_table.py:45`
+- **Fix Suggestion:** Verify column name or add '1)' to table 'data_ebt_capacity'
+
+### 58. MISSING_COLUMN
+
+- **Table:** `data_ebt_capacity`
+- **Column:** `SELECT`
+- **Expected:** `Column should exist in table 'data_ebt_capacity'`
+- **Actual:** `Column 'SELECT' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_ebt_capacity_table.py:45`
+- **Fix Suggestion:** Verify column name or add 'SELECT' to table 'data_ebt_capacity'
+
+### 59. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `ROW_NUMBER()`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'ROW_NUMBER()' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\processing\deduplication_service.py:338`
+  - `azure_functions\processing\deduplication_service.py:353`
+- **Fix Suggestion:** Verify column name or add 'ROW_NUMBER()' to table 'news_articles'
+
+### 60. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `a.category`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'a.category' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\shared\database_handler.py:286`
+  - `azure_functions\shared\database_handler_fixed.py:216`
+- **Fix Suggestion:** Verify column name or add 'a.category' to table 'news_articles'
+
+### 61. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `a.url`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'a.url' not found in reference`
+- **Locations:** 4 occurrence(s)
+  - `azure_functions\processing\deduplication_service.py:338`
+  - `azure_functions\processing\deduplication_service.py:353`
+  - `azure_functions\shared\database_handler.py:286`
+  - ... and 1 more
+- **Fix Suggestion:** Verify column name or add 'a.url' to table 'news_articles'
+
+### 62. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `a.scraped_date`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'a.scraped_date' not found in reference`
+- **Locations:** 4 occurrence(s)
+  - `azure_functions\processing\deduplication_service.py:338`
+  - `azure_functions\processing\deduplication_service.py:353`
+  - `azure_functions\shared\database_handler.py:286`
+  - ... and 1 more
+- **Fix Suggestion:** Verify column name or add 'a.scraped_date' to table 'news_articles'
+
+### 63. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `MAX(scraped_date)`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'MAX(scraped_date)' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\processing\deduplication_service.py:302`
+- **Fix Suggestion:** Verify column name or add 'MAX(scraped_date)' to table 'news_articles'
+
+### 64. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `a.author`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'a.author' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\shared\database_handler.py:286`
+  - `azure_functions\shared\database_handler_fixed.py:216`
+- **Fix Suggestion:** Verify column name or add 'a.author' to table 'news_articles'
+
+### 65. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `a.id`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'a.id' not found in reference`
+- **Locations:** 5 occurrence(s)
+  - `azure_functions\processing\deduplication_service.py:338`
+  - `azure_functions\processing\deduplication_service.py:353`
+  - `azure_functions\shared\database_handler.py:286`
+  - ... and 2 more
+- **Fix Suggestion:** Verify column name or add 'a.id' to table 'news_articles'
+
+### 66. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `SELECT`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'SELECT' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tests\setup_test_database.py:134`
+- **Fix Suggestion:** Verify column name or add 'SELECT' to table 'news_articles'
+
+### 67. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `a.title`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'a.title' not found in reference`
+- **Locations:** 4 occurrence(s)
+  - `azure_functions\processing\deduplication_service.py:338`
+  - `azure_functions\processing\deduplication_service.py:353`
+  - `azure_functions\shared\database_handler.py:286`
+  - ... and 1 more
+- **Fix Suggestion:** Verify column name or add 'a.title' to table 'news_articles'
+
+### 68. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `a.language`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'a.language' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\shared\database_handler.py:286`
+  - `azure_functions\shared\database_handler_fixed.py:216`
+- **Fix Suggestion:** Verify column name or add 'a.language' to table 'news_articles'
+
+### 69. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `')`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column '')' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\processing\deduplication_service.py:302`
+- **Fix Suggestion:** Verify column name or add '')' to table 'news_articles'
+
+### 70. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `COUNT(a.id)`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'COUNT(a.id)' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\deduplication_function\__init__.py:281`
+  - `azure_functions\processing\deduplication_service.py:255`
+- **Fix Suggestion:** Verify column name or add 'COUNT(a.id)' to table 'news_articles'
+
+### 71. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `MAX(published_date)`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'MAX(published_date)' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\shared\database_handler.py:426`
+  - `azure_functions\shared\database_handler.py:426`
+- **Fix Suggestion:** Verify column name or add 'MAX(published_date)' to table 'news_articles'
+
+### 72. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `MIN(scraped_date)`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'MIN(scraped_date)' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\processing\deduplication_service.py:302`
+- **Fix Suggestion:** Verify column name or add 'MIN(scraped_date)' to table 'news_articles'
+
+### 73. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `MIN(published_date)`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'MIN(published_date)' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\shared\database_handler.py:426`
+  - `azure_functions\shared\database_handler.py:426`
+- **Fix Suggestion:** Verify column name or add 'MIN(published_date)' to table 'news_articles'
+
+### 74. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `s.name`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 's.name' not found in reference`
+- **Locations:** 7 occurrence(s)
+  - `azure_functions\deduplication_function\__init__.py:281`
+  - `azure_functions\processing\deduplication_service.py:255`
+  - `azure_functions\processing\deduplication_service.py:338`
+  - ... and 4 more
+- **Fix Suggestion:** Verify column name or add 's.name' to table 'news_articles'
+
+### 75. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `a.source_id`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'a.source_id' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tests\test_data_integrity_properties.py:153`
+- **Fix Suggestion:** Verify column name or add 'a.source_id' to table 'news_articles'
+
+### 76. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `STRING_AGG(s.name`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'STRING_AGG(s.name' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\processing\deduplication_service.py:302`
+- **Fix Suggestion:** Verify column name or add 'STRING_AGG(s.name' to table 'news_articles'
+
+### 77. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `'`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column ''' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\processing\deduplication_service.py:302`
+- **Fix Suggestion:** Verify column name or add ''' to table 'news_articles'
+
+### 78. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `COUNT(*)`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'COUNT(*)' not found in reference`
+- **Locations:** 9 occurrence(s)
+  - `azure_functions\deduplication_function\__init__.py:203`
+  - `azure_functions\deduplication_function\__init__.py:211`
+  - `azure_functions\processing\deduplication_service.py:302`
+  - ... and 6 more
+- **Fix Suggestion:** Verify column name or add 'COUNT(*)' to table 'news_articles'
+
+### 79. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `TOP 1 scraped_date`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'TOP 1 scraped_date' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\shared\database_migration.py:425`
+- **Fix Suggestion:** Verify column name or add 'TOP 1 scraped_date' to table 'news_articles'
+
+### 80. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `a.content`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'a.content' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\shared\database_handler.py:286`
+  - `azure_functions\shared\database_handler_fixed.py:216`
+- **Fix Suggestion:** Verify column name or add 'a.content' to table 'news_articles'
+
+### 81. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `s.source_name`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 's.source_name' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\verify_counts.py:42`
+- **Fix Suggestion:** Verify column name or add 's.source_name' to table 'news_articles'
+
+### 82. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `COUNT(DISTINCT`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'COUNT(DISTINCT' not found in reference`
+- **Locations:** 3 occurrence(s)
+  - `azure_functions\deduplication_function\__init__.py:281`
+  - `azure_functions\processing\deduplication_service.py:255`
+  - `azure_functions\processing\deduplication_service.py:399`
+- **Fix Suggestion:** Verify column name or add 'COUNT(DISTINCT' to table 'news_articles'
+
+### 83. MISSING_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `a.published_date`
+- **Expected:** `Column should exist in table 'news_articles'`
+- **Actual:** `Column 'a.published_date' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\shared\database_handler.py:286`
+  - `azure_functions\shared\database_handler_fixed.py:216`
+- **Fix Suggestion:** Verify column name or add 'a.published_date' to table 'news_articles'
+
+### 84. MISSING_COLUMN
+
+- **Table:** `sentiment_analyses`
+- **Column:** `TOP 1 analysis_date`
+- **Expected:** `Column should exist in table 'sentiment_analyses'`
+- **Actual:** `Column 'TOP 1 analysis_date' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\shared\database_migration.py:429`
+- **Fix Suggestion:** Verify column name or add 'TOP 1 analysis_date' to table 'sentiment_analyses'
+
+### 85. MISSING_COLUMN
+
+- **Table:** `sentiment_analyses`
+- **Column:** `COUNT(*)`
+- **Expected:** `Column should exist in table 'sentiment_analyses'`
+- **Actual:** `Column 'COUNT(*)' not found in reference`
+- **Locations:** 3 occurrence(s)
+  - `azure_functions\scripts\check_sentiment_only.py:34`
+  - `azure_functions\scripts\direct_sentiment_check.py:14`
+  - `azure_functions\shared\excel_migration.py:601`
+- **Fix Suggestion:** Verify column name or add 'COUNT(*)' to table 'sentiment_analyses'
+
+### 86. MISSING_COLUMN
+
+- **Table:** `sentiment_analyses`
+- **Column:** `SELECT`
+- **Expected:** `Column should exist in table 'sentiment_analyses'`
+- **Actual:** `Column 'SELECT' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tests\setup_test_database.py:171`
+- **Fix Suggestion:** Verify column name or add 'SELECT' to table 'sentiment_analyses'
+
+### 87. MISSING_COLUMN
+
+- **Table:** `sentiment_analyses`
+- **Column:** `TOP 1 id`
+- **Expected:** `Column should exist in table 'sentiment_analyses'`
+- **Actual:** `Column 'TOP 1 id' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\scripts\check_sentiment_only.py:41`
+  - `azure_functions\scripts\direct_sentiment_check.py:20`
+- **Fix Suggestion:** Verify column name or add 'TOP 1 id' to table 'sentiment_analyses'
+
+### 88. MISSING_COLUMN
+
+- **Table:** `data_iaea_electrical`
+- **Column:** `1)`
+- **Expected:** `Column should exist in table 'data_iaea_electrical'`
+- **Actual:** `Column '1)' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_iaea_tables.py:64`
+- **Fix Suggestion:** Verify column name or add '1)' to table 'data_iaea_electrical'
+
+### 89. MISSING_COLUMN
+
+- **Table:** `data_iaea_electrical`
+- **Column:** `SELECT`
+- **Expected:** `Column should exist in table 'data_iaea_electrical'`
+- **Actual:** `Column 'SELECT' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_iaea_tables.py:64`
+- **Fix Suggestion:** Verify column name or add 'SELECT' to table 'data_iaea_electrical'
+
+### 90. MISSING_COLUMN
+
+- **Table:** `data_iaea_nuclear_capacity`
+- **Column:** `1)`
+- **Expected:** `Column should exist in table 'data_iaea_nuclear_capacity'`
+- **Actual:** `Column '1)' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_iaea_tables.py:48`
+- **Fix Suggestion:** Verify column name or add '1)' to table 'data_iaea_nuclear_capacity'
+
+### 91. MISSING_COLUMN
+
+- **Table:** `data_iaea_nuclear_capacity`
+- **Column:** `SELECT`
+- **Expected:** `Column should exist in table 'data_iaea_nuclear_capacity'`
+- **Actual:** `Column 'SELECT' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_iaea_tables.py:48`
+- **Fix Suggestion:** Verify column name or add 'SELECT' to table 'data_iaea_nuclear_capacity'
+
+### 92. MISSING_COLUMN
+
+- **Table:** `article_keywords`
+- **Column:** `keyword_id)`
+- **Expected:** `Column should exist in table 'article_keywords'`
+- **Actual:** `Column 'keyword_id)' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tests\setup_test_database.py:156`
+- **Fix Suggestion:** Verify column name or add 'keyword_id)' to table 'article_keywords'
+
+### 93. MISSING_COLUMN
+
+- **Table:** `article_keywords`
+- **Column:** `ak.article_id`
+- **Expected:** `Column should exist in table 'article_keywords'`
+- **Actual:** `Column 'ak.article_id' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\shared\database_handler.py:317`
+- **Fix Suggestion:** Verify column name or add 'ak.article_id' to table 'article_keywords'
+
+### 94. MISSING_COLUMN
+
+- **Table:** `article_keywords`
+- **Column:** `k.keyword`
+- **Expected:** `Column should exist in table 'article_keywords'`
+- **Actual:** `Column 'k.keyword' not found in reference`
+- **Locations:** 3 occurrence(s)
+  - `azure_functions\shared\database_handler.py:362`
+  - `azure_functions\shared\database_handler_fixed.py:269`
+  - `azure_functions\tests\test_data_integrity_properties.py:181`
+- **Fix Suggestion:** Verify column name or add 'k.keyword' to table 'article_keywords'
+
+### 95. MISSING_COLUMN
+
+- **Table:** `article_keywords`
+- **Column:** `COUNT(*)`
+- **Expected:** `Column should exist in table 'article_keywords'`
+- **Actual:** `Column 'COUNT(*)' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\tests\test_data_integrity_properties.py:242`
+  - `azure_functions\tests\test_data_integrity_properties.py:264`
+- **Fix Suggestion:** Verify column name or add 'COUNT(*)' to table 'article_keywords'
+
+### 96. MISSING_COLUMN
+
+- **Table:** `article_keywords`
+- **Column:** `SELECT`
+- **Expected:** `Column should exist in table 'article_keywords'`
+- **Actual:** `Column 'SELECT' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tests\setup_test_database.py:156`
+- **Fix Suggestion:** Verify column name or add 'SELECT' to table 'article_keywords'
+
+### 97. MISSING_COLUMN
+
+- **Table:** `news_sources`
+- **Column:** `1)`
+- **Expected:** `Column should exist in table 'news_sources'`
+- **Actual:** `Column '1)' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tests\setup_test_database.py:105`
+- **Fix Suggestion:** Verify column name or add '1)' to table 'news_sources'
+
+### 98. MISSING_COLUMN
+
+- **Table:** `news_sources`
+- **Column:** `COUNT(*)`
+- **Expected:** `Column should exist in table 'news_sources'`
+- **Actual:** `Column 'COUNT(*)' not found in reference`
+- **Locations:** 4 occurrence(s)
+  - `azure_functions\scripts\initialize-database.py:188`
+  - `azure_functions\shared\excel_migration.py:593`
+  - `azure_functions\tests\fix_database_permissions.py:156`
+  - ... and 1 more
+- **Fix Suggestion:** Verify column name or add 'COUNT(*)' to table 'news_sources'
+
+### 99. MISSING_COLUMN
+
+- **Table:** `news_sources`
+- **Column:** `SELECT`
+- **Expected:** `Column should exist in table 'news_sources'`
+- **Actual:** `Column 'SELECT' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tests\setup_test_database.py:105`
+- **Fix Suggestion:** Verify column name or add 'SELECT' to table 'news_sources'
+
+### 100. MISSING_COLUMN
+
+- **Table:** `keywords`
+- **Column:** `1)`
+- **Expected:** `Column should exist in table 'keywords'`
+- **Actual:** `Column '1)' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tests\setup_test_database.py:121`
+- **Fix Suggestion:** Verify column name or add '1)' to table 'keywords'
+
+### 101. MISSING_COLUMN
+
+- **Table:** `keywords`
+- **Column:** `COUNT(*)`
+- **Expected:** `Column should exist in table 'keywords'`
+- **Actual:** `Column 'COUNT(*)' not found in reference`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\shared\excel_migration.py:597`
+  - `azure_functions\tests\test_data_integrity_properties.py:197`
+- **Fix Suggestion:** Verify column name or add 'COUNT(*)' to table 'keywords'
+
+### 102. MISSING_COLUMN
+
+- **Table:** `keywords`
+- **Column:** `SELECT`
+- **Expected:** `Column should exist in table 'keywords'`
+- **Actual:** `Column 'SELECT' not found in reference`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\tests\setup_test_database.py:121`
+- **Fix Suggestion:** Verify column name or add 'SELECT' to table 'keywords'
+
+## 🟡 Warnings
+
+These issues may cause problems and should be reviewed.
+
+**Count:** 53
+
+### 1. EXTRA_COLUMN
+
+- **Table:** `data_ebt_prices`
+- **Column:** `id`
+- **Expected:** `Column 'id' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 3 occurrence(s)
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:29`
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:36`
+  - `azure_functions\scripts\seed_harga_ebt_only.py:72`
+- **Fix Suggestion:** Add column 'id' to operations or remove from schema
+
+### 2. EXTRA_COLUMN
+
+- **Table:** `data_ebt_prices`
+- **Column:** `no`
+- **Expected:** `Column 'no' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 3 occurrence(s)
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:29`
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:36`
+  - `azure_functions\scripts\seed_harga_ebt_only.py:72`
+- **Fix Suggestion:** Add column 'no' to operations or remove from schema
+
+### 3. EXTRA_COLUMN
+
+- **Table:** `data_ebt_prices`
+- **Column:** `lokasi`
+- **Expected:** `Column 'lokasi' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 3 occurrence(s)
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:29`
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:36`
+  - `azure_functions\scripts\seed_harga_ebt_only.py:72`
+- **Fix Suggestion:** Add column 'lokasi' to operations or remove from schema
+
+### 4. EXTRA_COLUMN
+
+- **Table:** `data_ebt_prices`
+- **Column:** `provinsi`
+- **Expected:** `Column 'provinsi' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 3 occurrence(s)
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:29`
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:36`
+  - `azure_functions\scripts\seed_harga_ebt_only.py:72`
+- **Fix Suggestion:** Add column 'provinsi' to operations or remove from schema
+
+### 5. EXTRA_COLUMN
+
+- **Table:** `data_ebt_prices`
+- **Column:** `jenis_ebt`
+- **Expected:** `Column 'jenis_ebt' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 3 occurrence(s)
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:29`
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:36`
+  - `azure_functions\scripts\seed_harga_ebt_only.py:72`
+- **Fix Suggestion:** Add column 'jenis_ebt' to operations or remove from schema
+
+### 6. EXTRA_COLUMN
+
+- **Table:** `data_ebt_prices`
+- **Column:** `faktor_lokasi`
+- **Expected:** `Column 'faktor_lokasi' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 3 occurrence(s)
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:29`
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:36`
+  - `azure_functions\scripts\seed_harga_ebt_only.py:72`
+- **Fix Suggestion:** Add column 'faktor_lokasi' to operations or remove from schema
+
+### 7. EXTRA_COLUMN
+
+- **Table:** `data_ebt_prices`
+- **Column:** `kelompok_hpt`
+- **Expected:** `Column 'kelompok_hpt' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 3 occurrence(s)
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:29`
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:36`
+  - `azure_functions\scripts\seed_harga_ebt_only.py:72`
+- **Fix Suggestion:** Add column 'kelompok_hpt' to operations or remove from schema
+
+### 8. EXTRA_COLUMN
+
+- **Table:** `data_ebt_prices`
+- **Column:** `stage`
+- **Expected:** `Column 'stage' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 3 occurrence(s)
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:29`
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:36`
+  - `azure_functions\scripts\seed_harga_ebt_only.py:72`
+- **Fix Suggestion:** Add column 'stage' to operations or remove from schema
+
+### 9. EXTRA_COLUMN
+
+- **Table:** `data_ebt_prices`
+- **Column:** `cent_usd_kwh`
+- **Expected:** `Column 'cent_usd_kwh' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 3 occurrence(s)
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:29`
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:36`
+  - `azure_functions\scripts\seed_harga_ebt_only.py:72`
+- **Fix Suggestion:** Add column 'cent_usd_kwh' to operations or remove from schema
+
+### 10. EXTRA_COLUMN
+
+- **Table:** `data_ebt_prices`
+- **Column:** `lcoe_cent_usd_kwh`
+- **Expected:** `Column 'lcoe_cent_usd_kwh' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 3 occurrence(s)
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:29`
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:36`
+  - `azure_functions\scripts\seed_harga_ebt_only.py:72`
+- **Fix Suggestion:** Add column 'lcoe_cent_usd_kwh' to operations or remove from schema
+
+### 11. EXTRA_COLUMN
+
+- **Table:** `data_ebt_prices`
+- **Column:** `battery`
+- **Expected:** `Column 'battery' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 3 occurrence(s)
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:29`
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:36`
+  - `azure_functions\scripts\seed_harga_ebt_only.py:72`
+- **Fix Suggestion:** Add column 'battery' to operations or remove from schema
+
+### 12. EXTRA_COLUMN
+
+- **Table:** `data_ebt_prices`
+- **Column:** `created_at`
+- **Expected:** `Column 'created_at' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 3 occurrence(s)
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:29`
+  - `azure_functions\scripts\inspect_harga_ebt_table.py:36`
+  - `azure_functions\scripts\seed_harga_ebt_only.py:72`
+- **Fix Suggestion:** Add column 'created_at' to operations or remove from schema
+
+### 13. EXTRA_COLUMN
+
+- **Table:** `configuration`
+- **Column:** `id`
+- **Expected:** `Column 'id' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 4 occurrence(s)
+  - `azure_functions\scripts\initialize-database.py:239`
+  - `azure_functions\shared\database_handler.py:621`
+  - `azure_functions\shared\database_handler.py:638`
+  - ... and 1 more
+- **Fix Suggestion:** Add column 'id' to operations or remove from schema
+
+### 14. EXTRA_COLUMN
+
+- **Table:** `configuration`
+- **Column:** `is_sensitive`
+- **Expected:** `Column 'is_sensitive' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 4 occurrence(s)
+  - `azure_functions\scripts\initialize-database.py:239`
+  - `azure_functions\shared\database_handler.py:621`
+  - `azure_functions\shared\database_handler.py:638`
+  - ... and 1 more
+- **Fix Suggestion:** Add column 'is_sensitive' to operations or remove from schema
+
+### 15. EXTRA_COLUMN
+
+- **Table:** `configuration`
+- **Column:** `created_at`
+- **Expected:** `Column 'created_at' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 4 occurrence(s)
+  - `azure_functions\scripts\initialize-database.py:239`
+  - `azure_functions\shared\database_handler.py:621`
+  - `azure_functions\shared\database_handler.py:638`
+  - ... and 1 more
+- **Fix Suggestion:** Add column 'created_at' to operations or remove from schema
+
+### 16. EXTRA_COLUMN
+
+- **Table:** `data_oil_prices`
+- **Column:** `id`
+- **Expected:** `Column 'id' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\seed_oil_prices_only.py:84`
+- **Fix Suggestion:** Add column 'id' to operations or remove from schema
+
+### 17. EXTRA_COLUMN
+
+- **Table:** `data_oil_prices`
+- **Column:** `year`
+- **Expected:** `Column 'year' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\seed_oil_prices_only.py:84`
+- **Fix Suggestion:** Add column 'year' to operations or remove from schema
+
+### 18. EXTRA_COLUMN
+
+- **Table:** `data_oil_prices`
+- **Column:** `month`
+- **Expected:** `Column 'month' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\seed_oil_prices_only.py:84`
+- **Fix Suggestion:** Add column 'month' to operations or remove from schema
+
+### 19. EXTRA_COLUMN
+
+- **Table:** `data_oil_prices`
+- **Column:** `price`
+- **Expected:** `Column 'price' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\seed_oil_prices_only.py:84`
+- **Fix Suggestion:** Add column 'price' to operations or remove from schema
+
+### 20. EXTRA_COLUMN
+
+- **Table:** `data_oil_prices`
+- **Column:** `date_raw`
+- **Expected:** `Column 'date_raw' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\seed_oil_prices_only.py:84`
+- **Fix Suggestion:** Add column 'date_raw' to operations or remove from schema
+
+### 21. EXTRA_COLUMN
+
+- **Table:** `data_oil_prices`
+- **Column:** `brent_price`
+- **Expected:** `Column 'brent_price' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\seed_oil_prices_only.py:84`
+- **Fix Suggestion:** Add column 'brent_price' to operations or remove from schema
+
+### 22. EXTRA_COLUMN
+
+- **Table:** `data_oil_prices`
+- **Column:** `created_at`
+- **Expected:** `Column 'created_at' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\seed_oil_prices_only.py:84`
+- **Fix Suggestion:** Add column 'created_at' to operations or remove from schema
+
+### 23. EXTRA_COLUMN
+
+- **Table:** `data_cpo_prices`
+- **Column:** `id`
+- **Expected:** `Column 'id' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\scripts\check_cpo_rows.py:22`
+  - `azure_functions\scripts\test_cpo_seed.py:56`
+- **Fix Suggestion:** Add column 'id' to operations or remove from schema
+
+### 24. EXTRA_COLUMN
+
+- **Table:** `data_cpo_prices`
+- **Column:** `upload_date`
+- **Expected:** `Column 'upload_date' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\scripts\check_cpo_rows.py:22`
+  - `azure_functions\scripts\test_cpo_seed.py:56`
+- **Fix Suggestion:** Add column 'upload_date' to operations or remove from schema
+
+### 25. EXTRA_COLUMN
+
+- **Table:** `data_cpo_prices`
+- **Column:** `price_date`
+- **Expected:** `Column 'price_date' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\scripts\check_cpo_rows.py:22`
+  - `azure_functions\scripts\test_cpo_seed.py:56`
+- **Fix Suggestion:** Add column 'price_date' to operations or remove from schema
+
+### 26. EXTRA_COLUMN
+
+- **Table:** `data_cpo_prices`
+- **Column:** `px_last`
+- **Expected:** `Column 'px_last' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\scripts\check_cpo_rows.py:22`
+  - `azure_functions\scripts\test_cpo_seed.py:56`
+- **Fix Suggestion:** Add column 'px_last' to operations or remove from schema
+
+### 27. EXTRA_COLUMN
+
+- **Table:** `data_cpo_prices`
+- **Column:** `scraped_at`
+- **Expected:** `Column 'scraped_at' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\scripts\check_cpo_rows.py:22`
+  - `azure_functions\scripts\test_cpo_seed.py:56`
+- **Fix Suggestion:** Add column 'scraped_at' to operations or remove from schema
+
+### 28. EXTRA_COLUMN
+
+- **Table:** `data_wte_sumber`
+- **Column:** `id`
+- **Expected:** `Column 'id' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_wte_tables.py:49`
+- **Fix Suggestion:** Add column 'id' to operations or remove from schema
+
+### 29. EXTRA_COLUMN
+
+- **Table:** `sentiment_analysis_articles`
+- **Column:** `created_at`
+- **Expected:** `Column 'created_at' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 6 occurrence(s)
+  - `azure_functions\shared\database_handler.py:484`
+  - `azure_functions\shared\database_handler.py:406`
+  - `azure_functions\shared\database_handler_fixed.py:329`
+  - ... and 3 more
+- **Fix Suggestion:** Add column 'created_at' to operations or remove from schema
+
+### 30. EXTRA_COLUMN
+
+- **Table:** `data_wte_komposisi`
+- **Column:** `id`
+- **Expected:** `Column 'id' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_wte_tables.py:69`
+- **Fix Suggestion:** Add column 'id' to operations or remove from schema
+
+### 31. EXTRA_COLUMN
+
+- **Table:** `data_wte_timbulan`
+- **Column:** `id`
+- **Expected:** `Column 'id' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_wte_tables.py:91`
+- **Fix Suggestion:** Add column 'id' to operations or remove from schema
+
+### 32. EXTRA_COLUMN
+
+- **Table:** `data_ebt_capacity`
+- **Column:** `id`
+- **Expected:** `Column 'id' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_ebt_capacity_table.py:45`
+- **Fix Suggestion:** Add column 'id' to operations or remove from schema
+
+### 33. EXTRA_COLUMN
+
+- **Table:** `news_articles`
+- **Column:** `reference_topic`
+- **Expected:** `Column 'reference_topic' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 38 occurrence(s)
+  - `azure_functions\deduplication_function\__init__.py:243`
+  - `azure_functions\deduplication_function\__init__.py:281`
+  - `azure_functions\deduplication_function\__init__.py:203`
+  - ... and 35 more
+- **Fix Suggestion:** Add column 'reference_topic' to operations or remove from schema
+
+### 34. EXTRA_COLUMN
+
+- **Table:** `sentiment_analyses`
+- **Column:** `updated_at`
+- **Expected:** `Column 'updated_at' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 11 occurrence(s)
+  - `azure_functions\scripts\check_sentiment_only.py:34`
+  - `azure_functions\scripts\check_sentiment_only.py:41`
+  - `azure_functions\scripts\direct_sentiment_check.py:14`
+  - ... and 8 more
+- **Fix Suggestion:** Add column 'updated_at' to operations or remove from schema
+
+### 35. EXTRA_COLUMN
+
+- **Table:** `sentiment_analyses`
+- **Column:** `reference_topic`
+- **Expected:** `Column 'reference_topic' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 11 occurrence(s)
+  - `azure_functions\scripts\check_sentiment_only.py:34`
+  - `azure_functions\scripts\check_sentiment_only.py:41`
+  - `azure_functions\scripts\direct_sentiment_check.py:14`
+  - ... and 8 more
+- **Fix Suggestion:** Add column 'reference_topic' to operations or remove from schema
+
+### 36. EXTRA_COLUMN
+
+- **Table:** `data_iaea_electrical`
+- **Column:** `id`
+- **Expected:** `Column 'id' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_iaea_tables.py:64`
+- **Fix Suggestion:** Add column 'id' to operations or remove from schema
+
+### 37. EXTRA_COLUMN
+
+- **Table:** `data_iaea_nuclear_capacity`
+- **Column:** `id`
+- **Expected:** `Column 'id' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\migrate_iaea_tables.py:48`
+- **Fix Suggestion:** Add column 'id' to operations or remove from schema
+
+### 38. EXTRA_COLUMN
+
+- **Table:** `article_keywords`
+- **Column:** `created_at`
+- **Expected:** `Column 'created_at' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 11 occurrence(s)
+  - `azure_functions\shared\database_handler.py:362`
+  - `azure_functions\shared\database_handler.py:246`
+  - `azure_functions\shared\database_handler.py:701`
+  - ... and 8 more
+- **Fix Suggestion:** Add column 'created_at' to operations or remove from schema
+
+### 39. EXTRA_COLUMN
+
+- **Table:** `execution_logs`
+- **Column:** `created_at`
+- **Expected:** `Column 'created_at' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 2 occurrence(s)
+  - `azure_functions\shared\database_handler.py:589`
+  - `azure_functions\shared\database_optimization.py:379`
+- **Fix Suggestion:** Add column 'created_at' to operations or remove from schema
+
+### 40. EXTRA_COLUMN
+
+- **Table:** `data_ruptl_projects`
+- **Column:** `id`
+- **Expected:** `Column 'id' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\seed_ruptl_only.py:81`
+- **Fix Suggestion:** Add column 'id' to operations or remove from schema
+
+### 41. EXTRA_COLUMN
+
+- **Table:** `data_ruptl_projects`
+- **Column:** `number`
+- **Expected:** `Column 'number' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\seed_ruptl_only.py:81`
+- **Fix Suggestion:** Add column 'number' to operations or remove from schema
+
+### 42. EXTRA_COLUMN
+
+- **Table:** `data_ruptl_projects`
+- **Column:** `province`
+- **Expected:** `Column 'province' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\seed_ruptl_only.py:81`
+- **Fix Suggestion:** Add column 'province' to operations or remove from schema
+
+### 43. EXTRA_COLUMN
+
+- **Table:** `data_ruptl_projects`
+- **Column:** `electric_system`
+- **Expected:** `Column 'electric_system' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\seed_ruptl_only.py:81`
+- **Fix Suggestion:** Add column 'electric_system' to operations or remove from schema
+
+### 44. EXTRA_COLUMN
+
+- **Table:** `data_ruptl_projects`
+- **Column:** `power_plant_type`
+- **Expected:** `Column 'power_plant_type' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\seed_ruptl_only.py:81`
+- **Fix Suggestion:** Add column 'power_plant_type' to operations or remove from schema
+
+### 45. EXTRA_COLUMN
+
+- **Table:** `data_ruptl_projects`
+- **Column:** `project_name`
+- **Expected:** `Column 'project_name' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\seed_ruptl_only.py:81`
+- **Fix Suggestion:** Add column 'project_name' to operations or remove from schema
+
+### 46. EXTRA_COLUMN
+
+- **Table:** `data_ruptl_projects`
+- **Column:** `capacity_mw`
+- **Expected:** `Column 'capacity_mw' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\seed_ruptl_only.py:81`
+- **Fix Suggestion:** Add column 'capacity_mw' to operations or remove from schema
+
+### 47. EXTRA_COLUMN
+
+- **Table:** `data_ruptl_projects`
+- **Column:** `target_cod_re_base`
+- **Expected:** `Column 'target_cod_re_base' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\seed_ruptl_only.py:81`
+- **Fix Suggestion:** Add column 'target_cod_re_base' to operations or remove from schema
+
+### 48. EXTRA_COLUMN
+
+- **Table:** `data_ruptl_projects`
+- **Column:** `target_cod_ared`
+- **Expected:** `Column 'target_cod_ared' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\seed_ruptl_only.py:81`
+- **Fix Suggestion:** Add column 'target_cod_ared' to operations or remove from schema
+
+### 49. EXTRA_COLUMN
+
+- **Table:** `data_ruptl_projects`
+- **Column:** `status`
+- **Expected:** `Column 'status' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\seed_ruptl_only.py:81`
+- **Fix Suggestion:** Add column 'status' to operations or remove from schema
+
+### 50. EXTRA_COLUMN
+
+- **Table:** `data_ruptl_projects`
+- **Column:** `developer`
+- **Expected:** `Column 'developer' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\seed_ruptl_only.py:81`
+- **Fix Suggestion:** Add column 'developer' to operations or remove from schema
+
+### 51. EXTRA_COLUMN
+
+- **Table:** `data_ruptl_projects`
+- **Column:** `notes`
+- **Expected:** `Column 'notes' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\seed_ruptl_only.py:81`
+- **Fix Suggestion:** Add column 'notes' to operations or remove from schema
+
+### 52. EXTRA_COLUMN
+
+- **Table:** `data_ruptl_projects`
+- **Column:** `created_at`
+- **Expected:** `Column 'created_at' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 1 occurrence(s)
+  - `azure_functions\scripts\seed_ruptl_only.py:81`
+- **Fix Suggestion:** Add column 'created_at' to operations or remove from schema
+
+### 53. EXTRA_COLUMN
+
+- **Table:** `news_sources`
+- **Column:** `updated_at`
+- **Expected:** `Column 'updated_at' should be used in code`
+- **Actual:** `Column not referenced in any operation`
+- **Locations:** 16 occurrence(s)
+  - `azure_functions\scripts\create_procedures.py:21`
+  - `azure_functions\scripts\initialize-database.py:188`
+  - `azure_functions\scripts\initialize-database.py:207`
+  - ... and 13 more
+- **Fix Suggestion:** Add column 'updated_at' to operations or remove from schema
+
+## 🔵 Informational
+
+These are informational notices about schema differences.
+
+**Count:** 8
+
+### 1. EXTRA_TABLE
+
+- **Table:** `data_fossil_prediction`
+- **Expected:** `Table 'data_fossil_prediction' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_fossil_prediction' or remove from schema
+
+### 2. EXTRA_TABLE
+
+- **Table:** `data_geopolitical_risk_index`
+- **Expected:** `Table 'data_geopolitical_risk_index' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_geopolitical_risk_index' or remove from schema
+
+### 3. EXTRA_TABLE
+
+- **Table:** `data_market_indicators`
+- **Expected:** `Table 'data_market_indicators' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_market_indicators' or remove from schema
+
+### 4. EXTRA_TABLE
+
+- **Table:** `data_oil_crackspreads`
+- **Expected:** `Table 'data_oil_crackspreads' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_oil_crackspreads' or remove from schema
+
+### 5. EXTRA_TABLE
+
+- **Table:** `data_petrochemical_prices`
+- **Expected:** `Table 'data_petrochemical_prices' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_petrochemical_prices' or remove from schema
+
+### 6. EXTRA_TABLE
+
+- **Table:** `data_renewable_energy`
+- **Expected:** `Table 'data_renewable_energy' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_renewable_energy' or remove from schema
+
+### 7. EXTRA_TABLE
+
+- **Table:** `data_saf_uco_prices`
+- **Expected:** `Table 'data_saf_uco_prices' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_saf_uco_prices' or remove from schema
+
+### 8. EXTRA_TABLE
+
+- **Table:** `data_volatility_index`
+- **Expected:** `Table 'data_volatility_index' should be used in code`
+- **Actual:** `Table not referenced in any code`
+- **Fix Suggestion:** Consider using table 'data_volatility_index' or remove from schema
+
+---
+
+## Mismatches by Table
+
+### Table: `<variable:table_name>`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table '<variable:table_name>' not found in reference`
+- Found in 5 location(s)
+- Fix: Verify table name or add '<variable:table_name>' to reference schema
+
+
+### Table: `article_keywords`
+
+**Issues:** 6
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `keyword_id)`
+- Expected: `Column should exist in table 'article_keywords'` | Actual: `Column 'keyword_id)' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'keyword_id)' to table 'article_keywords'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `ak.article_id`
+- Expected: `Column should exist in table 'article_keywords'` | Actual: `Column 'ak.article_id' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'ak.article_id' to table 'article_keywords'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `k.keyword`
+- Expected: `Column should exist in table 'article_keywords'` | Actual: `Column 'k.keyword' not found in reference`
+- Found in 3 location(s)
+- Fix: Verify column name or add 'k.keyword' to table 'article_keywords'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `COUNT(*)`
+- Expected: `Column should exist in table 'article_keywords'` | Actual: `Column 'COUNT(*)' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify column name or add 'COUNT(*)' to table 'article_keywords'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `SELECT`
+- Expected: `Column should exist in table 'article_keywords'` | Actual: `Column 'SELECT' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'SELECT' to table 'article_keywords'
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `created_at`
+- Expected: `Column 'created_at' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 11 location(s)
+- Fix: Add column 'created_at' to operations or remove from schema
+
+
+### Table: `biodiesel_hip`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'biodiesel_hip' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify table name or add 'biodiesel_hip' to reference schema
+
+
+### Table: `configuration`
+
+**Issues:** 3
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `id`
+- Expected: `Column 'id' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 4 location(s)
+- Fix: Add column 'id' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `is_sensitive`
+- Expected: `Column 'is_sensitive' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 4 location(s)
+- Fix: Add column 'is_sensitive' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `created_at`
+- Expected: `Column 'created_at' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 4 location(s)
+- Fix: Add column 'created_at' to operations or remove from schema
+
+
+### Table: `cte`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'cte' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify table name or add 'cte' to reference schema
+
+
+### Table: `data_biodiesel_hip`
+
+**Issues:** 1
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `1)`
+- Expected: `Column should exist in table 'data_biodiesel_hip'` | Actual: `Column '1)' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add '1)' to table 'data_biodiesel_hip'
+
+
+### Table: `data_bioetanol_hip`
+
+**Issues:** 3
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `1)`
+- Expected: `Column should exist in table 'data_bioetanol_hip'` | Actual: `Column '1)' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add '1)' to table 'data_bioetanol_hip'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `COUNT(*)`
+- Expected: `Column should exist in table 'data_bioetanol_hip'` | Actual: `Column 'COUNT(*)' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'COUNT(*)' to table 'data_bioetanol_hip'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `TOP 5 *`
+- Expected: `Column should exist in table 'data_bioetanol_hip'` | Actual: `Column 'TOP 5 *' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'TOP 5 *' to table 'data_bioetanol_hip'
+
+
+### Table: `data_cpo_prices`
+
+**Issues:** 6
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `COUNT(*)`
+- Expected: `Column should exist in table 'data_cpo_prices'` | Actual: `Column 'COUNT(*)' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'COUNT(*)' to table 'data_cpo_prices'
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `id`
+- Expected: `Column 'id' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 2 location(s)
+- Fix: Add column 'id' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `upload_date`
+- Expected: `Column 'upload_date' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 2 location(s)
+- Fix: Add column 'upload_date' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `price_date`
+- Expected: `Column 'price_date' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 2 location(s)
+- Fix: Add column 'price_date' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `px_last`
+- Expected: `Column 'px_last' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 2 location(s)
+- Fix: Add column 'px_last' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `scraped_at`
+- Expected: `Column 'scraped_at' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 2 location(s)
+- Fix: Add column 'scraped_at' to operations or remove from schema
+
+
+### Table: `data_ebt_capacity`
+
+**Issues:** 3
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `1)`
+- Expected: `Column should exist in table 'data_ebt_capacity'` | Actual: `Column '1)' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add '1)' to table 'data_ebt_capacity'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `SELECT`
+- Expected: `Column should exist in table 'data_ebt_capacity'` | Actual: `Column 'SELECT' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'SELECT' to table 'data_ebt_capacity'
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `id`
+- Expected: `Column 'id' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'id' to operations or remove from schema
+
+
+### Table: `data_ebt_prices`
+
+**Issues:** 14
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `TOP 5 *`
+- Expected: `Column should exist in table 'data_ebt_prices'` | Actual: `Column 'TOP 5 *' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'TOP 5 *' to table 'data_ebt_prices'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `COUNT(*)`
+- Expected: `Column should exist in table 'data_ebt_prices'` | Actual: `Column 'COUNT(*)' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'COUNT(*)' to table 'data_ebt_prices'
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `id`
+- Expected: `Column 'id' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 3 location(s)
+- Fix: Add column 'id' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `no`
+- Expected: `Column 'no' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 3 location(s)
+- Fix: Add column 'no' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `lokasi`
+- Expected: `Column 'lokasi' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 3 location(s)
+- Fix: Add column 'lokasi' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `provinsi`
+- Expected: `Column 'provinsi' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 3 location(s)
+- Fix: Add column 'provinsi' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `jenis_ebt`
+- Expected: `Column 'jenis_ebt' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 3 location(s)
+- Fix: Add column 'jenis_ebt' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `faktor_lokasi`
+- Expected: `Column 'faktor_lokasi' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 3 location(s)
+- Fix: Add column 'faktor_lokasi' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `kelompok_hpt`
+- Expected: `Column 'kelompok_hpt' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 3 location(s)
+- Fix: Add column 'kelompok_hpt' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `stage`
+- Expected: `Column 'stage' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 3 location(s)
+- Fix: Add column 'stage' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `cent_usd_kwh`
+- Expected: `Column 'cent_usd_kwh' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 3 location(s)
+- Fix: Add column 'cent_usd_kwh' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `lcoe_cent_usd_kwh`
+- Expected: `Column 'lcoe_cent_usd_kwh' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 3 location(s)
+- Fix: Add column 'lcoe_cent_usd_kwh' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `battery`
+- Expected: `Column 'battery' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 3 location(s)
+- Fix: Add column 'battery' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `created_at`
+- Expected: `Column 'created_at' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 3 location(s)
+- Fix: Add column 'created_at' to operations or remove from schema
+
+
+### Table: `data_eia_market`
+
+**Issues:** 3
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `1)`
+- Expected: `Column should exist in table 'data_eia_market'` | Actual: `Column '1)' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add '1)' to table 'data_eia_market'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `COUNT(*)`
+- Expected: `Column should exist in table 'data_eia_market'` | Actual: `Column 'COUNT(*)' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify column name or add 'COUNT(*)' to table 'data_eia_market'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `TOP 1 *`
+- Expected: `Column should exist in table 'data_eia_market'` | Actual: `Column 'TOP 1 *' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'TOP 1 *' to table 'data_eia_market'
+
+
+### Table: `data_fossil`
+
+**Issues:** 5
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `TOP 10 *`
+- Expected: `Column should exist in table 'data_fossil'` | Actual: `Column 'TOP 10 *' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'TOP 10 *' to table 'data_fossil'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `1)`
+- Expected: `Column should exist in table 'data_fossil'` | Actual: `Column '1)' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add '1)' to table 'data_fossil'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `TOP 1 *`
+- Expected: `Column should exist in table 'data_fossil'` | Actual: `Column 'TOP 1 *' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'TOP 1 *' to table 'data_fossil'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `COUNT(DISTINCT`
+- Expected: `Column should exist in table 'data_fossil'` | Actual: `Column 'COUNT(DISTINCT' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'COUNT(DISTINCT' to table 'data_fossil'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `COUNT(*)`
+- Expected: `Column should exist in table 'data_fossil'` | Actual: `Column 'COUNT(*)' not found in reference`
+- Found in 4 location(s)
+- Fix: Verify column name or add 'COUNT(*)' to table 'data_fossil'
+
+
+### Table: `data_fossil_prediction`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_fossil_prediction' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_fossil_prediction' or remove from schema
+
+
+### Table: `data_geopolitical_risk_index`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_geopolitical_risk_index' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_geopolitical_risk_index' or remove from schema
+
+
+### Table: `data_harga_ebt`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'data_harga_ebt' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify table name or add 'data_harga_ebt' to reference schema
+
+
+### Table: `data_iaea_electrical`
+
+**Issues:** 3
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `1)`
+- Expected: `Column should exist in table 'data_iaea_electrical'` | Actual: `Column '1)' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add '1)' to table 'data_iaea_electrical'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `SELECT`
+- Expected: `Column should exist in table 'data_iaea_electrical'` | Actual: `Column 'SELECT' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'SELECT' to table 'data_iaea_electrical'
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `id`
+- Expected: `Column 'id' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'id' to operations or remove from schema
+
+
+### Table: `data_iaea_nuclear_capacity`
+
+**Issues:** 3
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `1)`
+- Expected: `Column should exist in table 'data_iaea_nuclear_capacity'` | Actual: `Column '1)' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add '1)' to table 'data_iaea_nuclear_capacity'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `SELECT`
+- Expected: `Column should exist in table 'data_iaea_nuclear_capacity'` | Actual: `Column 'SELECT' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'SELECT' to table 'data_iaea_nuclear_capacity'
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `id`
+- Expected: `Column 'id' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'id' to operations or remove from schema
+
+
+### Table: `data_market_indicators`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_market_indicators' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_market_indicators' or remove from schema
+
+
+### Table: `data_new_table`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'data_new_table' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify table name or add 'data_new_table' to reference schema
+
+
+### Table: `data_oil_crackspreads`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_oil_crackspreads' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_oil_crackspreads' or remove from schema
+
+
+### Table: `data_oil_prices`
+
+**Issues:** 7
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `id`
+- Expected: `Column 'id' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'id' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `year`
+- Expected: `Column 'year' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'year' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `month`
+- Expected: `Column 'month' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'month' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `price`
+- Expected: `Column 'price' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'price' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `date_raw`
+- Expected: `Column 'date_raw' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'date_raw' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `brent_price`
+- Expected: `Column 'brent_price' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'brent_price' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `created_at`
+- Expected: `Column 'created_at' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'created_at' to operations or remove from schema
+
+
+### Table: `data_petrochemical_prices`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_petrochemical_prices' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_petrochemical_prices' or remove from schema
+
+
+### Table: `data_python_test`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'data_python_test' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify table name or add 'data_python_test' to reference schema
+
+
+### Table: `data_renewable_energy`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_renewable_energy' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_renewable_energy' or remove from schema
+
+
+### Table: `data_ruptl_projects`
+
+**Issues:** 13
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `id`
+- Expected: `Column 'id' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'id' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `number`
+- Expected: `Column 'number' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'number' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `province`
+- Expected: `Column 'province' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'province' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `electric_system`
+- Expected: `Column 'electric_system' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'electric_system' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `power_plant_type`
+- Expected: `Column 'power_plant_type' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'power_plant_type' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `project_name`
+- Expected: `Column 'project_name' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'project_name' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `capacity_mw`
+- Expected: `Column 'capacity_mw' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'capacity_mw' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `target_cod_re_base`
+- Expected: `Column 'target_cod_re_base' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'target_cod_re_base' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `target_cod_ared`
+- Expected: `Column 'target_cod_ared' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'target_cod_ared' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `status`
+- Expected: `Column 'status' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'status' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `developer`
+- Expected: `Column 'developer' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'developer' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `notes`
+- Expected: `Column 'notes' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'notes' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `created_at`
+- Expected: `Column 'created_at' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'created_at' to operations or remove from schema
+
+
+### Table: `data_saf_uco_prices`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_saf_uco_prices' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_saf_uco_prices' or remove from schema
+
+
+### Table: `data_table1`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'data_table1' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify table name or add 'data_table1' to reference schema
+
+
+### Table: `data_table2`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'data_table2' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify table name or add 'data_table2' to reference schema
+
+
+### Table: `data_test`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'data_test' not found in reference`
+- Found in 8 location(s)
+- Fix: Verify table name or add 'data_test' to reference schema
+
+
+### Table: `data_test_table`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'data_test_table' not found in reference`
+- Found in 5 location(s)
+- Fix: Verify table name or add 'data_test_table' to reference schema
+
+
+### Table: `data_volatility_index`
+
+**Issues:** 1
+
+**🔵 EXTRA_TABLE** (INFO)
+
+- Expected: `Table 'data_volatility_index' should be used in code` | Actual: `Table not referenced in any code`
+- Fix: Consider using table 'data_volatility_index' or remove from schema
+
+
+### Table: `data_wte_komposisi`
+
+**Issues:** 3
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `1)`
+- Expected: `Column should exist in table 'data_wte_komposisi'` | Actual: `Column '1)' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add '1)' to table 'data_wte_komposisi'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `SELECT`
+- Expected: `Column should exist in table 'data_wte_komposisi'` | Actual: `Column 'SELECT' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'SELECT' to table 'data_wte_komposisi'
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `id`
+- Expected: `Column 'id' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'id' to operations or remove from schema
+
+
+### Table: `data_wte_sumber`
+
+**Issues:** 3
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `1)`
+- Expected: `Column should exist in table 'data_wte_sumber'` | Actual: `Column '1)' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add '1)' to table 'data_wte_sumber'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `SELECT`
+- Expected: `Column should exist in table 'data_wte_sumber'` | Actual: `Column 'SELECT' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'SELECT' to table 'data_wte_sumber'
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `id`
+- Expected: `Column 'id' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'id' to operations or remove from schema
+
+
+### Table: `data_wte_timbulan`
+
+**Issues:** 3
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `1)`
+- Expected: `Column should exist in table 'data_wte_timbulan'` | Actual: `Column '1)' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add '1)' to table 'data_wte_timbulan'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `SELECT`
+- Expected: `Column should exist in table 'data_wte_timbulan'` | Actual: `Column 'SELECT' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'SELECT' to table 'data_wte_timbulan'
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `id`
+- Expected: `Column 'id' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 1 location(s)
+- Fix: Add column 'id' to operations or remove from schema
+
+
+### Table: `execution_logs`
+
+**Issues:** 1
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `created_at`
+- Expected: `Column 'created_at' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 2 location(s)
+- Fix: Add column 'created_at' to operations or remove from schema
+
+
+### Table: `for`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'for' not found in reference`
+- Found in 4 location(s)
+- Fix: Verify table name or add 'for' to reference schema
+
+
+### Table: `from`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'from' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify table name or add 'from' to reference schema
+
+
+### Table: `information_schema`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'information_schema' not found in reference`
+- Found in 32 location(s)
+- Fix: Verify table name or add 'information_schema' to reference schema
+
+
+### Table: `keywords`
+
+**Issues:** 3
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `1)`
+- Expected: `Column should exist in table 'keywords'` | Actual: `Column '1)' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add '1)' to table 'keywords'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `COUNT(*)`
+- Expected: `Column should exist in table 'keywords'` | Actual: `Column 'COUNT(*)' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify column name or add 'COUNT(*)' to table 'keywords'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `SELECT`
+- Expected: `Column should exist in table 'keywords'` | Actual: `Column 'SELECT' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'SELECT' to table 'keywords'
+
+
+### Table: `migration_test_marker`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'migration_test_marker' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify table name or add 'migration_test_marker' to reference schema
+
+
+### Table: `news_articles`
+
+**Issues:** 26
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `ROW_NUMBER()`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'ROW_NUMBER()' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify column name or add 'ROW_NUMBER()' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `a.category`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'a.category' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify column name or add 'a.category' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `a.url`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'a.url' not found in reference`
+- Found in 4 location(s)
+- Fix: Verify column name or add 'a.url' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `a.scraped_date`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'a.scraped_date' not found in reference`
+- Found in 4 location(s)
+- Fix: Verify column name or add 'a.scraped_date' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `MAX(scraped_date)`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'MAX(scraped_date)' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'MAX(scraped_date)' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `a.author`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'a.author' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify column name or add 'a.author' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `a.id`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'a.id' not found in reference`
+- Found in 5 location(s)
+- Fix: Verify column name or add 'a.id' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `SELECT`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'SELECT' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'SELECT' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `a.title`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'a.title' not found in reference`
+- Found in 4 location(s)
+- Fix: Verify column name or add 'a.title' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `a.language`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'a.language' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify column name or add 'a.language' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `')`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column '')' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add '')' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `COUNT(a.id)`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'COUNT(a.id)' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify column name or add 'COUNT(a.id)' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `MAX(published_date)`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'MAX(published_date)' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify column name or add 'MAX(published_date)' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `MIN(scraped_date)`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'MIN(scraped_date)' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'MIN(scraped_date)' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `MIN(published_date)`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'MIN(published_date)' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify column name or add 'MIN(published_date)' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `s.name`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 's.name' not found in reference`
+- Found in 7 location(s)
+- Fix: Verify column name or add 's.name' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `a.source_id`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'a.source_id' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'a.source_id' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `STRING_AGG(s.name`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'STRING_AGG(s.name' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'STRING_AGG(s.name' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `'`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column ''' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add ''' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `COUNT(*)`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'COUNT(*)' not found in reference`
+- Found in 9 location(s)
+- Fix: Verify column name or add 'COUNT(*)' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `TOP 1 scraped_date`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'TOP 1 scraped_date' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'TOP 1 scraped_date' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `a.content`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'a.content' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify column name or add 'a.content' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `s.source_name`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 's.source_name' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 's.source_name' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `COUNT(DISTINCT`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'COUNT(DISTINCT' not found in reference`
+- Found in 3 location(s)
+- Fix: Verify column name or add 'COUNT(DISTINCT' to table 'news_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `a.published_date`
+- Expected: `Column should exist in table 'news_articles'` | Actual: `Column 'a.published_date' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify column name or add 'a.published_date' to table 'news_articles'
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `reference_topic`
+- Expected: `Column 'reference_topic' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 38 location(s)
+- Fix: Add column 'reference_topic' to operations or remove from schema
+
+
+### Table: `news_sources`
+
+**Issues:** 4
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `1)`
+- Expected: `Column should exist in table 'news_sources'` | Actual: `Column '1)' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add '1)' to table 'news_sources'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `COUNT(*)`
+- Expected: `Column should exist in table 'news_sources'` | Actual: `Column 'COUNT(*)' not found in reference`
+- Found in 4 location(s)
+- Fix: Verify column name or add 'COUNT(*)' to table 'news_sources'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `SELECT`
+- Expected: `Column should exist in table 'news_sources'` | Actual: `Column 'SELECT' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'SELECT' to table 'news_sources'
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `updated_at`
+- Expected: `Column 'updated_at' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 16 location(s)
+- Fix: Add column 'updated_at' to operations or remove from schema
+
+
+### Table: `on`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'on' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify table name or add 'on' to reference schema
+
+
+### Table: `operation`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'operation' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify table name or add 'operation' to reference schema
+
+
+### Table: `operations`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'operations' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify table name or add 'operations' to reference schema
+
+
+### Table: `orders`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'orders' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify table name or add 'orders' to reference schema
+
+
+### Table: `select`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'select' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify table name or add 'select' to reference schema
+
+
+### Table: `sentiment_analyses`
+
+**Issues:** 6
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `TOP 1 analysis_date`
+- Expected: `Column should exist in table 'sentiment_analyses'` | Actual: `Column 'TOP 1 analysis_date' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'TOP 1 analysis_date' to table 'sentiment_analyses'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `COUNT(*)`
+- Expected: `Column should exist in table 'sentiment_analyses'` | Actual: `Column 'COUNT(*)' not found in reference`
+- Found in 3 location(s)
+- Fix: Verify column name or add 'COUNT(*)' to table 'sentiment_analyses'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `SELECT`
+- Expected: `Column should exist in table 'sentiment_analyses'` | Actual: `Column 'SELECT' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'SELECT' to table 'sentiment_analyses'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `TOP 1 id`
+- Expected: `Column should exist in table 'sentiment_analyses'` | Actual: `Column 'TOP 1 id' not found in reference`
+- Found in 2 location(s)
+- Fix: Verify column name or add 'TOP 1 id' to table 'sentiment_analyses'
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `updated_at`
+- Expected: `Column 'updated_at' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 11 location(s)
+- Fix: Add column 'updated_at' to operations or remove from schema
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `reference_topic`
+- Expected: `Column 'reference_topic' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 11 location(s)
+- Fix: Add column 'reference_topic' to operations or remove from schema
+
+
+### Table: `sentiment_analysis_articles`
+
+**Issues:** 6
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `saa.article_id`
+- Expected: `Column should exist in table 'sentiment_analysis_articles'` | Actual: `Column 'saa.article_id' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'saa.article_id' to table 'sentiment_analysis_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `a.url`
+- Expected: `Column should exist in table 'sentiment_analysis_articles'` | Actual: `Column 'a.url' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'a.url' to table 'sentiment_analysis_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `article_id)`
+- Expected: `Column should exist in table 'sentiment_analysis_articles'` | Actual: `Column 'article_id)' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'article_id)' to table 'sentiment_analysis_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `COUNT(*)`
+- Expected: `Column should exist in table 'sentiment_analysis_articles'` | Actual: `Column 'COUNT(*)' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'COUNT(*)' to table 'sentiment_analysis_articles'
+
+**🔴 MISSING_COLUMN** (CRITICAL)
+
+- Column: `SELECT`
+- Expected: `Column should exist in table 'sentiment_analysis_articles'` | Actual: `Column 'SELECT' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify column name or add 'SELECT' to table 'sentiment_analysis_articles'
+
+**🟡 EXTRA_COLUMN** (WARNING)
+
+- Column: `created_at`
+- Expected: `Column 'created_at' should be used in code` | Actual: `Column not referenced in any operation`
+- Found in 6 location(s)
+- Fix: Add column 'created_at' to operations or remove from schema
+
+
+### Table: `sql`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'sql' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify table name or add 'sql' to reference schema
+
+
+### Table: `statement`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'statement' not found in reference`
+- Found in 8 location(s)
+- Fix: Verify table name or add 'statement' to reference schema
+
+
+### Table: `statements`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'statements' not found in reference`
+- Found in 9 location(s)
+- Fix: Verify table name or add 'statements' to reference schema
+
+
+### Table: `sys`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'sys' not found in reference`
+- Found in 21 location(s)
+- Fix: Verify table name or add 'sys' to reference schema
+
+
+### Table: `table`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'table' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify table name or add 'table' to reference schema
+
+
+### Table: `test`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'test' not found in reference`
+- Found in 3 location(s)
+- Fix: Verify table name or add 'test' to reference schema
+
+
+### Table: `test_generated`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'test_generated' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify table name or add 'test_generated' to reference schema
+
+
+### Table: `test_table`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'test_table' not found in reference`
+- Found in 8 location(s)
+- Fix: Verify table name or add 'test_table' to reference schema
+
+
+### Table: `the`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'the' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify table name or add 'the' to reference schema
+
+
+### Table: `typing`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'typing' not found in reference`
+- Found in 1 location(s)
+- Fix: Verify table name or add 'typing' to reference schema
+
+
+### Table: `users`
+
+**Issues:** 1
+
+**🔴 MISSING_TABLE** (CRITICAL)
+
+- Expected: `Table should exist in reference schema` | Actual: `Table 'users' not found in reference`
+- Found in 13 location(s)
+- Fix: Verify table name or add 'users' to reference schema
+

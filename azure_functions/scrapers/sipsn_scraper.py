@@ -55,8 +55,9 @@ class SIPSNDataScraper(BaseNewsScraper):
     def _clean_column_names(self, data: List[Dict]) -> List[Dict]:
         """Clean and rename column names."""
         rename_dict = {
-            'nama_dati2': 'Nama Kota/Kabupaten',
-            'nama_propinsi': 'Nama Provinsi'
+            'nama_dati2': 'city_regency',
+            'nama_propinsi': 'province',
+            'tahun': 'year'
         }
         
         cleaned = []
@@ -146,13 +147,15 @@ class SIPSNDataScraper(BaseNewsScraper):
                 self.logger.warning("No data fetched from SIPSN API")
                 return []
             
-            results = [{
-                'type': 'data_wte_waste',
-                'year': tahun,
-                'data': all_data,
-                'fetch_date': datetime.now().isoformat(),
-                'data_types': list(all_data.keys())
-            }]
+            results = []
+            for jenis, data in all_data.items():
+                # Map jenis to table name
+                table_name = self.DATA_TYPES.get(jenis, f'data_wte_{jenis}')
+                results.append({
+                    'type': table_name,
+                    'data': data,
+                    'period': str(tahun)
+                })
             
             total_records = sum(len(v) for v in all_data.values())
             self.logger.info(f"Successfully fetched {total_records} total SIPSN records")

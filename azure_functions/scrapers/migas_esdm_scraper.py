@@ -306,14 +306,14 @@ class MigasESDMScraper(BaseNewsScraper):
                     
                     find_month, find_price, find_date, find_brent = self._extract_icp_from_pdf_bytes(pdf_bytes)
                     
-                    if find_month and find_price:
-                        all_data.append({
-                            'Tahun': tahun,
-                            'Bulan': find_month,
-                            'Harga': str(find_price),
-                            'Harga_Brent': str(find_brent) if find_brent else None,
-                            'Tanggal': find_date
-                        })
+                        if find_month and find_price:
+                            all_data.append({
+                                'year': tahun,
+                                'month': find_month,
+                                'price': str(find_price),
+                                'brent_price': str(find_brent) if find_brent else None,
+                                'date_raw': find_date
+                            })
                         self.logger.info(f"Extracted ICP: US${find_price} for {find_month}")
                     
                     await asyncio.sleep(1.0)

@@ -239,12 +239,12 @@ class BioetanolESDMScraper(BaseNewsScraper):
                 
                 if hip_value:
                     entry = {
-                        'Date': article.get('date'),
-                        'Bulan HIP': hip_month,
-                        'HIP Bioetanol IDR/L': int(hip_value * 1000)
+                        'date': article.get('date'),
+                        'bulan_hip': hip_month,
+                        'hip_bioetanol_idr_l': int(hip_value * 1000)
                     }
                     if harga_tetes:
-                        entry['Harga Tetes Tebu'] = int(harga_tetes * 1000)
+                        entry['harga_tetes_tebu'] = int(harga_tetes * 1000)
                     all_data.append(entry)
                     self.logger.info(f"Extracted HIP: {hip_value} for {hip_month}")
                 

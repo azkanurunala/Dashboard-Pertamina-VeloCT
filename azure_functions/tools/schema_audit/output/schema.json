@@ -1,0 +1,3087 @@
+{
+  "version": "1.0",
+  "extracted_at": "2026-02-16T02:51:22.986159",
+  "source_file": "C:\\RunningProjects\\Dashboard-Pertamina-VeloCT\\pei-dashboard.bacpac",
+  "tables": {
+    "article_keywords": {
+      "name": "article_keywords",
+      "columns": [
+        {
+          "name": "article_id",
+          "data_type": "uniqueidentifier",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "keyword_id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "relevance_score",
+          "data_type": "float",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "created_at",
+          "data_type": "datetime2",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "configuration": {
+      "name": "configuration",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "config_key",
+          "data_type": "nvarchar",
+          "nullable": false,
+          "default_value": null,
+          "max_length": 100,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "config_value",
+          "data_type": "ntext",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "config_type",
+          "data_type": "varchar",
+          "nullable": false,
+          "default_value": null,
+          "max_length": 20,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "description",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 500,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "is_sensitive",
+          "data_type": "bit",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "created_at",
+          "data_type": "datetime2",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        },
+        {
+          "name": "updated_at",
+          "data_type": "datetime2",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_biodiesel_hip": {
+      "name": "data_biodiesel_hip",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "published_date",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        },
+        {
+          "name": "hip_month",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 50,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "price_idr_liter",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "scraped_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_bioetanol_hip": {
+      "name": "data_bioetanol_hip",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "date",
+          "data_type": "date",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "bulan_hip",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 50,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "hip_bioetanol_idr_l",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "harga_tetes_tebu",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "created_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_cpo_prices": {
+      "name": "data_cpo_prices",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "upload_date",
+          "data_type": "date",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "price_date",
+          "data_type": "date",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "px_last",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "scraped_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_ebt_capacity": {
+      "name": "data_ebt_capacity",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "tahun",
+          "data_type": "int",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "bulan",
+          "data_type": "int",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "plta",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "pltm",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "pltmh",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "pltp",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "plts",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "plts_atap",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "pltb",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "pltbm",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "pltbg",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "pltsa",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "pltbn",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "plt_hybrid",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "total",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "created_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_ebt_prices": {
+      "name": "data_ebt_prices",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "no",
+          "data_type": "int",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "lokasi",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 255,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "provinsi",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 255,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "jenis_ebt",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 255,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "faktor_lokasi",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "kelompok_hpt",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 255,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "stage",
+          "data_type": "int",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "cent_usd_kwh",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "lcoe_cent_usd_kwh",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "battery",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "created_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_eia_market": {
+      "name": "data_eia_market",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "bulan",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 50,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "tahun",
+          "data_type": "int",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "world_total_production",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "opec",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "non_opec",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "crude_oil",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "other_liquids",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "world_total_consumption",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "oecd",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "non_oecd",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "next_release_date",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        },
+        {
+          "name": "scraped_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_fossil": {
+      "name": "data_fossil",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "time",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        },
+        {
+          "name": "brent",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "gasoline",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "diesel",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "avtur",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "created_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_fossil_prediction": {
+      "name": "data_fossil_prediction",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "prediction_year",
+          "data_type": "int",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "brent",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "gasoline",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "diesel",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "avtur",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "fo05_price",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "go2500_price",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "go50_price",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "jetkero_price",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "ron92_price",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "ron95_price",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "ron97_price",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "fo05_cs",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "go2500_cs",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "go50_cs",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "jetkero_cs",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "ron92_cs",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "ron95_cs",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "ron97_cs",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "scraped_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_geopolitical_risk_index": {
+      "name": "data_geopolitical_risk_index",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "index_date",
+          "data_type": "date",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "region",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 50,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "gpr_value",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "scraped_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_iaea_electrical": {
+      "name": "data_iaea_electrical",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "year",
+          "data_type": "int",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "net_electrical_capacity_gwe",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "num_operated_reactors_with_data",
+          "data_type": "int",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "electricity_supplied_twh",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "created_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_iaea_nuclear_capacity": {
+      "name": "data_iaea_nuclear_capacity",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "year",
+          "data_type": "int",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "total_net_electrical_capacity_gw",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "num_operated_reactors",
+          "data_type": "int",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "year_end_total_net_electrical_capacity_gw",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "year_end_operational_reactors",
+          "data_type": "int",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "created_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_market_indicators": {
+      "name": "data_market_indicators",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "indicator_date",
+          "data_type": "date",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "category",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 50,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "indicator_name",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 100,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "value",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "scraped_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_oil_crackspreads": {
+      "name": "data_oil_crackspreads",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "assess_date",
+          "data_type": "date",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "val_ron92",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "val_ron95",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "val_ron97",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "val_fo05",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "val_jetkero",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "val_go50",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "val_go2500",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "val_brent",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "val_ron92_mt",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "val_ron95_mt",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "cs_ron92",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "cs_ron95",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "cs_ron97",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "scraped_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_oil_prices": {
+      "name": "data_oil_prices",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "year",
+          "data_type": "int",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "month",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 50,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "price",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "date_raw",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 100,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "brent_price",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "created_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_petrochemical_prices": {
+      "name": "data_petrochemical_prices",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "year",
+          "data_type": "int",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "month",
+          "data_type": "int",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "price_paraxylene",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "price_propylene",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "price_benzene",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "price_butane",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "price_propane",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "price_lpg",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "price_brent",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "cs_paraxylene",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "cs_propylene",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "cs_benzene",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "cs_lpg",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "scraped_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_renewable_energy": {
+      "name": "data_renewable_energy",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "indicator_date",
+          "data_type": "date",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "energy_type",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 50,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "metric_name",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 50,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "region",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 100,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "value",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "uom",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 20,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "scraped_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_ruptl_projects": {
+      "name": "data_ruptl_projects",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "number",
+          "data_type": "int",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "province",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 100,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "electric_system",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 255,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "power_plant_type",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 255,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "project_name",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 255,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "capacity_mw",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "target_cod_re_base",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 50,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "target_cod_ared",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 50,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "status",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 100,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "developer",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 255,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "notes",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "created_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_saf_uco_prices": {
+      "name": "data_saf_uco_prices",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "assess_date",
+          "data_type": "date",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "value_uco",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "value_saf",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "mod_date_uco",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        },
+        {
+          "name": "mod_date_saf",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        },
+        {
+          "name": "scraped_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_volatility_index": {
+      "name": "data_volatility_index",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "indicator_date",
+          "data_type": "date",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "index_name",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 50,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "index_value",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "scraped_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_wte_komposisi": {
+      "name": "data_wte_komposisi",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "year",
+          "data_type": "int",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "province",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 255,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "city_regency",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 255,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "sisa_makanan",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "kayu_ranting",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "kertas_karton",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "plastik",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "logam",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "kain",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "karet_kulit",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "kaca",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "lain_lain",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "created_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_wte_sumber": {
+      "name": "data_wte_sumber",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "year",
+          "data_type": "int",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "province",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 255,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "city_regency",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 255,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "ss_rumah_tangga",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "ss_perkantoran",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "ss_pasar",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "ss_perniagaan",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "ss_fasilitas_publik",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "ss_kawasan",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "ss_lain_lain",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "created_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "data_wte_timbulan": {
+      "name": "data_wte_timbulan",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "year",
+          "data_type": "int",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "province",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 255,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "city_regency",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 255,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "timbulan_harian",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "timbulan_tahunan",
+          "data_type": "float",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "created_at",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "execution_logs": {
+      "name": "execution_logs",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "uniqueidentifier",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "function_name",
+          "data_type": "nvarchar",
+          "nullable": false,
+          "default_value": null,
+          "max_length": 100,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "execution_id",
+          "data_type": "nvarchar",
+          "nullable": false,
+          "default_value": null,
+          "max_length": 100,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "start_time",
+          "data_type": "datetime2",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        },
+        {
+          "name": "end_time",
+          "data_type": "datetime2",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        },
+        {
+          "name": "status",
+          "data_type": "varchar",
+          "nullable": false,
+          "default_value": null,
+          "max_length": 20,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "error_message",
+          "data_type": "ntext",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "input_parameters",
+          "data_type": "ntext",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "output_summary",
+          "data_type": "ntext",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "duration_ms",
+          "data_type": "int",
+          "nullable": true,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "created_at",
+          "data_type": "datetime2",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "keywords": {
+      "name": "keywords",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "keyword",
+          "data_type": "nvarchar",
+          "nullable": false,
+          "default_value": null,
+          "max_length": 100,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "category",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 50,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "is_active",
+          "data_type": "bit",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "created_at",
+          "data_type": "datetime2",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "news_articles": {
+      "name": "news_articles",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "uniqueidentifier",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "title",
+          "data_type": "nvarchar",
+          "nullable": false,
+          "default_value": null,
+          "max_length": 500,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "content",
+          "data_type": "ntext",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "url",
+          "data_type": "nvarchar",
+          "nullable": false,
+          "default_value": null,
+          "max_length": 1000,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "source_id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "published_date",
+          "data_type": "datetime2",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        },
+        {
+          "name": "scraped_date",
+          "data_type": "datetime2",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        },
+        {
+          "name": "language",
+          "data_type": "varchar",
+          "nullable": false,
+          "default_value": null,
+          "max_length": 10,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "author",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 200,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "category",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 100,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "created_at",
+          "data_type": "datetime2",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        },
+        {
+          "name": "updated_at",
+          "data_type": "datetime2",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        },
+        {
+          "name": "reference_topic",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 100,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "news_sources": {
+      "name": "news_sources",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": true
+        },
+        {
+          "name": "name",
+          "data_type": "nvarchar",
+          "nullable": false,
+          "default_value": null,
+          "max_length": 100,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "base_url",
+          "data_type": "nvarchar",
+          "nullable": false,
+          "default_value": null,
+          "max_length": 500,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "country",
+          "data_type": "varchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 10,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "language",
+          "data_type": "varchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 10,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "category",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 50,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "is_active",
+          "data_type": "bit",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "created_at",
+          "data_type": "datetime2",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        },
+        {
+          "name": "updated_at",
+          "data_type": "datetime2",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "sentiment_analyses": {
+      "name": "sentiment_analyses",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "uniqueidentifier",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "analysis_date",
+          "data_type": "datetime2",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        },
+        {
+          "name": "date_range_start",
+          "data_type": "datetime2",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        },
+        {
+          "name": "date_range_end",
+          "data_type": "datetime2",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        },
+        {
+          "name": "sentiment_score",
+          "data_type": "float",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "sentiment_label",
+          "data_type": "varchar",
+          "nullable": false,
+          "default_value": null,
+          "max_length": 20,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "confidence",
+          "data_type": "float",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": 53,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "summary",
+          "data_type": "ntext",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "model_version",
+          "data_type": "varchar",
+          "nullable": false,
+          "default_value": null,
+          "max_length": 50,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "role_context",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 200,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "article_count",
+          "data_type": "int",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "created_at",
+          "data_type": "datetime2",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        },
+        {
+          "name": "updated_at",
+          "data_type": "datetime2",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        },
+        {
+          "name": "reference_topic",
+          "data_type": "nvarchar",
+          "nullable": true,
+          "default_value": null,
+          "max_length": 100,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    },
+    "sentiment_analysis_articles": {
+      "name": "sentiment_analysis_articles",
+      "columns": [
+        {
+          "name": "sentiment_analysis_id",
+          "data_type": "uniqueidentifier",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "article_id",
+          "data_type": "uniqueidentifier",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": null,
+          "is_identity": false
+        },
+        {
+          "name": "created_at",
+          "data_type": "datetime2",
+          "nullable": false,
+          "default_value": null,
+          "max_length": null,
+          "precision": null,
+          "scale": 7,
+          "is_identity": false
+        }
+      ],
+      "primary_key": null,
+      "foreign_keys": [],
+      "indexes": [],
+      "constraints": []
+    }
+  }
+}

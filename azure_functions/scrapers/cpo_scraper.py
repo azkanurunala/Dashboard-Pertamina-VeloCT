@@ -317,9 +317,9 @@ class CPOPriceScraper(BaseNewsScraper):
                 for harga_data in harga_list:
                     dates = harga_data["parsed_date"] or article["upload_date"]
                     all_data.append({
-                        "Upload_Dates": article["upload_date"],
-                        "Dates": dates,
-                        "PX_LAST": harga_data["harga"]
+                        "upload_date": article["upload_date"],
+                        "price_date": dates,
+                        "px_last": harga_data["harga"]
                     })
                 
                 await asyncio.sleep(1.0)

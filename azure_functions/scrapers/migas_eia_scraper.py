@@ -197,6 +197,74 @@ class MigasEIAScraper(BaseNewsScraper):
         
         return rows
 
+    def pivot_data(self, rows: List[Dict]) -> List[Dict]:
+        """Pivot the long-format data into wide-format for the database."""
+        import pandas as pd
+        
+        if not rows:
+            return []
+            
+        df = pd.DataFrame(rows)
+        
+        # Pivot
+        # index: report_date
+        # columns: series_id
+        # values: value
+        
+        df_pivoted = df.pivot_table(
+            index='report_date', 
+            columns='series_id', 
+            values='value', 
+            aggfunc='first'
+        ).reset_index()
+        
+        # Parse date to bulan/tahun
+        df_pivoted['date_obj'] = pd.to_datetime(df_pivoted['report_date'])
+        df_pivoted['tahun'] = df_pivoted['date_obj'].dt.year
+        df_pivoted['bulan'] = df_pivoted['date_obj'].dt.month.map(self.NUMBER_TO_MONTH)
+        
+        # Map column names to DB schema
+        # Schema: world_total_production, opec, non_opec, crude_oil, other_liquids, world_total_consumption, oecd, non_oecd
+        
+        column_mapping = {
+            'World Total Production': 'world_total_production',
+            'OPEC Production': 'opec',
+            'Non-OPEC Production': 'non_opec',
+            'Crude Oil': 'crude_oil',
+            'World Total Consumption': 'world_total_consumption',
+            'OECD Consumption': 'oecd',
+            # Add missing ones if they exist in source or calculate them
+        }
+        
+        # Calculate 'non_oecd' and 'other_liquids' if possible or missing
+        # 'other_liquids' = World Total Production - Crude Oil? Or provided by API?
+        # 'Non-OECD' = World Consumption - OECD
+        
+        if 'World Total Production' in df_pivoted.columns and 'Crude Oil' in df_pivoted.columns:
+            df_pivoted['other_liquids'] = df_pivoted['World Total Production'] - df_pivoted['Crude Oil']
+            
+        if 'World Total Consumption' in df_pivoted.columns and 'OECD Consumption' in df_pivoted.columns:
+            df_pivoted['non_oecd'] = df_pivoted['World Total Consumption'] - df_pivoted['OECD Consumption']
+            
+        # Apply renaming
+        df_pivoted = df_pivoted.rename(columns=column_mapping)
+        
+        # Keep only valid columns
+        valid_cols = [
+            'bulan', 'tahun', 'world_total_production', 'opec', 'non_opec', 
+            'crude_oil', 'other_liquids', 'world_total_consumption', 
+            'oecd', 'non_oecd', 'next_release_date'
+        ]
+        
+        # Fill missing with None
+        for col in valid_cols:
+            if col not in df_pivoted.columns:
+                df_pivoted[col] = None
+        
+        # Return dicts
+        # drop helper cols
+        return df_pivoted[valid_cols].to_dict('records')
+
     async def _scrape_articles_from_source(
         self, 
         keywords: List[str], 
@@ -244,7 +312,10 @@ class MigasEIAScraper(BaseNewsScraper):
                 return []
             
             # Transform data
-            transformed = self.transform_data(all_data, next_release_str)
+            transformed = self.pivot_data(transformed)
+            
+            # Map column names if needed to match database exactly
+            # Database columns: bulan, tahun, world_total_production, opec, non_opec, crude_oil, ...
             
             results = [{
                 'type': 'data_eia_market',

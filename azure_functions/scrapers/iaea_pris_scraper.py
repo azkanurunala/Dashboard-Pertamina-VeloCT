@@ -138,12 +138,41 @@ class IAEAPRISScraper(BaseNewsScraper):
             
             # Convert to structured results
             results = [{
-                'type': 'data_nuclear',
+                'type': 'data_iaea_nuclear_capacity',
                 'data': data,
                 'fetch_date': datetime.now().isoformat(),
                 'source': 'IAEA PRIS',
                 'countries_count': len(data)
             }]
+            
+            # Map columns to schema (migrate_iaea_tables.py)
+            # Schema: country, total_net_electrical_capacity_gw, num_operated_reactors, 
+            # year_end_total_net_electrical_capacity_gw, year_end_operational_reactors
+            
+            mapped_data = []
+            for row in data:
+                new_row = {}
+                new_row['country'] = row.get('Country')
+                
+                # Dynamic mapping based on PRIS table headers
+                for k, v in row.items():
+                    if 'Operational' in k and 'No.' in k:
+                        # Map to both snapshot and year-end for now as they are often same in snapshot
+                        new_row['num_operated_reactors'] = int(v.replace(',', '')) if v and v.replace(',', '').isdigit() else 0
+                        new_row['year_end_operational_reactors'] = new_row['num_operated_reactors']
+                    elif 'Operational' in k and 'Capacity' in k:
+                         # Convert MW to GW
+                         try:
+                             val = float(v.replace(',', ''))
+                             new_row['total_net_electrical_capacity_gw'] = val / 1000.0
+                             new_row['year_end_total_net_electrical_capacity_gw'] = new_row['total_net_electrical_capacity_gw']
+                         except (ValueError, TypeError):
+                             new_row['total_net_electrical_capacity_gw'] = 0.0
+                             new_row['year_end_total_net_electrical_capacity_gw'] = 0.0
+                              
+                mapped_data.append(new_row)
+                
+            results[0]['data'] = mapped_data
             
             self.logger.info(f"Successfully fetched IAEA PRIS data for {len(data)} countries")
             return results
