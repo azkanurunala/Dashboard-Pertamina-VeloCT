@@ -1,0 +1,685 @@
+[
+  {
+    "config": {
+      "bindings": [
+        {
+          "authLevel": "function",
+          "direction": "in",
+          "methods": [
+            "get",
+            "post"
+          ],
+          "name": "req",
+          "type": "httpTrigger"
+        },
+        {
+          "direction": "out",
+          "name": "$return",
+          "type": "http"
+        }
+      ],
+      "scriptFile": "__init__.py"
+    },
+    "configHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/bisnis_indonesia_scraper_function/function.json",
+    "files": null,
+    "functionAppId": null,
+    "href": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/functions/bisnis_indonesia_scraper_function",
+    "id": "/subscriptions/5e4ecee4-ce42-47f4-b953-7f29ad625c53/resourceGroups/PeiDashboard/providers/Microsoft.Web/sites/pei-dashboard/functions/bisnis_indonesia_scraper_function",
+    "invokeUrlTemplate": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/api/bisnis_indonesia_scraper_function",
+    "isDisabled": false,
+    "kind": null,
+    "language": "python",
+    "location": "Canada Central",
+    "name": "pei-dashboard/bisnis_indonesia_scraper_function",
+    "resourceGroup": "PeiDashboard",
+    "scriptHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/bisnis_indonesia_scraper_function/__init__.py",
+    "scriptRootPathHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/bisnis_indonesia_scraper_function/",
+    "secretsFileHref": null,
+    "testData": "",
+    "testDataHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/tmp/FunctionsData/bisnis_indonesia_scraper_function.dat",
+    "type": "Microsoft.Web/sites/functions"
+  },
+  {
+    "config": {
+      "bindings": [
+        {
+          "authLevel": "function",
+          "direction": "in",
+          "methods": [
+            "get",
+            "post"
+          ],
+          "name": "req",
+          "type": "httpTrigger"
+        },
+        {
+          "direction": "out",
+          "name": "$return",
+          "type": "http"
+        }
+      ],
+      "scriptFile": "__init__.py"
+    },
+    "configHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/bps_scraper_function/function.json",
+    "files": null,
+    "functionAppId": null,
+    "href": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/functions/bps_scraper_function",
+    "id": "/subscriptions/5e4ecee4-ce42-47f4-b953-7f29ad625c53/resourceGroups/PeiDashboard/providers/Microsoft.Web/sites/pei-dashboard/functions/bps_scraper_function",
+    "invokeUrlTemplate": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/api/bps_scraper_function",
+    "isDisabled": false,
+    "kind": null,
+    "language": "python",
+    "location": "Canada Central",
+    "name": "pei-dashboard/bps_scraper_function",
+    "resourceGroup": "PeiDashboard",
+    "scriptHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/bps_scraper_function/__init__.py",
+    "scriptRootPathHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/bps_scraper_function/",
+    "secretsFileHref": null,
+    "testData": "",
+    "testDataHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/tmp/FunctionsData/bps_scraper_function.dat",
+    "type": "Microsoft.Web/sites/functions"
+  },
+  {
+    "config": {
+      "bindings": [
+        {
+          "authLevel": "function",
+          "direction": "in",
+          "methods": [
+            "get",
+            "post"
+          ],
+          "name": "req",
+          "type": "httpTrigger"
+        },
+        {
+          "direction": "out",
+          "name": "$return",
+          "type": "http"
+        }
+      ],
+      "scriptFile": "__init__.py"
+    },
+    "configHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/cnbc_indonesia_scraper_function/function.json",
+    "files": null,
+    "functionAppId": null,
+    "href": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/functions/cnbc_indonesia_scraper_function",
+    "id": "/subscriptions/5e4ecee4-ce42-47f4-b953-7f29ad625c53/resourceGroups/PeiDashboard/providers/Microsoft.Web/sites/pei-dashboard/functions/cnbc_indonesia_scraper_function",
+    "invokeUrlTemplate": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/api/cnbc_indonesia_scraper_function",
+    "isDisabled": false,
+    "kind": null,
+    "language": "python",
+    "location": "Canada Central",
+    "name": "pei-dashboard/cnbc_indonesia_scraper_function",
+    "resourceGroup": "PeiDashboard",
+    "scriptHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/cnbc_indonesia_scraper_function/__init__.py",
+    "scriptRootPathHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/cnbc_indonesia_scraper_function/",
+    "secretsFileHref": null,
+    "testData": "",
+    "testDataHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/tmp/FunctionsData/cnbc_indonesia_scraper_function.dat",
+    "type": "Microsoft.Web/sites/functions"
+  },
+  {
+    "config": {
+      "bindings": [
+        {
+          "authLevel": "function",
+          "direction": "in",
+          "methods": [
+            "get",
+            "post"
+          ],
+          "name": "req",
+          "type": "httpTrigger"
+        },
+        {
+          "direction": "out",
+          "name": "$return",
+          "type": "http"
+        }
+      ],
+      "scriptFile": "__init__.py"
+    },
+    "configHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/cnbc_scraper_function/function.json",
+    "files": null,
+    "functionAppId": null,
+    "href": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/functions/cnbc_scraper_function",
+    "id": "/subscriptions/5e4ecee4-ce42-47f4-b953-7f29ad625c53/resourceGroups/PeiDashboard/providers/Microsoft.Web/sites/pei-dashboard/functions/cnbc_scraper_function",
+    "invokeUrlTemplate": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/api/cnbc_scraper_function",
+    "isDisabled": false,
+    "kind": null,
+    "language": "python",
+    "location": "Canada Central",
+    "name": "pei-dashboard/cnbc_scraper_function",
+    "resourceGroup": "PeiDashboard",
+    "scriptHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/cnbc_scraper_function/__init__.py",
+    "scriptRootPathHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/cnbc_scraper_function/",
+    "secretsFileHref": null,
+    "testData": "",
+    "testDataHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/tmp/FunctionsData/cnbc_scraper_function.dat",
+    "type": "Microsoft.Web/sites/functions"
+  },
+  {
+    "config": {
+      "bindings": [
+        {
+          "authLevel": "function",
+          "direction": "in",
+          "methods": [
+            "get",
+            "post"
+          ],
+          "name": "req",
+          "type": "httpTrigger"
+        },
+        {
+          "direction": "out",
+          "name": "$return",
+          "type": "http"
+        }
+      ],
+      "scriptFile": "__init__.py"
+    },
+    "configHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/cnn_scraper_function/function.json",
+    "files": null,
+    "functionAppId": null,
+    "href": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/functions/cnn_scraper_function",
+    "id": "/subscriptions/5e4ecee4-ce42-47f4-b953-7f29ad625c53/resourceGroups/PeiDashboard/providers/Microsoft.Web/sites/pei-dashboard/functions/cnn_scraper_function",
+    "invokeUrlTemplate": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/api/cnn_scraper_function",
+    "isDisabled": false,
+    "kind": null,
+    "language": "python",
+    "location": "Canada Central",
+    "name": "pei-dashboard/cnn_scraper_function",
+    "resourceGroup": "PeiDashboard",
+    "scriptHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/cnn_scraper_function/__init__.py",
+    "scriptRootPathHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/cnn_scraper_function/",
+    "secretsFileHref": null,
+    "testData": "",
+    "testDataHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/tmp/FunctionsData/cnn_scraper_function.dat",
+    "type": "Microsoft.Web/sites/functions"
+  },
+  {
+    "config": {
+      "bindings": [
+        {
+          "authLevel": "function",
+          "direction": "in",
+          "methods": [
+            "get",
+            "post"
+          ],
+          "name": "req",
+          "route": "maintenance",
+          "type": "httpTrigger"
+        },
+        {
+          "direction": "out",
+          "name": "$return",
+          "type": "http"
+        }
+      ],
+      "scriptFile": "__init__.py"
+    },
+    "configHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/database_maintenance_function/function.json",
+    "files": null,
+    "functionAppId": null,
+    "href": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/functions/database_maintenance_function",
+    "id": "/subscriptions/5e4ecee4-ce42-47f4-b953-7f29ad625c53/resourceGroups/PeiDashboard/providers/Microsoft.Web/sites/pei-dashboard/functions/database_maintenance_function",
+    "invokeUrlTemplate": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/api/maintenance",
+    "isDisabled": false,
+    "kind": null,
+    "language": "python",
+    "location": "Canada Central",
+    "name": "pei-dashboard/database_maintenance_function",
+    "resourceGroup": "PeiDashboard",
+    "scriptHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/database_maintenance_function/__init__.py",
+    "scriptRootPathHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/database_maintenance_function/",
+    "secretsFileHref": null,
+    "testData": "",
+    "testDataHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/tmp/FunctionsData/database_maintenance_function.dat",
+    "type": "Microsoft.Web/sites/functions"
+  },
+  {
+    "config": {
+      "bindings": [
+        {
+          "authLevel": "function",
+          "direction": "in",
+          "methods": [
+            "get",
+            "post"
+          ],
+          "name": "req",
+          "route": "deduplicate",
+          "type": "httpTrigger"
+        },
+        {
+          "direction": "out",
+          "name": "$return",
+          "type": "http"
+        }
+      ],
+      "scriptFile": "__init__.py"
+    },
+    "configHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/deduplication_function/function.json",
+    "files": null,
+    "functionAppId": null,
+    "href": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/functions/deduplication_function",
+    "id": "/subscriptions/5e4ecee4-ce42-47f4-b953-7f29ad625c53/resourceGroups/PeiDashboard/providers/Microsoft.Web/sites/pei-dashboard/functions/deduplication_function",
+    "invokeUrlTemplate": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/api/deduplicate",
+    "isDisabled": false,
+    "kind": null,
+    "language": "python",
+    "location": "Canada Central",
+    "name": "pei-dashboard/deduplication_function",
+    "resourceGroup": "PeiDashboard",
+    "scriptHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/deduplication_function/__init__.py",
+    "scriptRootPathHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/deduplication_function/",
+    "secretsFileHref": null,
+    "testData": "",
+    "testDataHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/tmp/FunctionsData/deduplication_function.dat",
+    "type": "Microsoft.Web/sites/functions"
+  },
+  {
+    "config": {
+      "bindings": [
+        {
+          "authLevel": "anonymous",
+          "direction": "in",
+          "methods": [
+            "get",
+            "post"
+          ],
+          "name": "req",
+          "route": "health",
+          "type": "httpTrigger"
+        },
+        {
+          "direction": "out",
+          "name": "$return",
+          "type": "http"
+        }
+      ],
+      "scriptFile": "__init__.py"
+    },
+    "configHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/health_check_function/function.json",
+    "files": null,
+    "functionAppId": null,
+    "href": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/functions/health_check_function",
+    "id": "/subscriptions/5e4ecee4-ce42-47f4-b953-7f29ad625c53/resourceGroups/PeiDashboard/providers/Microsoft.Web/sites/pei-dashboard/functions/health_check_function",
+    "invokeUrlTemplate": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/api/health",
+    "isDisabled": false,
+    "kind": null,
+    "language": "python",
+    "location": "Canada Central",
+    "name": "pei-dashboard/health_check_function",
+    "resourceGroup": "PeiDashboard",
+    "scriptHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/health_check_function/__init__.py",
+    "scriptRootPathHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/health_check_function/",
+    "secretsFileHref": null,
+    "testData": "",
+    "testDataHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/tmp/FunctionsData/health_check_function.dat",
+    "type": "Microsoft.Web/sites/functions"
+  },
+  {
+    "config": {
+      "bindings": [
+        {
+          "authLevel": "function",
+          "direction": "in",
+          "methods": [
+            "get",
+            "post"
+          ],
+          "name": "req",
+          "type": "httpTrigger"
+        },
+        {
+          "direction": "out",
+          "name": "$return",
+          "type": "http"
+        }
+      ],
+      "scriptFile": "__init__.py"
+    },
+    "configHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/kompas_scraper_function/function.json",
+    "files": null,
+    "functionAppId": null,
+    "href": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/functions/kompas_scraper_function",
+    "id": "/subscriptions/5e4ecee4-ce42-47f4-b953-7f29ad625c53/resourceGroups/PeiDashboard/providers/Microsoft.Web/sites/pei-dashboard/functions/kompas_scraper_function",
+    "invokeUrlTemplate": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/api/kompas_scraper_function",
+    "isDisabled": false,
+    "kind": null,
+    "language": "python",
+    "location": "Canada Central",
+    "name": "pei-dashboard/kompas_scraper_function",
+    "resourceGroup": "PeiDashboard",
+    "scriptHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/kompas_scraper_function/__init__.py",
+    "scriptRootPathHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/kompas_scraper_function/",
+    "secretsFileHref": null,
+    "testData": "",
+    "testDataHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/tmp/FunctionsData/kompas_scraper_function.dat",
+    "type": "Microsoft.Web/sites/functions"
+  },
+  {
+    "config": {
+      "bindings": [
+        {
+          "authLevel": "function",
+          "direction": "in",
+          "methods": [
+            "get",
+            "post"
+          ],
+          "name": "req",
+          "type": "httpTrigger"
+        },
+        {
+          "direction": "out",
+          "name": "$return",
+          "type": "http"
+        }
+      ],
+      "scriptFile": "__init__.py"
+    },
+    "configHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/kontan_scraper_function/function.json",
+    "files": null,
+    "functionAppId": null,
+    "href": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/functions/kontan_scraper_function",
+    "id": "/subscriptions/5e4ecee4-ce42-47f4-b953-7f29ad625c53/resourceGroups/PeiDashboard/providers/Microsoft.Web/sites/pei-dashboard/functions/kontan_scraper_function",
+    "invokeUrlTemplate": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/api/kontan_scraper_function",
+    "isDisabled": false,
+    "kind": null,
+    "language": "python",
+    "location": "Canada Central",
+    "name": "pei-dashboard/kontan_scraper_function",
+    "resourceGroup": "PeiDashboard",
+    "scriptHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/kontan_scraper_function/__init__.py",
+    "scriptRootPathHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/kontan_scraper_function/",
+    "secretsFileHref": null,
+    "testData": "",
+    "testDataHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/tmp/FunctionsData/kontan_scraper_function.dat",
+    "type": "Microsoft.Web/sites/functions"
+  },
+  {
+    "config": {
+      "bindings": [
+        {
+          "authLevel": "function",
+          "direction": "in",
+          "methods": [
+            "get",
+            "post"
+          ],
+          "name": "req",
+          "type": "httpTrigger"
+        },
+        {
+          "direction": "out",
+          "name": "$return",
+          "type": "http"
+        }
+      ],
+      "scriptFile": "__init__.py"
+    },
+    "configHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/oilprice_scraper_function/function.json",
+    "files": null,
+    "functionAppId": null,
+    "href": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/functions/oilprice_scraper_function",
+    "id": "/subscriptions/5e4ecee4-ce42-47f4-b953-7f29ad625c53/resourceGroups/PeiDashboard/providers/Microsoft.Web/sites/pei-dashboard/functions/oilprice_scraper_function",
+    "invokeUrlTemplate": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/api/oilprice_scraper_function",
+    "isDisabled": false,
+    "kind": null,
+    "language": "python",
+    "location": "Canada Central",
+    "name": "pei-dashboard/oilprice_scraper_function",
+    "resourceGroup": "PeiDashboard",
+    "scriptHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/oilprice_scraper_function/__init__.py",
+    "scriptRootPathHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/oilprice_scraper_function/",
+    "secretsFileHref": null,
+    "testData": "",
+    "testDataHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/tmp/FunctionsData/oilprice_scraper_function.dat",
+    "type": "Microsoft.Web/sites/functions"
+  },
+  {
+    "config": {
+      "bindings": [
+        {
+          "authLevel": "function",
+          "direction": "in",
+          "methods": [
+            "get",
+            "post"
+          ],
+          "name": "req",
+          "type": "httpTrigger"
+        },
+        {
+          "direction": "out",
+          "name": "$return",
+          "type": "http"
+        }
+      ],
+      "scriptFile": "__init__.py"
+    },
+    "configHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/reuters_scraper_function/function.json",
+    "files": null,
+    "functionAppId": null,
+    "href": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/functions/reuters_scraper_function",
+    "id": "/subscriptions/5e4ecee4-ce42-47f4-b953-7f29ad625c53/resourceGroups/PeiDashboard/providers/Microsoft.Web/sites/pei-dashboard/functions/reuters_scraper_function",
+    "invokeUrlTemplate": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/api/reuters_scraper_function",
+    "isDisabled": false,
+    "kind": null,
+    "language": "python",
+    "location": "Canada Central",
+    "name": "pei-dashboard/reuters_scraper_function",
+    "resourceGroup": "PeiDashboard",
+    "scriptHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/reuters_scraper_function/__init__.py",
+    "scriptRootPathHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/reuters_scraper_function/",
+    "secretsFileHref": null,
+    "testData": "",
+    "testDataHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/tmp/FunctionsData/reuters_scraper_function.dat",
+    "type": "Microsoft.Web/sites/functions"
+  },
+  {
+    "config": {
+      "bindings": [
+        {
+          "authLevel": "function",
+          "direction": "in",
+          "methods": [
+            "get",
+            "post"
+          ],
+          "name": "req",
+          "type": "httpTrigger"
+        },
+        {
+          "direction": "out",
+          "name": "$return",
+          "type": "http"
+        }
+      ],
+      "scriptFile": "__init__.py"
+    },
+    "configHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/tempo_scraper_function/function.json",
+    "files": null,
+    "functionAppId": null,
+    "href": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/functions/tempo_scraper_function",
+    "id": "/subscriptions/5e4ecee4-ce42-47f4-b953-7f29ad625c53/resourceGroups/PeiDashboard/providers/Microsoft.Web/sites/pei-dashboard/functions/tempo_scraper_function",
+    "invokeUrlTemplate": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/api/tempo_scraper_function",
+    "isDisabled": false,
+    "kind": null,
+    "language": "python",
+    "location": "Canada Central",
+    "name": "pei-dashboard/tempo_scraper_function",
+    "resourceGroup": "PeiDashboard",
+    "scriptHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/tempo_scraper_function/__init__.py",
+    "scriptRootPathHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/tempo_scraper_function/",
+    "secretsFileHref": null,
+    "testData": "",
+    "testDataHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/tmp/FunctionsData/tempo_scraper_function.dat",
+    "type": "Microsoft.Web/sites/functions"
+  },
+  {
+    "config": {
+      "bindings": [
+        {
+          "authLevel": "function",
+          "direction": "in",
+          "methods": [
+            "get",
+            "post"
+          ],
+          "name": "req",
+          "type": "httpTrigger"
+        },
+        {
+          "direction": "out",
+          "name": "$return",
+          "type": "http"
+        }
+      ],
+      "scriptFile": "__init__.py"
+    },
+    "configHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/test_env_function/function.json",
+    "files": null,
+    "functionAppId": null,
+    "href": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/functions/test_env_function",
+    "id": "/subscriptions/5e4ecee4-ce42-47f4-b953-7f29ad625c53/resourceGroups/PeiDashboard/providers/Microsoft.Web/sites/pei-dashboard/functions/test_env_function",
+    "invokeUrlTemplate": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/api/test_env_function",
+    "isDisabled": false,
+    "kind": null,
+    "language": "python",
+    "location": "Canada Central",
+    "name": "pei-dashboard/test_env_function",
+    "resourceGroup": "PeiDashboard",
+    "scriptHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/test_env_function/__init__.py",
+    "scriptRootPathHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/test_env_function/",
+    "secretsFileHref": null,
+    "testData": "",
+    "testDataHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/tmp/FunctionsData/test_env_function.dat",
+    "type": "Microsoft.Web/sites/functions"
+  },
+  {
+    "config": {
+      "bindings": [
+        {
+          "authLevel": "function",
+          "direction": "in",
+          "methods": [
+            "get",
+            "post"
+          ],
+          "name": "req",
+          "type": "httpTrigger"
+        },
+        {
+          "direction": "out",
+          "name": "$return",
+          "type": "http"
+        }
+      ],
+      "scriptFile": "__init__.py"
+    },
+    "configHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/test_function/function.json",
+    "files": null,
+    "functionAppId": null,
+    "href": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/functions/test_function",
+    "id": "/subscriptions/5e4ecee4-ce42-47f4-b953-7f29ad625c53/resourceGroups/PeiDashboard/providers/Microsoft.Web/sites/pei-dashboard/functions/test_function",
+    "invokeUrlTemplate": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/api/test_function",
+    "isDisabled": false,
+    "kind": null,
+    "language": "python",
+    "location": "Canada Central",
+    "name": "pei-dashboard/test_function",
+    "resourceGroup": "PeiDashboard",
+    "scriptHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/test_function/__init__.py",
+    "scriptRootPathHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/test_function/",
+    "secretsFileHref": null,
+    "testData": "",
+    "testDataHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/tmp/FunctionsData/test_function.dat",
+    "type": "Microsoft.Web/sites/functions"
+  },
+  {
+    "config": {
+      "bindings": [
+        {
+          "authLevel": "function",
+          "direction": "in",
+          "methods": [
+            "get",
+            "post"
+          ],
+          "name": "req",
+          "type": "httpTrigger"
+        },
+        {
+          "direction": "out",
+          "name": "$return",
+          "type": "http"
+        }
+      ],
+      "scriptFile": "__init__.py"
+    },
+    "configHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/test_imports_function/function.json",
+    "files": null,
+    "functionAppId": null,
+    "href": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/functions/test_imports_function",
+    "id": "/subscriptions/5e4ecee4-ce42-47f4-b953-7f29ad625c53/resourceGroups/PeiDashboard/providers/Microsoft.Web/sites/pei-dashboard/functions/test_imports_function",
+    "invokeUrlTemplate": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/api/test_imports_function",
+    "isDisabled": false,
+    "kind": null,
+    "language": "python",
+    "location": "Canada Central",
+    "name": "pei-dashboard/test_imports_function",
+    "resourceGroup": "PeiDashboard",
+    "scriptHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/test_imports_function/__init__.py",
+    "scriptRootPathHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/test_imports_function/",
+    "secretsFileHref": null,
+    "testData": "",
+    "testDataHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/tmp/FunctionsData/test_imports_function.dat",
+    "type": "Microsoft.Web/sites/functions"
+  },
+  {
+    "config": {
+      "bindings": [
+        {
+          "authLevel": "function",
+          "direction": "in",
+          "methods": [
+            "get",
+            "post"
+          ],
+          "name": "req",
+          "type": "httpTrigger"
+        },
+        {
+          "direction": "out",
+          "name": "$return",
+          "type": "http"
+        }
+      ],
+      "scriptFile": "__init__.py"
+    },
+    "configHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/theguardian_scraper_function/function.json",
+    "files": null,
+    "functionAppId": null,
+    "href": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/functions/theguardian_scraper_function",
+    "id": "/subscriptions/5e4ecee4-ce42-47f4-b953-7f29ad625c53/resourceGroups/PeiDashboard/providers/Microsoft.Web/sites/pei-dashboard/functions/theguardian_scraper_function",
+    "invokeUrlTemplate": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/api/theguardian_scraper_function",
+    "isDisabled": false,
+    "kind": null,
+    "language": "python",
+    "location": "Canada Central",
+    "name": "pei-dashboard/theguardian_scraper_function",
+    "resourceGroup": "PeiDashboard",
+    "scriptHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/theguardian_scraper_function/__init__.py",
+    "scriptRootPathHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/home/site/wwwroot/theguardian_scraper_function/",
+    "secretsFileHref": null,
+    "testData": "",
+    "testDataHref": "https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/admin/vfs/tmp/FunctionsData/theguardian_scraper_function.dat",
+    "type": "Microsoft.Web/sites/functions"
+  }
+]

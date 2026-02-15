@@ -490,8 +490,8 @@ class TestReporter:
         mapping = self.reporter.generate_mapping_table({})
         
         assert "Scraper-Table Mapping" in mapping
-        assert "Total Tables: 0" in mapping
-        assert "Total Scrapers: 0" in mapping
+        assert "**Total Tables:** 0" in mapping
+        assert "**Total Scrapers:** 0" in mapping
     
     def test_generate_mapping_table_with_operations(self):
         """Test mapping table generation with operations."""
@@ -637,9 +637,9 @@ class TestReporter:
         stats = self.reporter.generate_statistics(schema=schema)
         
         assert "Schema Statistics" in stats
-        assert "Total Tables: 1" in stats
-        assert "Total Columns: 1" in stats
-        assert "Schema Version: 1.0" in stats
+        assert "**Total Tables:** 1" in stats
+        assert "**Total Columns:** 1" in stats
+        assert "**Schema Version:** 1.0" in stats
     
     def test_generate_statistics_with_mismatches(self):
         """Test statistics generation with mismatch data."""
@@ -659,10 +659,10 @@ class TestReporter:
         stats = self.reporter.generate_statistics(mismatches=mismatches)
         
         assert "Mismatch Statistics" in stats
-        assert "Total Mismatches: 2" in stats
-        assert "Critical: 1" in stats
-        assert "Warnings: 1" in stats
-        assert "Tables Affected: 2" in stats
+        assert "**Total Mismatches:** 2" in stats
+        assert "**Critical:** 1" in stats
+        assert "**Warnings:** 1" in stats
+        assert "**Tables Affected:** 2" in stats
     
     def test_generate_statistics_with_fixes(self):
         """Test statistics generation with fix data."""
@@ -682,10 +682,10 @@ class TestReporter:
         stats = self.reporter.generate_statistics(fixes=fixes)
         
         assert "Fix Statistics" in stats
-        assert "Total Fixes: 2" in stats
-        assert "Successfully Applied: 1" in stats
-        assert "Failed: 1" in stats
-        assert "Success Rate: 50.0%" in stats
+        assert "**Total Fixes:** 2" in stats
+        assert "**Successfully Applied:** 1" in stats
+        assert "**Failed:** 1" in stats
+        assert "**Success Rate:** 50.0%" in stats
     
     def test_generate_statistics_with_operations(self):
         """Test statistics generation with operations data."""
@@ -707,8 +707,8 @@ class TestReporter:
         stats = self.reporter.generate_statistics(operations_map=operations_map)
         
         assert "Operations Statistics" in stats
-        assert "Total Operations: 3" in stats
-        assert "Tables with Operations: 1" in stats
+        assert "**Total Operations:** 3" in stats
+        assert "**Tables with Operations:** 1" in stats
         assert "INSERT: 3" in stats
     
     def test_generate_statistics_comprehensive(self):

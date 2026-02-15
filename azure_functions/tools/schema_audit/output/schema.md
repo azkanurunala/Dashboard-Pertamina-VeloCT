@@ -1,7 +1,7 @@
 # Database Schema Documentation
 
 **Source:** C:\RunningProjects\Dashboard-Pertamina-VeloCT\pei-dashboard.bacpac
-**Extracted:** 2026-02-16 02:51:22
+**Extracted:** 2026-02-16 04:39:59
 **Version:** 1.0
 **Total Tables:** 26
 
