@@ -119,6 +119,7 @@ BEGIN
         [sentiment_label] VARCHAR(20) NOT NULL,
         [confidence] FLOAT NOT NULL,
         [summary] NTEXT NOT NULL,
+        [summary_data] NTEXT NULL,
         [model_version] VARCHAR(50) NOT NULL DEFAULT 'copilot-1.0',
         [role_context] NVARCHAR(200) NULL,
         [article_count] INT NOT NULL DEFAULT 0,
@@ -401,12 +402,25 @@ IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[da
 BEGIN
     CREATE TABLE [dbo].[data_oil_crackspreads] (
         [id] INT IDENTITY(1,1) PRIMARY KEY,
-        [date] DATE NOT NULL,
-        [product_type] NVARCHAR(100) NOT NULL,
-        [crackspread_usd_barrel] FLOAT NULL,
-        [region] NVARCHAR(100) NULL,
-        [source] NVARCHAR(100) NULL,
-        [scraped_at] DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        [year] INT NOT NULL,
+        [month] INT NOT NULL,
+        [price_ron92] FLOAT NULL,
+        [price_ron95] FLOAT NULL,
+        [price_ron97] FLOAT NULL,
+        [price_fo05] FLOAT NULL,
+        [price_jetkero] FLOAT NULL,
+        [price_go50] FLOAT NULL,
+        [price_go2500] FLOAT NULL,
+        [price_brent] FLOAT NULL,
+        [price_ron92_crackspread] FLOAT NULL,
+        [price_ron95_crackspread] FLOAT NULL,
+        [price_ron97_crackspread] FLOAT NULL,
+        [price_fo05_crackspread] FLOAT NULL,
+        [price_jetkero_crackspread] FLOAT NULL,
+        [price_go50_crackspread] FLOAT NULL,
+        [price_go2500_crackspread] FLOAT NULL,
+        [scraped_at] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_oil_crackspreads_year_month] UNIQUE ([year], [month])
     );
     PRINT '✓ Created table: data_oil_crackspreads';
 END
