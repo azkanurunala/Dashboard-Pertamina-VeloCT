@@ -24,7 +24,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         ("beautifulsoup4", "bs4"),
         ("lxml", "lxml"),
         ("aiohttp", "aiohttp"),
-        ("pyodbc", "pyodbc"),
+        ("pymssql", "pymssql"),
         ("scrapers.cnbc_scraper", "..scrapers.cnbc_scraper"),
         ("shared.config", "..shared.config"),
         ("shared.database_handler", "..shared.database_handler"),
@@ -33,7 +33,19 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     
     for name, import_path in imports_to_test:
         try:
-            __import__(import_path.replace("..", "azure_functions").replace(".", "/"))
+            # Handle standard library and local imports
+            if import_path.startswith(".."):
+                # Local shared modules
+                clean_name = import_path.lstrip(".")
+                if clean_name == "shared.database_handler":
+                    from shared import database_handler
+                elif clean_name == "shared.config":
+                    from shared import config
+                elif clean_name == "shared.models":
+                    from shared import models
+            else:
+                __import__(import_path)
+            
             results["imports"][name] = {"status": "OK", "error": None}
         except Exception as e:
             results["imports"][name] = {"status": "FAILED", "error": str(e)}

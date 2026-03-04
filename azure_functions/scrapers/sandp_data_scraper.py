@@ -477,6 +477,7 @@ class SAndPDataScraper(BaseNewsScraper):
         # Final rename to match data_fossil_prediction schema
         # Schema: prediction_year, brent, gasoline, diesel, avtur, 
         # fo05_price, go2500_price, go50_price, jetkero_price, ron92_price...
+        # ron92_cs, ron95_cs, ron97_cs, fo05_cs, jetkero_cs, go50_cs, go2500_cs
         
         # Map 'price_brent' -> 'brent'
         if 'price_brent' in df_price.columns:
@@ -492,19 +493,32 @@ class SAndPDataScraper(BaseNewsScraper):
         
         df_price = df_price.rename(columns=final_rename)
         
-        if is_short_term:
-             # Short term doesn't map 1:1 to data_fossil_prediction which is year-based?
-             # Actually `data_fossil_prediction` has `prediction_year`.
-             # If short term has months, maybe it goes to a different table?
-             # Re-checking schema: `data_fossil_prediction` only has `prediction_year`.
-             # If we have monthly data, we might need a `prediction_period` or similar.
-             # However, the user asked to align with `migrate_all_tables.sql` which has `data_fossil_prediction`.
-             # That table seems to be for annual data or has implicit monthly via multiple rows per year?
-             # No, it just has `prediction_year`.
-             # For now, I will keep the structure but ensure keys match what DB expects if possible.
-             pass
+        # Rename 'year' to 'prediction_year' to match DB schema
+        if 'year' in df_price.columns:
+            df_price = df_price.rename(columns={'year': 'prediction_year'})
+        
+        # Map ron92 -> gasoline, go50 -> diesel, jetkero -> avtur for the DB
+        if 'ron92_price' in df_price.columns and 'gasoline' not in df_price.columns:
+            df_price['gasoline'] = df_price['ron92_price']
+        if 'go50_price' in df_price.columns and 'diesel' not in df_price.columns:
+            df_price['diesel'] = df_price['go50_price']
+        if 'jetkero_price' in df_price.columns and 'avtur' not in df_price.columns:
+            df_price['avtur'] = df_price['jetkero_price']
+        
+        # Filter to only columns that exist in the DB schema
+        valid_columns = [
+            'prediction_year', 'brent', 'gasoline', 'diesel', 'avtur',
+            'fo05_price', 'go2500_price', 'go50_price', 'jetkero_price',
+            'ron92_price', 'ron95_price', 'ron97_price',
+            'fo05_cs', 'go2500_cs', 'go50_cs', 'jetkero_cs',
+            'ron92_cs', 'ron95_cs', 'ron97_cs'
+        ]
+        # Keep only valid columns that exist in the dataframe
+        existing_valid = [c for c in valid_columns if c in df_price.columns]
+        df_price = df_price[existing_valid]
 
-        return df_price.sort_values(index_cols)
+        sort_cols = ['prediction_year']
+        return df_price.sort_values(sort_cols)
 
     def pivot_saf_uco_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -545,7 +559,7 @@ class SAndPDataScraper(BaseNewsScraper):
             if col not in df_final.columns:
                 df_final[col] = None
                 
-        return df_final[cols].sort_values('assessDate')
+        return df_final[cols].sort_values('assess_date')
 
     async def _scrape_articles_from_source(
         self, 
@@ -737,6 +751,11 @@ class SAndPDataScraper(BaseNewsScraper):
                     for col in ['brent', 'gasoline', 'diesel', 'avtur']:
                         if col not in df_pivoted.columns:
                             df_pivoted[col] = None
+                    
+                    # Filter to only columns that exist in data_fossil DB schema
+                    valid_fossil_cols = ['time', 'brent', 'gasoline', 'diesel', 'avtur']
+                    existing_cols = [c for c in valid_fossil_cols if c in df_pivoted.columns]
+                    df_pivoted = df_pivoted[existing_cols]
                             
                     results.append({
                         'type': 'data_fossil',

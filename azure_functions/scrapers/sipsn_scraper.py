@@ -29,11 +29,11 @@ class SIPSNDataScraper(BaseNewsScraper):
     Fetches waste management data from Indonesia's national waste information system.
     """
     
-    # Data type mapping
+    # Data type mapping — must match actual DB table names exactly
     DATA_TYPES = {
-        'sumber': 'WTE_Sumber',       # Waste source data
-        'komposisi': 'WTE_Komposisi', # Waste composition data
-        'timbulan': 'WTE_Timbulan'    # Waste generation data
+        'sumber': 'data_wte_sumber',       # Waste source data
+        'komposisi': 'data_wte_komposisi', # Waste composition data
+        'timbulan': 'data_wte_timbulan'    # Waste generation data
     }
     
     def __init__(self, config: Optional[ScrapingConfig] = None):

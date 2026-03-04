@@ -47,7 +47,7 @@ class SCMPScraper(BaseNewsScraper):
             )
         
         super().__init__(config)
-        self.requires_selenium = True
+        self.requires_selenium = False  # Use aiohttp instead of Selenium
 
     def _parse_scmp_date(self, date_str: str) -> Optional[str]:
         """Parse SCMP date formats."""
@@ -74,20 +74,65 @@ class SCMPScraper(BaseNewsScraper):
         return None
 
     async def _search_articles(self, query: str) -> List[Dict]:
-        """Search SCMP for articles using Selenium."""
+        """Search SCMP for articles using aiohttp (no Selenium needed)."""
         try:
+            # Try RSS feed first (no JS required)
+            rss_url = f"https://www.scmp.com/rss/91/feed"
+            try:
+                rss_content = await self._fetch_content(rss_url)
+                soup = BeautifulSoup(rss_content, 'html.parser')
+                items = soup.find_all('item')
+                
+                articles = []
+                for item in items:
+                    title = item.find('title')
+                    link = item.find('link')
+                    pubdate = item.find('pubdate')
+                    
+                    if title and link:
+                        # Check if article matches query
+                        title_text = title.get_text(strip=True)
+                        if query.lower() in title_text.lower():
+                            date_str = None
+                            if pubdate:
+                                date_str = self._parse_scmp_date(pubdate.get_text(strip=True))
+                            
+                            articles.append({
+                                'title': title_text,
+                                'url': link.get_text(strip=True) if link.string else link.next_sibling.strip() if link.next_sibling else '',
+                                'date': date_str or datetime.now().strftime('%Y-%m-%d')
+                            })
+                
+                if articles:
+                    self.logger.info(f"Found {len(articles)} articles via SCMP RSS")
+                    return articles
+            except Exception as rss_err:
+                self.logger.warning(f"RSS feed failed, trying HTML search: {rss_err}")
+            
+            # Fallback: HTML search page via aiohttp
             url = self.config.selectors['search_url'].format(query=query)
-            content = await self._fetch_content_selenium(url)
+            content = await self._fetch_content(url)
             soup = BeautifulSoup(content, 'html.parser')
             
             articles = []
-            items = soup.select(self.config.selectors.get("article_list", "article"))
+            # Try multiple selector patterns for SCMP search results
+            for selector in [self.config.selectors.get('article_list', 'article'), 
+                           'div.search-result', 'div[class*="article"]', 'article']:
+                items = soup.select(selector)
+                if items:
+                    break
             
             self.logger.info(f"Found {len(items)} article items")
             
             for item in items:
                 try:
-                    title_elem = item.select_one(self.config.selectors.get("article_title", "h2 a"))
+                    # Try multiple title selectors
+                    title_elem = None
+                    for title_sel in [self.config.selectors.get('article_title', 'h2 a'), 'h2 a', 'h3 a', 'a[class*="title"]']:
+                        title_elem = item.select_one(title_sel)
+                        if title_elem:
+                            break
+                    
                     if not title_elem:
                         continue
                     
@@ -96,7 +141,7 @@ class SCMPScraper(BaseNewsScraper):
                     if article_url and not article_url.startswith('http'):
                         article_url = f"{self.config.base_url}{article_url}"
                     
-                    date_elem = item.select_one(self.config.selectors.get("article_date", "time"))
+                    date_elem = item.select_one(self.config.selectors.get('article_date', 'time'))
                     date_str = date_elem.get('datetime', '') if date_elem else None
                     if not date_str and date_elem:
                         date_str = date_elem.get_text(strip=True)
@@ -120,9 +165,9 @@ class SCMPScraper(BaseNewsScraper):
             return []
 
     async def _extract_article_content(self, url: str) -> str:
-        """Extract article content from SCMP page."""
+        """Extract article content from SCMP page using aiohttp."""
         try:
-            content = await self._fetch_content_selenium(url)
+            content = await self._fetch_content(url)
             soup = BeautifulSoup(content, 'html.parser')
             
             content_div = soup.select_one(self.config.selectors.get("article_content", "div.article__body"))

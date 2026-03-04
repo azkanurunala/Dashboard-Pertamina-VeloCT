@@ -80,6 +80,106 @@ DATA_SOURCES = {
     'crackspread_bbm', 'crackspread_non_bbm'
 }
 
+# Keyword-based category classification — ported from src/main sinonim_dict
+# Maps category name → list of keywords/synonyms to match against article title+content
+CATEGORY_KEYWORDS = {
+    'indeks risiko geopolitik': [
+        'indeks risiko geopolitik', 'tekanan geopolitik', 'geopolitik',
+        'geopolitical risk', 'geopolitical pressure', 'geopolitics'],
+    'indeks volatilitas': [
+        'indeks volatilitas', 'volatilitas', 'volatility index', 'volatility'],
+    'Kurs': [
+        'kurs', 'nilai tukar rupiah', 'dolar', 'dxy', 'dollar', 'nilai tukar'],
+    'IHSG': [
+        'ihsg', 'pasar saham'],
+    'Inflasi': [
+        'inflasi', 'inflation'],
+    'BI Rate': [
+        'bi rate', 'suku bunga', 'bunga bi', 'bi 7-day'],
+    'Indonia': [
+        'indonia'],
+    'indeks sales retail': [
+        'indeks sales retail', 'indeks penjualan ritel', 'indeks penjualan retail',
+        'indeks retail', 'indeks ritel'],
+    'indeks kepercayaan knsmn': [
+        'indeks kepercayaan konsumen', 'indeks kepercayaan pelanggan',
+        'ekspektasi konsumen', 'kondisi ekonomi terkini', 'kepercayaan konsumen',
+        'kondisi ekonomi saat ini'],
+    'indeks kinerja manufaktur': [
+        'indeks kinerja manufaktur', 'kinerja manufaktur',
+        'purchasing manufaktur index', 'manufaktur index', 'manufacturing index', 'pmi'],
+    'indeks kinerja jasa': [
+        'indeks kinerja jasa', 'kinerja jasa',
+        'purchasing services index', 'services index'],
+    'neraca perdagangan': [
+        'neraca perdagangan', 'trade balance'],
+    'PDB': [
+        'pertumbuhan domestik bruto', 'pdb', 'pertumbuhan ekonomi', 'gdp'],
+    'Biodiesel': [
+        'biodiesel', 'minyak kelapa sawit', 'crude palm oil', 'cpo',
+        'minyak sawit', 'kelapa sawit', 'sawit',
+        'hip bbn', 'harga fame', 'harga indeks pasar biodiesel',
+        'b40', 'b50', 'biofuel'],
+    'Bioetanol': [
+        'bioetanol', 'tebu', 'gula', 'molase',
+        'etanol', 'ethanol', 'bioethanol', 'tetes tebu'],
+    'RUPTL': [
+        'ruptl', 'listrik', 'pln', 'ipp', 'pjbl', 'pembangkit',
+        'ketenagalistrikan', 'transmisi', 'distribusi', 'elektrifikasi',
+        'batubara', 'batu bara', 'panas bumi', 'surya',
+        'bess', 'plta', 'pltal', 'pltb', 'pltbg', 'pltbm',
+        'pltd', 'pltg', 'pltgu', 'pltm', 'pltmg', 'pltn',
+        'pltp', 'plts', 'pltsa', 'pltu'],
+    'Harga Minyak': [
+        'harga minyak', 'minyak mentah', 'oil price', 'crude oil',
+        'brent', 'wti'],
+    'Volume Minyak': [
+        'volume minyak', 'volume bbm', 'oil volume'],
+    'Harga Produk Kilang': [
+        'harga produk kilang', 'bbm', 'harga kilang pertamina',
+        'kilang pertamina', 'kilang', 'refinery', 'harga pertamina'],
+    'Volume Produk Kilang': [
+        'volume produk kilang', 'volume kilang pertamina', 'volume kilang',
+        'volume pertamina'],
+    'SAF': [
+        'saf', 'uco', 'corsia', 'safco', 'biorefinery',
+        'minyak jelantah', 'bioavtur', 'sustainable aviation fuel',
+        'used cooking oil'],
+    'Crackspread_BBM': [
+        'ron 92', 'pertamax', 'ron 95', 'ron 97', 'residual fo',
+        'fuel oil', 'jet fuel', 'avtur', 'kerosene',
+        'refined products', 'refining', 'oil products',
+        'gasoline', 'heavy oil', 'diesel', 'gasoil',
+        'naphtha', 'lpg', 'biogasoline', 'petroleum coke', 'crackspread'],
+    'Crackspread_NonBBM': [
+        'petro', 'petrochemical', 'aromatic', 'olefin', 'polymer',
+        'paraxylene', 'propylene', 'benzene', 'green coke'],
+    'Harga EBT': [
+        'lcoe', 'harga jual listrik ebt', 'harga listrik ebt',
+        'tarif listrik ebt', 'energi terbarukan', 'renewable energy'],
+    'Harga WTE': [
+        'wte', 'waste to energy', 'sampah', 'pltsa'],
+    'Nuklir': [
+        'nuklir', 'pltn', 'pembangkit listrik nuklir', 'nuclear'],
+}
+
+
+def _classify_article_categories(title: str, content: str) -> list:
+    """
+    Classify an article into categories by matching title+content against
+    CATEGORY_KEYWORDS. Returns list of matching category names.
+    Falls back to ['Harga Minyak'] if no keywords match.
+    """
+    text = f"{title} {content}".lower()
+    matched = []
+    for category, keywords in CATEGORY_KEYWORDS.items():
+        for kw in keywords:
+            if kw.lower() in text:
+                matched.append(category)
+                break  # one match per category is enough
+    return matched if matched else ['Harga Minyak']
+
+
 
 class OrchestratorFunction(IOrchestratorFunction):
     """
@@ -112,9 +212,14 @@ class OrchestratorFunction(IOrchestratorFunction):
                 copilot_config = await config_manager.get_copilot_config()
                 self.copilot_integration = CopilotIntegration(copilot_config)
                 
-                # Initialize Blob Storage integration
-                self.blob_integration = BlobStorageIntegration()
-                await self.blob_integration.initialize()
+                # Initialize Blob Storage integration (optional - used for backup/archiving only)
+                try:
+                    self.blob_integration = BlobStorageIntegration()
+                    await self.blob_integration.initialize()
+                    logger.info("Blob storage integration initialized")
+                except Exception as blob_err:
+                    logger.warning(f"Blob storage not available (non-fatal): {str(blob_err)}")
+                    self.blob_integration = None
                 
                 self._initialized = True
                 logger.info("Orchestrator function initialized successfully")
@@ -543,16 +648,20 @@ class OrchestratorFunction(IOrchestratorFunction):
                     articles_data = articles if isinstance(articles, list) else [articles]
                 else:
                     # Convert NewsArticle objects to dict format
+                    # Classify each article into categories by keyword matching
                     for article in articles:
-                        article_dict = {
-                            "title": article.title,
-                            "content": article.content,
-                            "url": article.url,
-                            "source": article.source,
-                            "published_date": article.published_date,
-                            "keywords": keywords[:2]
-                        }
-                        articles_data.append(article_dict)
+                        categories = _classify_article_categories(article.title, article.content)
+                        for cat in categories:
+                            article_dict = {
+                                "title": article.title,
+                                "content": article.content,
+                                "url": article.url,
+                                "source": article.source,
+                                "published_date": article.published_date,
+                                "keywords": keywords[:2],
+                                "category": cat
+                            }
+                            articles_data.append(article_dict)
                 
                 logger.info(f"Scraping completed for {source}: {len(articles_data)} items found")
                 
@@ -633,6 +742,7 @@ class OrchestratorFunction(IOrchestratorFunction):
                                 articles_saved += len(data_list)
                     else:
                         # Convert to NewsArticle objects and save to database
+                        # Each article_data already has its category from classification
                         news_articles = []
                         for article_data in items:
                             article = NewsArticle(
@@ -641,7 +751,8 @@ class OrchestratorFunction(IOrchestratorFunction):
                                 url=article_data["url"],
                                 source=article_data["source"],
                                 published_date=article_data["published_date"],
-                                keywords=article_data["keywords"]
+                                keywords=article_data["keywords"],
+                                category=article_data.get("category", 'Harga Minyak')
                             )
                             news_articles.append(article)
                         

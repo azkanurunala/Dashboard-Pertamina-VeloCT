@@ -7,7 +7,7 @@ azure-identity>=1.15.0
 azure-keyvault-secrets>=4.7.0
 
 # Database connectivity
-pyodbc>=5.0.0
+pymssql>=2.2.0
 
 # Data processing
 pandas>=2.0.0
@@ -15,6 +15,10 @@ pandas>=2.0.0
 # Web scraping
 beautifulsoup4>=4.12.0
 aiohttp>=3.9.0
+lxml>=4.9.0
+
+# PDF text extraction
+pdfplumber>=0.10.0
 
 # Configuration management
 python-dotenv>=1.0.0

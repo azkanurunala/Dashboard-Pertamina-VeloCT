@@ -5,6 +5,7 @@ Provides connection pooling, retry logic, and comprehensive database operations.
 
 import asyncio
 import logging
+import re
 from typing import List, Optional, Dict, Any, Union
 from datetime import datetime
 import json
@@ -12,11 +13,11 @@ import uuid
 from contextlib import asynccontextmanager
 
 try:
-    import pyodbc
-    PYODBC_AVAILABLE = True
+    import pymssql
+    PYMSSQL_AVAILABLE = True
 except ImportError:
-    PYODBC_AVAILABLE = False
-    pyodbc = None
+    PYMSSQL_AVAILABLE = False
+    pymssql = None
 
 try:
     from azure.identity import DefaultAzureCredential
@@ -41,6 +42,44 @@ class DatabaseHandler(IDatabaseHandler):
     Implements the IDatabaseHandler interface for all database operations.
     """
     
+    @staticmethod
+    def _parse_connection_string(conn_str: str) -> Dict[str, str]:
+        """Parse ODBC-style connection string into components for pymssql."""
+        parts = {}
+        # Handle both ; and \n separators
+        for segment in re.split(r'[;\n]', conn_str):
+            segment = segment.strip()
+            if '=' in segment:
+                key, value = segment.split('=', 1)
+                parts[key.strip().lower()] = value.strip()
+        
+        # Map ODBC keys to pymssql params
+        server = parts.get('server', parts.get('data source', ''))
+        database = parts.get('database', parts.get('initial catalog', ''))
+        user = parts.get('uid', parts.get('user id', parts.get('user', '')))
+        password = parts.get('pwd', parts.get('password', ''))
+        
+        # Handle server with port (e.g., "server.database.windows.net,1433")
+        port = 1433
+        if ',' in server:
+            server, port_str = server.rsplit(',', 1)
+            try:
+                port = int(port_str.strip())
+            except ValueError:
+                port = 1433
+        
+        # Strip "tcp:" prefix — ODBC uses "tcp:hostname" but pymssql needs just "hostname"
+        if server.lower().startswith('tcp:'):
+            server = server[4:]
+        
+        return {
+            'server': server,
+            'database': database,
+            'user': user,
+            'password': password,
+            'port': port
+        }
+    
     def __init__(self, config: DatabaseConfig):
         """
         Initialize the database handler.
@@ -48,13 +87,14 @@ class DatabaseHandler(IDatabaseHandler):
         Args:
             config: Database configuration
         """
-        if not PYODBC_AVAILABLE:
-            raise DatabaseError("pyodbc library is required for SQL Server operations")
+        if not PYMSSQL_AVAILABLE:
+            raise DatabaseError("pymssql library is required for SQL Server operations")
             
         self.config = config
         self.logger = get_logger(__name__)
         self._connection_pool: Optional[Any] = None
         self._pool_lock = asyncio.Lock()
+        self._conn_params = self._parse_connection_string(config.connection_string)
         
     async def _get_connection_pool(self):
         """Get or create the connection pool."""
@@ -83,15 +123,28 @@ class DatabaseHandler(IDatabaseHandler):
         try:
             await self._get_connection_pool()
             
-            # Create connection using pyodbc
-            connection = pyodbc.connect(
-                self.config.connection_string,
-                timeout=self.config.connection_timeout
+            # Create connection using pymssql
+            # Azure SQL requires encrypted connections
+            connection = pymssql.connect(
+                server=self._conn_params['server'],
+                user=self._conn_params['user'],
+                password=self._conn_params['password'],
+                database=self._conn_params['database'],
+                port=self._conn_params['port'],
+                login_timeout=self.config.connection_timeout,
+                timeout=self.config.command_timeout,
+                tds_version='7.3',
+                conn_properties='',  # Disable session-level SET commands that may fail
             )
-            connection.timeout = self.config.command_timeout
             
             yield connection
             
+        except pymssql.InterfaceError as e:
+            self.logger.error(f"Database interface error (server={self._conn_params['server']}, port={self._conn_params['port']}): {str(e)}")
+            raise DatabaseError(f"Database connection failed: {str(e)}")
+        except pymssql.DatabaseError as e:
+            self.logger.error(f"Database error: {str(e)}")
+            raise DatabaseError(f"Database connection failed: {str(e)}")
         except Exception as e:
             self.logger.error(f"Database connection error: {str(e)}")
             raise DatabaseError(f"Database connection failed: {str(e)}")
@@ -139,28 +192,28 @@ class DatabaseHandler(IDatabaseHandler):
                         return 0
 
                     # 1. Get List of URLs from input
-                    input_urls = [a.url for a in articles]
-                    self.logger.info(f"🔍 save_articles: Checking for existing URLs in {len(input_urls)} articles")
+                    input_urls = list(set(a.url for a in articles))
+                    self.logger.info(f"🔍 save_articles: Checking for existing (url, category) pairs in {len(articles)} articles")
                     
-                    existing_urls = set()
+                    existing_pairs = set()
                     
                     # Process in chunks of 1000 to be safe with parameters
                     chunk_size = 1000
                     for i in range(0, len(input_urls), chunk_size):
                         chunk_urls = input_urls[i:i + chunk_size]
-                        placeholders = ','.join(['?' for _ in chunk_urls])
+                        placeholders = ','.join(['%s' for _ in chunk_urls])
                         
-                        check_query = f"SELECT url FROM news_articles WHERE url IN ({placeholders})"
+                        check_query = f"SELECT url, category FROM news_articles WHERE url IN ({placeholders})"
                         self.logger.info(f"📡 save_articles: Executing duplicate check query for chunk {i//chunk_size + 1}")
-                        cursor.execute(check_query, chunk_urls)
+                        cursor.execute(check_query, tuple(chunk_urls))
                         
                         rows = cursor.fetchall()
-                        self.logger.info(f"✅ save_articles: Found {len(rows)} existing URLs in chunk")
+                        self.logger.info(f"✅ save_articles: Found {len(rows)} existing (url, category) pairs in chunk")
                         for row in rows:
-                            existing_urls.add(row[0])
+                            existing_pairs.add((row[0], row[1]))
                     
-                    # 3. Filter articles
-                    new_articles = [a for a in articles if a.url not in existing_urls]
+                    # 3. Filter articles — same URL with different category is NOT a duplicate
+                    new_articles = [a for a in articles if (a.url, a.category) not in existing_pairs]
                     self.logger.info(f"✨ save_articles: {len(new_articles)} new articles found after deduplication")
                     
                     if not new_articles:
@@ -179,7 +232,7 @@ class DatabaseHandler(IDatabaseHandler):
                             INSERT INTO news_articles 
                             (id, title, content, url, source_id, published_date, scraped_date, 
                              language, author, category)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                             """
                             
                             cursor.execute(insert_query, (
@@ -219,7 +272,7 @@ class DatabaseHandler(IDatabaseHandler):
     async def _get_or_create_source(self, cursor, source_name: str) -> int:
         """Get or create a news source and return its ID."""
         # Check if source exists
-        cursor.execute("SELECT id FROM news_sources WHERE name = ?", (source_name,))
+        cursor.execute("SELECT id FROM news_sources WHERE name = %s", (source_name,))
         result = cursor.fetchone()
         
         if result:
@@ -227,7 +280,7 @@ class DatabaseHandler(IDatabaseHandler):
         
         # Create new source
         cursor.execute(
-            "INSERT INTO news_sources (name, base_url) VALUES (?, ?)",
+            "INSERT INTO news_sources (name, base_url) VALUES (%s, %s)",
             (source_name, f"https://www.{source_name.lower().replace(' ', '')}.com")
         )
         
@@ -243,14 +296,14 @@ class DatabaseHandler(IDatabaseHandler):
             
             # Insert article-keyword relationship
             cursor.execute(
-                "INSERT INTO article_keywords (article_id, keyword_id) VALUES (?, ?)",
+                "INSERT INTO article_keywords (article_id, keyword_id) VALUES (%s, %s)",
                 (article_id, keyword_id)
             )
     
     async def _get_or_create_keyword(self, cursor, keyword: str) -> int:
         """Get or create a keyword and return its ID."""
         # Check if keyword exists
-        cursor.execute("SELECT id FROM keywords WHERE keyword = ?", (keyword,))
+        cursor.execute("SELECT id FROM keywords WHERE keyword = %s", (keyword,))
         result = cursor.fetchone()
         
         if result:
@@ -258,23 +311,13 @@ class DatabaseHandler(IDatabaseHandler):
         
         # Create new keyword
         cursor.execute(
-            "INSERT INTO keywords (keyword) VALUES (?)",
+            "INSERT INTO keywords (keyword) VALUES (%s)",
             (keyword,)
         )
         
         # Get the inserted ID
         cursor.execute("SELECT SCOPE_IDENTITY()")
         return int(cursor.fetchone()[0])
-        
-        if result:
-            return result[0]
-        
-        # Create new keyword
-        cursor.execute("INSERT INTO keywords (keyword) VALUES (?)", (keyword,))
-        
-        # Get the inserted ID
-        cursor.execute("SELECT SCOPE_IDENTITY()")
-        return cursor.fetchone()[0]
     
     async def get_articles(self, filters: ArticleFilters) -> List[NewsArticle]:
         """Retrieve articles from the database based on filters."""
@@ -293,23 +336,23 @@ class DatabaseHandler(IDatabaseHandler):
                 params = []
                 
                 if filters.source:
-                    query += " AND s.name = ?"
+                    query += " AND s.name = %s"
                     params.append(filters.source)
                 
                 if filters.start_date:
-                    query += " AND a.published_date >= ?"
+                    query += " AND a.published_date >= %s"
                     params.append(filters.start_date)
                 
                 if filters.end_date:
-                    query += " AND a.published_date <= ?"
+                    query += " AND a.published_date <= %s"
                     params.append(filters.end_date)
                 
                 if filters.language:
-                    query += " AND a.language = ?"
+                    query += " AND a.language = %s"
                     params.append(filters.language)
                 
                 if filters.category:
-                    query += " AND a.category = ?"
+                    query += " AND a.category = %s"
                     params.append(filters.category)
                 
                 if filters.keywords:
@@ -321,7 +364,7 @@ class DatabaseHandler(IDatabaseHandler):
                         INNER JOIN keywords k ON ak.keyword_id = k.id
                         WHERE k.keyword IN ({})
                     )
-                    """.format(','.join(['?' for _ in filters.keywords]))
+                    """.format(','.join(['%s' for _ in filters.keywords]))
                     params.extend(filters.keywords)
                 
                 query += " ORDER BY a.published_date DESC"
@@ -329,7 +372,7 @@ class DatabaseHandler(IDatabaseHandler):
                 if filters.limit:
                     query += f" OFFSET {filters.offset or 0} ROWS FETCH NEXT {filters.limit} ROWS ONLY"
                 
-                cursor.execute(query, params)
+                cursor.execute(query, tuple(params))
                 rows = cursor.fetchall()
                 
                 articles = []
@@ -363,7 +406,7 @@ class DatabaseHandler(IDatabaseHandler):
             SELECT k.keyword 
             FROM article_keywords ak
             INNER JOIN keywords k ON ak.keyword_id = k.id
-            WHERE ak.article_id = ?
+            WHERE ak.article_id = %s
         """, (article_id,))
         
         return [row[0] for row in cursor.fetchall()]
@@ -383,7 +426,7 @@ class DatabaseHandler(IDatabaseHandler):
                     INSERT INTO sentiment_analyses 
                     (id, analysis_date, date_range_start, date_range_end, sentiment_score, 
                      sentiment_label, confidence, summary, model_version, role_context, article_count)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """
                     
                     cursor.execute(insert_query, (
@@ -403,7 +446,7 @@ class DatabaseHandler(IDatabaseHandler):
                     # Insert article relationships
                     for article_id in analysis.article_ids:
                         cursor.execute(
-                            "INSERT INTO sentiment_analysis_articles (sentiment_analysis_id, article_id) VALUES (?, ?)",
+                            "INSERT INTO sentiment_analysis_articles (sentiment_analysis_id, article_id) VALUES (%s, %s)",
                             (analysis.id, article_id)
                         )
                     
@@ -422,12 +465,12 @@ class DatabaseHandler(IDatabaseHandler):
             now = datetime.utcnow()
             return now, now
         
-        placeholders = ','.join(['?' for _ in article_ids])
+        placeholders = ','.join(['%s' for _ in article_ids])
         cursor.execute(f"""
             SELECT MIN(published_date), MAX(published_date)
             FROM news_articles
             WHERE id IN ({placeholders})
-        """, article_ids)
+        """, tuple(article_ids))
         
         result = cursor.fetchone()
         return result[0] or datetime.utcnow(), result[1] or datetime.utcnow()
@@ -447,12 +490,12 @@ class DatabaseHandler(IDatabaseHandler):
                 params = []
                 
                 if date_range:
-                    query += " AND date_range_start >= ? AND date_range_end <= ?"
+                    query += " AND date_range_start >= %s AND date_range_end <= %s"
                     params.extend([date_range.start_date, date_range.end_date])
                 
                 query += " ORDER BY analysis_date DESC"
                 
-                cursor.execute(query, params)
+                cursor.execute(query, tuple(params))
                 rows = cursor.fetchall()
                 
                 analyses = []
@@ -484,7 +527,7 @@ class DatabaseHandler(IDatabaseHandler):
         cursor.execute("""
             SELECT article_id 
             FROM sentiment_analysis_articles
-            WHERE sentiment_analysis_id = ?
+            WHERE sentiment_analysis_id = %s
         """, (analysis_id,))
         
         return [row[0] for row in cursor.fetchall()]
@@ -521,7 +564,7 @@ class DatabaseHandler(IDatabaseHandler):
                 cursor = conn.cursor()
                 try:
                     columns = list(data[0].keys())
-                    placeholders = ', '.join(['?' for _ in columns])
+                    placeholders = ', '.join(['%s' for _ in columns])
                     column_names = ', '.join(columns)
                     
                     insert_query = f"INSERT INTO {table_name} ({column_names}) VALUES ({placeholders})"
@@ -529,7 +572,8 @@ class DatabaseHandler(IDatabaseHandler):
                     rows = [tuple(item[col] for col in columns) for item in data]
                     
                     self.logger.info(f"💾 save_structured_data: Saving {len(data)} rows to {table_name}")
-                    cursor.executemany(insert_query, rows)
+                    for row in rows:
+                        cursor.execute(insert_query, row)
                     
                     conn.commit()
                     self.logger.info(f"🚀 save_structured_data: Successfully saved {len(data)} rows to {table_name}")
@@ -549,8 +593,8 @@ class DatabaseHandler(IDatabaseHandler):
                 
                 try:
                     if params:
-                        # Convert dict params to list for pyodbc
-                        param_list = list(params.values()) if isinstance(params, dict) else params
+                        # Convert dict params to tuple for pymssql
+                        param_list = tuple(params.values()) if isinstance(params, dict) else tuple(params)
                         cursor.execute(query, param_list)
                     else:
                         cursor.execute(query)
@@ -590,7 +634,7 @@ class DatabaseHandler(IDatabaseHandler):
                     INSERT INTO execution_logs 
                     (id, function_name, execution_id, start_time, end_time, status, 
                      error_message, input_parameters, output_summary, duration_ms)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """
                     
                     cursor.execute(insert_query, (
@@ -618,7 +662,7 @@ class DatabaseHandler(IDatabaseHandler):
         """Get a configuration value from the database."""
         try:
             result = await self.execute_query(
-                "SELECT config_value FROM configuration WHERE config_key = ?",
+                "SELECT config_value FROM configuration WHERE config_key = %s",
                 [config_key]
             )
             return result[0]['config_value'] if result else None
@@ -635,13 +679,13 @@ class DatabaseHandler(IDatabaseHandler):
             if existing is not None:
                 # Update existing
                 await self.execute_query(
-                    "UPDATE configuration SET config_value = ?, updated_at = GETUTCDATE() WHERE config_key = ?",
+                    "UPDATE configuration SET config_value = %s, updated_at = GETUTCDATE() WHERE config_key = %s",
                     [config_value, config_key]
                 )
             else:
                 # Insert new
                 await self.execute_query(
-                    "INSERT INTO configuration (config_key, config_value, config_type) VALUES (?, ?, ?)",
+                    "INSERT INTO configuration (config_key, config_value, config_type) VALUES (%s, %s, %s)",
                     [config_key, config_value, config_type]
                 )
                 
@@ -663,7 +707,7 @@ class DatabaseHandler(IDatabaseHandler):
     def _get_or_create_source_sync(self, cursor, source_name: str) -> int:
         """Get or create a news source and return its ID (synchronous)."""
         # Check if source exists
-        cursor.execute("SELECT id FROM news_sources WHERE name = ?", (source_name,))
+        cursor.execute("SELECT id FROM news_sources WHERE name = %s", (source_name,))
         result = cursor.fetchone()
         
         if result:
@@ -671,7 +715,7 @@ class DatabaseHandler(IDatabaseHandler):
         
         # Create new source
         cursor.execute(
-            "INSERT INTO news_sources (name, base_url) VALUES (?, ?)",
+            "INSERT INTO news_sources (name, base_url) VALUES (%s, %s)",
             (source_name, f"https://www.{source_name.lower().replace(' ', '')}.com")
         )
         
@@ -683,7 +727,7 @@ class DatabaseHandler(IDatabaseHandler):
             return int(identity_result[0])
         else:
             # Fallback: try to get the ID by name again
-            cursor.execute("SELECT id FROM news_sources WHERE name = ?", (source_name,))
+            cursor.execute("SELECT id FROM news_sources WHERE name = %s", (source_name,))
             fallback_result = cursor.fetchone()
             if fallback_result and fallback_result[0] is not None:
                 return int(fallback_result[0])
@@ -698,14 +742,14 @@ class DatabaseHandler(IDatabaseHandler):
             
             # Insert article-keyword relationship
             cursor.execute(
-                "INSERT INTO article_keywords (article_id, keyword_id) VALUES (?, ?)",
+                "INSERT INTO article_keywords (article_id, keyword_id) VALUES (%s, %s)",
                 (article_id, keyword_id)
             )
     
     def _get_or_create_keyword_sync(self, cursor, keyword: str) -> int:
         """Get or create a keyword and return its ID (synchronous)."""
         # Check if keyword exists
-        cursor.execute("SELECT id FROM keywords WHERE keyword = ?", (keyword,))
+        cursor.execute("SELECT id FROM keywords WHERE keyword = %s", (keyword,))
         result = cursor.fetchone()
         
         if result:
@@ -713,7 +757,7 @@ class DatabaseHandler(IDatabaseHandler):
         
         # Create new keyword
         cursor.execute(
-            "INSERT INTO keywords (keyword) VALUES (?)",
+            "INSERT INTO keywords (keyword) VALUES (%s)",
             (keyword,)
         )
         
@@ -725,7 +769,7 @@ class DatabaseHandler(IDatabaseHandler):
             return int(identity_result[0])
         else:
             # Fallback: try to get the ID by keyword again
-            cursor.execute("SELECT id FROM keywords WHERE keyword = ?", (keyword,))
+            cursor.execute("SELECT id FROM keywords WHERE keyword = %s", (keyword,))
             fallback_result = cursor.fetchone()
             if fallback_result and fallback_result[0] is not None:
                 return int(fallback_result[0])

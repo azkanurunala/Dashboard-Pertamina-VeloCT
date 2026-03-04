@@ -312,7 +312,8 @@ class MigasEIAScraper(BaseNewsScraper):
                 return []
             
             # Transform data
-            transformed = self.pivot_data(transformed)
+            long_format = self.transform_data(all_data, next_release_str)
+            transformed = self.pivot_data(long_format)
             
             # Map column names if needed to match database exactly
             # Database columns: bulan, tahun, world_total_production, opec, non_opec, crude_oil, ...
