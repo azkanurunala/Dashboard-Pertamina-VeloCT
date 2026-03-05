@@ -11,6 +11,9 @@ from io import BytesIO
 from openpyxl import load_workbook
 from dotenv import load_dotenv
 import time
+import re
+import requests
+from datetime import datetime, date
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -27,6 +30,7 @@ ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_DATA_PATH", "/results/(Terstruktur)Data
 URL_CAPACITY = "https://pris.iaea.org/PRIS/WorldStatistics/WorldTrendNuclearPowerCapacity.aspx"
 URL_PRODUCTION = "https://pris.iaea.org/PRIS/WorldStatistics/WorldTrendinElectricalProduction.aspx"
 URL_COUNTRY_STATS = "https://pris.iaea.org/PRIS/CountryStatistics/CountryStatisticsLandingPage.aspx"
+PRIS_LAST_UPDATE_URL = "https://pris.iaea.org/PRIS/WorldStatistics/OperationalReactorsByCountry.aspx"
 SHEET_NAME_CAPACITY = "(Data)IAEA_Nuclear_Capacity"
 SHEET_NAME_PRODUCTION = "(Data)IAEA_Electrical"
 SHEET_NAME_COUNTRY_STATS = "(Data)IAEA_Country_Stats"
@@ -156,6 +160,21 @@ def fetch_electrical_production_data():
         if driver:
             driver.quit()
 
+def fetch_pris_last_update_selenium() -> date | None:
+    driver = None
+    try:
+        driver = setup_driver()
+        driver.get(PRIS_LAST_UPDATE_URL)
+        WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        html = driver.page_source
+        hits = re.findall(r"Last update on\s+(\d{4}-\d{2}-\d{2})", html)
+        if not hits:
+            return None
+        return datetime.strptime(hits[-1], "%Y-%m-%d").date()
+    finally:
+        if driver:
+            driver.quit()
+            
 def fetch_country_statistics_data():
     driver = None
     try:
@@ -213,6 +232,14 @@ def fetch_country_statistics_data():
         df = df[cols]
 
         print(f"Berhasil scrape {len(df)} baris Country Statistics")
+        
+        pris_last = fetch_pris_last_update_selenium()  # date atau None
+        if pris_last is None:
+            raise Exception("Tidak menemukan 'Last update on YYYY-MM-DD' di PRIS_LAST_UPDATE_URL")
+
+        df["LastUpdate"] = pris_last
+        cols = ["LastUpdate", "Country", "CountryCode"] + [c for c in df.columns if c not in ("LastUpdate","Country","CountryCode")]
+        df = df[cols]
         return df
 
     except Exception as e:
@@ -295,22 +322,45 @@ def save_to_onedrive(access_token, df_capacity: pd.DataFrame, df_production: pd.
             print(f"Sheet '{SHEET_NAME_PRODUCTION}': {len(df_combined_production)} rows")
         if df_country is not None and not df_country.empty:
             print(f"\nMemproses sheet: {SHEET_NAME_COUNTRY_STATS}")
-            df_combined_country = df_country
+
             if excel_buffer is not None:
                 excel_buffer.seek(0)
                 try:
                     existing_df = pd.read_excel(excel_buffer, sheet_name=SHEET_NAME_COUNTRY_STATS, engine="openpyxl")
-                    df_combined_country = pd.concat([existing_df, df_country], ignore_index=True)
 
-                    # dedup paling aman by Country (atau by CountryCode kalau kamu yakin selalu terisi)
-                    dedup_key = "CountryCode" if "CountryCode" in df_combined_country.columns else "Country"
-                    df_combined_country.drop_duplicates(subset=[dedup_key], keep="last", inplace=True)
+                    # pastikan kolom LastUpdate ada di data baru
+                    if "LastUpdate" not in df_country.columns:
+                        raise Exception("Kolom LastUpdate belum ada di df_country.")
 
-                    # sort optional
-                    df_combined_country = df_combined_country.sort_values("Country")
-                    print(f"  Data di-merge. Total rows: {len(df_combined_country)}")
-                except:
+                    pris_last = df_country["LastUpdate"].iloc[0]
+
+                    # kalau existing juga punya LastUpdate, cek apakah sama
+                    if "LastUpdate" in existing_df.columns:
+                        last_saved = pd.to_datetime(existing_df["LastUpdate"], errors="coerce").max()
+                        last_saved = last_saved.date() if pd.notna(last_saved) else None
+
+                        if last_saved == pris_last:
+                            print(f"LastUpdate masih sama ({pris_last}), skip append Country Stats.")
+                            df_combined_country = existing_df  # tidak berubah
+                        else:
+                            df_combined_country = pd.concat([existing_df, df_country], ignore_index=True)
+                    else:
+                        # sheet lama belum punya kolom LastUpdate -> merge saja
+                        df_combined_country = pd.concat([existing_df, df_country], ignore_index=True)
+
+                except Exception:
                     print("  Sheet baru akan dibuat")
+                    df_combined_country = df_country
+            else:
+                df_combined_country = df_country
+
+            # dedup + sort (jalan baik untuk existing maupun baru)
+            if "LastUpdate" not in df_combined_country.columns:
+                raise Exception("Kolom LastUpdate belum ada. Pastikan fetch_country_statistics_data() menambahkannya.")
+
+            key_country = "CountryCode" if "CountryCode" in df_combined_country.columns else "Country"
+            df_combined_country.drop_duplicates(subset=["LastUpdate", key_country], keep="last", inplace=True)
+            df_combined_country = df_combined_country.sort_values(["LastUpdate", "Country"], ascending=[True, True])
 
             if SHEET_NAME_COUNTRY_STATS in wb.sheetnames:
                 del wb[SHEET_NAME_COUNTRY_STATS]
@@ -322,7 +372,7 @@ def save_to_onedrive(access_token, df_capacity: pd.DataFrame, df_production: pd.
                 for col_idx, value in enumerate(row_data, 1):
                     ws.cell(row=row_idx, column=col_idx, value=value)
 
-            print(f"Sheet '{SHEET_NAME_COUNTRY_STATS}': {len(df_combined_country)} rows")
+            print(f"Sheet '{SHEET_NAME_COUNTRY_STATS}': {len(df_combined_country)} rows")        
         wb.save(output_buffer)
         wb.close()
         output_buffer.seek(0)
@@ -348,7 +398,9 @@ def main_iaea_scraper():
     df_capacity = fetch_nuclear_capacity_data()
     df_production = fetch_electrical_production_data()
     df_country = fetch_country_statistics_data()
-    print(df_production)
+    print("Country df:", None if df_country is None else df_country.shape)
+    # print(df_production)
+    print("Masuk save_to_onedrive. Country empty?", df_country is None or df_country.empty)
     if (df_capacity is not None and not df_capacity.empty) or \
        (df_production is not None and not df_production.empty) or \
        (df_country is not None and not df_country.empty):
