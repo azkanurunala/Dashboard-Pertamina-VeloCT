@@ -21,7 +21,7 @@ from code_scrapping.cnbc import main_google_news_cnbc
 from code_scrapping.oilprice import scrape_oilprice
 from code_scrapping.scrape_sandp_news import scrape_news_sap
 from code_scrapping.scmp import main_scmp
-from code_scrapping.the_guardian_sitemap import scrape_theguardian
+from code_scrapping.the_guardian import scrape_theguardian
 from code_scrapping.energiesmedia import scrape_energiesmedia
 from code_scrapping.bioenergytimes import scrape_bioenergytimes
 
@@ -38,7 +38,7 @@ sinonim_dict = {
     # "oil price ": ["crude oil "],
     # "oil volume ": ["bbm volume "],
     # "SAF " : ["UCO ", "sustainable aviation fuel ", "used cooking oil ", "CORSIA ", "SAFCo ", "biorefinery ", "bioavtur "], 
-    "RON 92 " : ["pertamax ", "RON 95 ", "RON 97 ", "Residual FO ", "Fuel Oil", "Jet Fuel ", "Avtur ", "Kerosene ", "refinery ", "refined products ", "refining ", "oil products ", "Gasoline ", "Heavy Oil ", "Diesel ", "Gasoil ", "Naphtha ", "LPG ", "Biodiesel ", "Biogasoline ", "Petroleum Coke ", "Oil price ", "Fuel "], 
+    "RON 92 " : ["pertamax ", "RON 95 ", "RON 97 ", "Residual FO ", "Fuel Oil", "Jet Fuel ", "Avtur ", "Kerosene ", "refinery ", "refined products ", "refining ", "oil products ", "Gasoline ", "Heavy Oil ", "Diesel ", "Gasoil ", "Naphtha ", "LPG ", "Biodiesel ", "Biogasoline ", "Petroleum Coke ", "Oil price ", "Fuel cost ", "Fuel price "], 
     "Petro " : ["chemical ", "petrochemical ", "aromatic ", "olefin ", "polymer ", "LPG ", "Paraxylene ", "Propylene ", "Benzene ", "Green Coke " ]
 }
 
