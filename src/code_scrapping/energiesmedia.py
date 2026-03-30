@@ -1,162 +1,244 @@
+import os
+import sys
+import time
+from datetime import datetime
+
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-import pandas as pd
-from datetime import datetime
-import time
 
-def search_energiesmedia(keyword, page=1):
-    keyword_formatted = keyword.replace(' ', '+')
-    if page == 1:
-        url = f"https://energiesmedia.com/?s={keyword_formatted}"
-    else:
-        url = f"https://energiesmedia.com/page/{page}/?s={keyword_formatted}"
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/121.0.0.0 Safari/537.36"
-        )
-    }
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from helpers.scraping_utils import normalize_to_iso_date, rename_to_standard_columns
+
+
+# Constants
+
+ENERGIESMEDIA_BASE_URL = "https://energiesmedia.com"
+
+REQUEST_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/121.0.0.0 Safari/537.36"
+    )
+}
+
+REQUEST_TIMEOUT     = 60
+PAGE_FETCH_DELAY    = 2.0   # seconds between paginated list requests
+CONTENT_FETCH_DELAY = 2.0   # seconds between article content fetches
+MIN_CONTENT_LENGTH  = 10    # minimum element character length to include
+
+# CSS selectors for noise elements inside the article body
+NOISE_SELECTORS = (
+    "div.jnews_inline_related_post_wrapper, "
+    "div.oilma-article-content-banner, "
+    "div.oilma-article-bottom-banner, "
+    "div.m-a-box, "
+    "script"
+)
+
+
+# Search Results Page Fetching
+
+def _fetch_search_page(keyword: str, page: int) -> list[dict]:
+    """
+    Fetch one Energiesmedia search results page and return parsed article metadata including title, date, and link.
+    """
+    kw_enc = keyword.replace(" ", "+")
+    url    = (
+        f"{ENERGIESMEDIA_BASE_URL}/?s={kw_enc}"
+        if page == 1
+        else f"{ENERGIESMEDIA_BASE_URL}/page/{page}/?s={kw_enc}"
+    )
+
     try:
-        r = requests.get(url, headers=headers, timeout=60)
-        r.raise_for_status()
-        soup = BeautifulSoup(r.content, "html.parser")
-        articles = []
-        article_modules = soup.select("article.jeg_post.jeg_pl_lg_2")
-        for module in article_modules:
-            try:
-                title_elem = module.select_one("h3.jeg_post_title a")
-                if not title_elem:
-                    continue
-                title = title_elem.get_text(strip=True)
-                link = title_elem.get('href', '').strip()
-                date_elem = module.select_one("div.jeg_meta_date a")
-                if date_elem:
-                    date_text = date_elem.get_text(strip=True)
-                    try:
-                        date_obj = datetime.strptime(date_text, "%B %d, %Y")
-                        date_formatted = date_obj.strftime("%Y-%m-%d")
-                    except:
-                        date_formatted = date_text
-                else:
-                    date_formatted = "N/A"
-                if title and link:
-                    articles.append({
-                        'Judul': title,
-                        'Tanggal': date_formatted,
-                        'Link': link
-                    })
-            except Exception as e:
-                print(f"[WARN] Error parsing article: {e}")
-                continue
-        return articles
-    except Exception as e:
-        print(f"[ERROR] Failed to fetch page {page}: {e}")
+        response = requests.get(url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, "html.parser")
+    except Exception as exc:
+        print(f"[Fetch] Failed to fetch page {page}: {exc}")
         return []
 
-def fetch_article_content(url):
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/121.0.0.0 Safari/537.36"
-        )
-    }
+    articles: list[dict] = []
+
+    for module in soup.select("article.jeg_post.jeg_pl_lg_2"):
+        try:
+            title_elem = module.select_one("h3.jeg_post_title a")
+            if not title_elem:
+                continue
+
+            title = title_elem.get_text(strip=True)
+            link  = title_elem.get("href", "").strip()
+
+            if not title or not link:
+                continue
+
+            # Parse date — Energiesmedia uses "Month DD, YYYY" (e.g. "March 7, 2026")
+            date_elem = module.select_one("div.jeg_meta_date a")
+            raw_date  = date_elem.get_text(strip=True) if date_elem else ""
+            iso_date  = normalize_to_iso_date(raw_date) or raw_date or "N/A"
+
+            articles.append({"Judul": title, "Tanggal": iso_date, "Link": link})
+
+        except Exception as exc:
+            print(f"[Fetch] Error parsing article card: {exc}")
+            continue
+
+    return articles
+
+
+# Article Content Fetching
+
+def _fetch_article_content(url: str) -> str:
+    """
+    Fetch an Energiesmedia article page, remove noise elements, and return cleaned body text or "N/A" if unavailable.
+    """
     try:
-        r = requests.get(url, headers=headers, timeout=60)
-        r.raise_for_status()
-        soup = BeautifulSoup(r.content, "html.parser")
+        response = requests.get(url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, "html.parser")
+
         article_body = soup.select_one("div.content-inner")
         if not article_body:
-            print(f"[WARN] No article content found")
+            print(f"[Content] Content container not found: {url}")
             return "N/A"
-        for unwanted in article_body.select('div.jnews_inline_related_post_wrapper, div.oilma-article-content-banner, div.oilma-article-bottom-banner, div.m-a-box, script'):
-            unwanted.decompose()
-        content_parts = []
-        for elem in article_body.find_all(['p', 'h2', 'h3', 'blockquote']):
-            text = elem.get_text(strip=True)
-            if text and len(text) > 10:
-                content_parts.append(text)
-        if content_parts:
-            content = "\n\n".join(content_parts)
-            print(f"Success Extracted {len(content)} characters")
-            return content
-        return "N/A"
-    except Exception as e:
-        print(f"Error, Failed to fetch content: {e}")
+
+        # Two-pass decompose to avoid stale-reference errors
+        for noise in article_body.select(NOISE_SELECTORS):
+            noise.decompose()
+
+        paragraphs = [
+            el.get_text(strip=True)
+            for el in article_body.find_all(["p", "h2", "h3", "blockquote"])
+            if len(el.get_text(strip=True)) > MIN_CONTENT_LENGTH
+        ]
+
+        if not paragraphs:
+            return "N/A"
+
+        content = "\n\n".join(paragraphs)
+        print(f"[Content] Extracted {len(content)} characters.")
+        return content
+
+    except Exception as exc:
+        print(f"[Content] Failed to fetch content: {exc}")
         return "N/A"
 
-def scrape_energiesmedia(keyword, tanggal=None):
-    all_articles = []
-    filter_datetime = None
-    if tanggal:
+
+# Orchestration
+
+def scrape_energiesmedia(
+    keyword: str,
+    tanggal: str | None = None,
+) -> pd.DataFrame | None:
+    """
+    Scrape Energiesmedia articles by keyword with optional date filtering, then return a DataFrame enriched with full content.
+    """
+    iso_filter: str | None = None
+    filter_dt:  datetime | None = None
+
+    if tanggal is not None:
+        iso_filter = normalize_to_iso_date(str(tanggal))
+        if not iso_filter:
+            print(f"[Scrape] Warning: could not normalise tanggal='{tanggal}' — using as-is.")
+            iso_filter = str(tanggal)
         try:
-            if isinstance(tanggal, datetime):
-                filter_datetime = tanggal
-            else:
-                filter_datetime = datetime.strptime(str(tanggal), '%Y-%m-%d')
-            print(f"[INFO] Filter tanggal: {filter_datetime.strftime('%Y-%m-%d')}")
-        except Exception as e:
-            print(f"[WARN] Gagal parse filter_date '{tanggal}': {e}")
-            filter_datetime = None
-    page = 1
-    should_stop = False
-    while not should_stop:
-        print(f"\n[INFO] Scraping page {page}...")
-        articles = search_energiesmedia(keyword, page)
+            filter_dt = datetime.strptime(iso_filter, "%Y-%m-%d")
+            print(f"[Scrape] Date filter: {iso_filter}")
+        except ValueError:
+            print(f"[Scrape] Warning: could not parse normalised date '{iso_filter}'.")
+
+    matched:   list[dict] = []
+    page       = 1
+    stop_early = False
+
+    while not stop_early:
+        print(f"\n[Scrape] Fetching page {page}...")
+        articles = _fetch_search_page(keyword, page)
+
         if not articles:
-            print(f"[INFO] No more articles found on page {page}, stopping.")
+            print(f"[Scrape] No articles on page {page} — stopping.")
             break
+
         for article in articles:
+            raw_tgl = article.get("Tanggal", "")
+
             try:
-                article_date = datetime.strptime(article['Tanggal'], '%Y-%m-%d')
-                if filter_datetime:
-                    if article_date < filter_datetime:
-                        print(f"[INFO] Found article with older date ({article['Tanggal']}) on page {page}, stopping scraping")
-                        should_stop = True
-                        break
-                    elif article_date == filter_datetime:
-                        all_articles.append(article)
-                else:
-                    all_articles.append(article)
-            except Exception as e:
-                print(f"[WARN] Error parsing date '{article['Tanggal']}': {e}")
-                if not filter_datetime:
-                    all_articles.append(article)
-        if should_stop:
+                article_dt = (
+                    datetime.strptime(raw_tgl, "%Y-%m-%d")
+                    if raw_tgl not in ("N/A", "")
+                    else None
+                )
+            except ValueError:
+                article_dt = None
+
+            if filter_dt and article_dt:
+                if article_dt < filter_dt:
+                    print(f"[Scrape] Article dated {raw_tgl} is older than target — stopping.")
+                    stop_early = True
+                    break
+                elif article_dt == filter_dt:
+                    matched.append(article)
+            else:
+                matched.append(article)
+
+        if stop_early:
             break
+
         page += 1
-        time.sleep(2)
-    print(f"\n[INFO] Total articles found: {len(all_articles)}")
-    if not all_articles:
-        print("[INFO] No articles to process.")
+        time.sleep(PAGE_FETCH_DELAY)
+
+    print(f"\n[Scrape] {len(matched)} article(s) found.")
+
+    if not matched:
         return None
-    print(f"\n[INFO] Fetching content for {len(all_articles)} articles...\n")
-    for i, article in enumerate(all_articles, 1):
-        print(f"[{i}/{len(all_articles)}] {article['Judul'][:60]}...")
-        article['Konten'] = fetch_article_content(article['Link'])
-        if i < len(all_articles):
-            time.sleep(2)
-    df = pd.DataFrame(all_articles)
-    df = df.rename(
-        columns={
-            'Judul': 'title',
-            'Tanggal': 'date',
-            'Link': 'url',
-            'Konten': 'content'
-        }
-    )
+
+    print(f"[Scrape] Fetching content for {len(matched)} article(s)...\n")
+    for i, article in enumerate(matched, start=1):
+        print(f"[Scrape] [{i}/{len(matched)}] {article['Judul'][:60]}...")
+        article["Konten"] = _fetch_article_content(article["Link"])
+        if i < len(matched):
+            time.sleep(CONTENT_FETCH_DELAY)
+
+    df = rename_to_standard_columns(pd.DataFrame(matched))
     return df
 
-if __name__ == '__main__':
-    df = scrape_energiesmedia(
-        keyword="Oil",
-        tanggal="2026-01-01"
-    )
-    if df is not None and not df.empty:
-        # df.to_excel("energiesmedia_results.xlsx", index=False, engine='openpyxl')
-        print(df)
-        print("\n[INFO] Scraping completed and saved to 'energiesmedia_results.xlsx'")
-        print(f"[INFO] Total articles: {len(df)}")
+
+# Public Entry Point
+
+def main_energiesmedia(
+    keyword: str = "Oil price",
+    tanggal: str | None = "2026-03-07",
+) -> pd.DataFrame | None:
+    """
+    Run the Energiesmedia scraping workflow for a keyword and optional date, returning a DataFrame or None if no results are found.
+    """
+    print(f"[Main] Keyword : '{keyword}'")
+    print(f"[Main] Target  : {tanggal or '(no date filter)'}\n")
+
+    df = scrape_energiesmedia(keyword, tanggal=tanggal)
+
+    if df is None or df.empty:
+        print("[Main] No articles found.")
+        return None
+
+    print(f"[Main] Successfully scraped {len(df)} article(s).")
+    return df
+
+
+# Script Entry Point
+
+if __name__ == "__main__":
+    from dotenv import load_dotenv
+    load_dotenv()
+
+    result = main_energiesmedia(keyword="Oil price", tanggal="2026-03-07")
+
+    if result is not None:
+        print(result)
+        result.to_excel("energiesmedia_results.xlsx", index=False, engine="openpyxl")
+        print(f"\n[Output] Saved to 'energiesmedia_results.xlsx'")
+        print(f"[Output] Total articles : {len(result)}")
+        print(f"[Output] Columns        : {', '.join(result.columns)}")
     else:
-        print("\n[INFO] No articles found")
+        print("\n[Output] No articles found.")
