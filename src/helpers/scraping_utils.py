@@ -1,6 +1,7 @@
 import re
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup, Tag
+import pandas as pd
 
 
 # Constants
