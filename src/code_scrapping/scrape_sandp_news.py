@@ -1,189 +1,273 @@
-import requests
-import pandas as pd
 import os
-from bs4 import BeautifulSoup
+import sys
 from datetime import datetime, timedelta
-from dotenv import load_dotenv
 
-load_dotenv()
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
 
-SP_USERNAME = os.getenv("S&P_USERNAME")
-SP_PASSWORD = os.getenv("S&P_PASSWORD")
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from helpers.scraping_utils import normalize_to_iso_date
 
-def login_spglobal(username=None, password=None):
-    if username is None:
-        username = SP_USERNAME
-    if password is None:
-        password = SP_PASSWORD
+
+# Constants
+
+SP_AUTH_URL      = "https://api.ci.spglobal.com/auth/api"
+SP_SEARCH_URL    = "https://api.ci.spglobal.com/news-insights/v1/search/story"
+SP_CONTENT_URL   = "https://api.ci.spglobal.com/news-insights/v1/content/{article_id}"
+
+DEFAULT_PAGESIZE = 1000
+REQUEST_TIMEOUT  = 30
+SEARCH_TIMEOUT   = 60
+
+
+# Authentication
+
+def _login(username: str | None = None, password: str | None = None) -> str | None:
+    """
+    Authenticate with the S&P API using provided or environment credentials and return a Bearer token, or None on failure.
+    """
+    username = username or os.getenv("S&P_USERNAME")
+    password = password or os.getenv("S&P_PASSWORD")
+
     if not username or not password:
-        print("Error: S&P_USERNAME atau S&P_PASSWORD tidak ditemukan di environment variables")
-        return None
-    url = "https://api.ci.spglobal.com/auth/api"
-    payload = {
-        "username": username,
-        "password": password
-    }
-    headers = {
-        "Content-Type": "application/x-www-form-urlencoded"
-    }
-    try:
-        print("Login ke S&P Global API...")
-        print(f"Username: {username}")
-        response = requests.post(url, data=payload, headers=headers, timeout=30)
-        print(f"Status code: {response.status_code}")
-        response.raise_for_status()
-        token_data = response.json()
-        access_token = token_data.get('access_token')
-        if access_token:
-            print("Login berhasil! Access token diperoleh.")
-            return access_token
-        else:
-            print("Login gagal: access_token tidak ditemukan dalam response")
-            print(f"Response: {token_data}")
-            return None
-    except requests.exceptions.RequestException as e:
-        print(f"Error saat login: {e}")
-        if hasattr(e, 'response') and e.response is not None:
-            print(f"Response status: {e.response.status_code}")
-            print(f"Response body: {e.response.text}")
+        print("[Auth] Error: S&P_USERNAME or S&P_PASSWORD not found in environment.")
         return None
 
-def extract_text_from_html(html_content):
+    print(f"[Auth] Logging in as '{username}'...")
+
+    try:
+        response = requests.post(
+            SP_AUTH_URL,
+            data={"username": username, "password": password},
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            timeout=REQUEST_TIMEOUT,
+        )
+        response.raise_for_status()
+        token = response.json().get("access_token")
+
+        if token:
+            print("[Auth] Login successful — access token obtained.")
+            return token
+
+        print(f"[Auth] Login failed: access_token not in response: {response.json()}")
+        return None
+
+    except requests.RequestException as exc:
+        print(f"[Auth] Request error: {exc}")
+        if hasattr(exc, "response") and exc.response is not None:
+            print(f"[Auth] Response {exc.response.status_code}: {exc.response.text}")
+        return None
+
+
+# HTML → Plain Text
+
+def _html_to_text(html_content: str) -> str:
+    """
+    Convert HTML content to clean plain text by removing script/style tags and normalizing whitespace.
+    """
     if not html_content:
         return ""
-    soup = BeautifulSoup(html_content, 'html.parser')
-    for script in soup(["script", "style"]):
-        script.decompose()
-    text = soup.get_text(separator=' ', strip=True)
-    text = ' '.join(text.split())
-    return text
 
-def get_article_content(access_token, article_id):
-    url = f"https://api.ci.spglobal.com/news-insights/v1/content/{article_id}"
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
+    soup = BeautifulSoup(html_content, "html.parser")
+    for tag in soup(["script", "style"]):
+        tag.decompose()
+
+    return " ".join(soup.get_text(separator=" ", strip=True).split())
+
+
+# Article Content Fetching
+
+def _fetch_article_content(access_token: str, article_id: str) -> str:
+    """
+    Fetch S&P article content using an access token and convert HTML body to clean plain text.
+    """
+    url = SP_CONTENT_URL.format(article_id=article_id)
     try:
-        response = requests.get(url, headers=headers, timeout=30)
+        response = requests.get(
+            url,
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type":  "application/json",
+            },
+            timeout=REQUEST_TIMEOUT,
+        )
         response.raise_for_status()
         data = response.json()
-        if data and 'envelope' in data and 'content' in data['envelope']:
-            body_html = data['envelope']['content'].get('body', '')
-            body_text = extract_text_from_html(body_html)
-            return body_text
-        return ""
-    except requests.exceptions.RequestException as e:
-        print(f"Error saat mengambil content untuk article {article_id}: {e}")
+
+        body_html = (
+            data.get("envelope", {})
+                .get("content", {})
+                .get("body", "")
+        )
+        return _html_to_text(body_html)
+
+    except requests.RequestException as exc:
+        print(f"[Content] Failed to fetch article {article_id}: {exc}")
         return ""
 
-def search_news(access_token, query="SAF", start_date=None, end_date=None, pagesize=1000):
-    url = "https://api.ci.spglobal.com/news-insights/v1/search/story"
+
+# News Search
+
+def _search_news(
+    access_token: str,
+    query: str,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    pagesize: int = DEFAULT_PAGESIZE,
+) -> list[dict]:
+    """
+    Search S&P Global news with optional date filtering and return articles enriched with full content.
+    """
+    params: dict = {"q": query, "pagesize": pagesize}
+
     if start_date and end_date:
-        filter_query = f'updatedDate >= "{start_date}" AND updatedDate < "{end_date}"'
-    else:
-        filter_query = None
-    params = {
-        "q": query,
-        "pagesize": pagesize
-    }
-    if filter_query:
-        params["filter"] = filter_query
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
+        params["filter"] = f'updatedDate >= "{start_date}" AND updatedDate < "{end_date}"'
+
+    print(f"\n[Search] Query   : '{query}'")
+    if "filter" in params:
+        print(f"[Search] Filter  : {params['filter']}")
+
     try:
-        print(f"\nMengambil news untuk query: '{query}'")
-        if filter_query:
-            print(f"Filter: {filter_query}")
-        response = requests.get(url, params=params, headers=headers, timeout=60)
-        print(f"Status: {response.status_code}")
+        response = requests.get(
+            SP_SEARCH_URL,
+            params=params,
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type":  "application/json",
+            },
+            timeout=SEARCH_TIMEOUT,
+        )
+        print(f"[Search] Status  : {response.status_code}")
         response.raise_for_status()
         data = response.json()
-        if data and 'results' in data:
-            results = data['results']
-            metadata = data.get('metadata', {})
-            print(f"Total artikel ditemukan: {metadata.get('count', len(results))}")
-            articles = []
-            for idx, item in enumerate(results, 1):
-                article_id = item.get('id', '')
-                headline = item.get('headline', '')
-                updated_date = item.get('updatedDate', '')
-                document_url = item.get('documentUrl', '')
-                date_only = ""
-                if updated_date:
-                    try:
-                        dt = datetime.fromisoformat(updated_date.replace('Z', '+00:00'))
-                        date_only = dt.strftime('%Y-%m-%d')
-                    except:
-                        date_only = updated_date.split('T')[0] if 'T' in updated_date else updated_date
 
-                print(f"  [{idx}/{len(results)}] Mengambil content: {headline[:50]}...")
-                content = get_article_content(access_token, article_id)
-                articles.append({
-                    'title': headline,
-                    'date': date_only,
-                    'url': document_url,
-                    'content': content
-                })
-            return articles
-        else:
-            print("Tidak ada hasil ditemukan")
-            return []
-    except requests.exceptions.RequestException as e:
-        print(f"Error saat search news: {e}")
-        if hasattr(e, 'response') and e.response is not None:
-            print(f"Response: {e.response.text}")
+    except requests.RequestException as exc:
+        print(f"[Search] Request error: {exc}")
+        if hasattr(exc, "response") and exc.response is not None:
+            print(f"[Search] Response: {exc.response.text}")
         return []
 
-def scrape_news_sap(keyword="SAF", tanggal_filter=None):
-    print("\nLogin ke S&P Global API...")
-    access_token = login_spglobal()
-    if not access_token:
-        print("Gagal login ke S&P Global API")
-        return []
-    start_date = None
-    end_date = None
-    if tanggal_filter:
-        try:
-            date_obj = datetime.strptime(tanggal_filter, '%Y-%m-%d')
-            start_date = f"{tanggal_filter} 00:00:00"
-            next_day = date_obj + timedelta(days=1)
-            end_date = next_day.strftime('%Y-%m-%d 00:00:00')
-        except Exception as e:
-            print(f"Error parsing tanggal_filter: {e}")
-            return []
-    articles = search_news(access_token, keyword, start_date, end_date, pagesize=1000)
-    if not articles:
-        print("Tidak ada artikel yang ditemukan")
-        return []
-    print(f"\nBerhasil mengambil {len(articles)} artikel")
+    results  = data.get("results", [])
+    metadata = data.get("metadata", {})
+    print(f"[Search] Found {metadata.get('count', len(results))} article(s).")
+
+    articles: list[dict] = []
+    for i, item in enumerate(results, start=1):
+        article_id   = item.get("id",          "")
+        headline     = item.get("headline",     "")
+        updated_date = item.get("updatedDate",  "")
+        document_url = item.get("documentUrl",  "")
+
+        # Normalise date — handles ISO 8601 timestamps from the API
+        iso_date = normalize_to_iso_date(updated_date.split("T")[0]) if updated_date else ""
+
+        print(f"  [{i}/{len(results)}] {headline[:50]}...")
+        content = _fetch_article_content(access_token, article_id)
+
+        articles.append({
+            "title":   headline,
+            "date":    iso_date,
+            "url":     document_url,
+            "content": content,
+        })
+
     return articles
 
 
+# Orchestration
+
+def scrape_spglobal(
+    keyword: str = "SAF",
+    tanggal: str | None = None,
+) -> list[dict]:
+    """
+    Authenticate with S&P Global and fetch news articles by keyword with optional single-day date filtering.
+    """
+    access_token = _login()
+    if not access_token:
+        print("[Scrape] Login failed — aborting.")
+        return []
+
+    start_date: str | None = None
+    end_date:   str | None = None
+
+    if tanggal is not None:
+        iso_date = normalize_to_iso_date(str(tanggal))
+        if not iso_date:
+            print(f"[Scrape] Warning: could not normalise tanggal='{tanggal}' — ignoring date filter.")
+        else:
+            date_obj   = datetime.strptime(iso_date, "%Y-%m-%d")
+            start_date = f"{iso_date} 00:00:00"
+            end_date   = (date_obj + timedelta(days=1)).strftime("%Y-%m-%d 00:00:00")
+
+    articles = _search_news(access_token, keyword, start_date, end_date)
+
+    if not articles:
+        print("[Scrape] No articles found.")
+    else:
+        print(f"\n[Scrape] {len(articles)} article(s) retrieved.")
+
+    return articles
+
+
+# Public Entry Point
+
+def main_spglobal(
+    keyword: str = "SAF",
+    tanggal: str | None = None,
+) -> pd.DataFrame | None:
+    """
+    Run the S&P Global scraping workflow for a keyword and optional date, returning a structured DataFrame or None if no results are found.
+    """
+    print("=" * 60)
+    print("S&P Global Commodity Insights News Scraper")
+    print("=" * 60)
+    print(f"[Main] Keyword : '{keyword}'")
+    print(f"[Main] Target  : {tanggal or '(no date filter)'}\n")
+
+    articles = scrape_spglobal(keyword=keyword, tanggal=tanggal)
+
+    if not articles:
+        print("[Main] No articles to return.")
+        return None
+
+    df = pd.DataFrame(articles)[["title", "date", "url", "content"]]
+    print(f"\n[Main] Successfully retrieved {len(df)} article(s).")
+    return df
+
+
+# Script Entry Point
+
 if __name__ == "__main__":
-    print("=" * 60)
-    print("TEST SCRAPE S&P GLOBAL NEWS")
-    print("=" * 60)
+    from dotenv import load_dotenv
+    load_dotenv()
+
     keyword = "SAF"
-    tanggal = datetime.today().strftime('%Y-%m-%d')
-    print(f"\nKeyword: {keyword}")
-    print(f"Tanggal: {tanggal}")
-    articles = scrape_news_sap(keyword=keyword, tanggal_filter=tanggal)
+    tanggal = "2025-01-08"
+
+    result = main_spglobal(keyword=keyword, tanggal=tanggal)
+
     print("\n" + "=" * 60)
     print("HASIL")
     print("=" * 60)
-    if articles:
-        print(f"Total artikel: {len(articles)}\n")
-        for i, article in enumerate(articles[:5], 1):
-            print(f"[{i}] {article['title']}")
-            print(f"    Date: {article['date']}")
-            print(f"    URL: {article['url']}")
-            print(f"    Content: {article['content'][:200]}..." if article['content'] else "    Content: -")
+
+    if result is not None:
+        print(f"Total artikel: {len(result)}\n")
+        for i, row in result.head(5).iterrows():
+            print(f"[{i+1}] {row['title']}")
+            print(f"     Date    : {row['date']}")
+            print(f"     URL     : {row['url']}")
+            content_preview = row["content"][:200] + "..." if row["content"] else "-"
+            print(f"     Content : {content_preview}")
             print()
+
+        filename = f"spglobal_{keyword}_{tanggal}.xlsx"
+        result.to_excel(filename, index=False, engine="openpyxl")
+        print(f"[Output] Saved to '{filename}'")
     else:
-        print("Tidak ada artikel ditemukan")
+        print("Tidak ada artikel ditemukan.")
+
     print("=" * 60)
     print("SELESAI")
     print("=" * 60)

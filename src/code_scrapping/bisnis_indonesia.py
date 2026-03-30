@@ -1,227 +1,305 @@
+import os
+import re
+import sys
+import time
+from datetime import datetime
+
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-import re
-import time
-import pandas as pd
-from datetime import datetime
-import os
 
-# ============================== Fungsi bantu: Ubah format tanggal ==============================
-def change_format_date(teks):
-    """Mengubah format tanggal dari 'DD NamaBulan YYYY' ke 'YYYY-MM-DD'."""
-    if not teks:
-        return None
-    
-    # mapping bulan
-    bulan = {
-        'january': '01', 'february': '02', 'march': '03', 'april': '04',
-        'may': '05', 'june': '06', 'july': '07', 'august': '08',
-        'september': '09', 'october': '10', 'november': '11', 'december': '12',
-        'januari': '01', 'februari': '02', 'maret': '03', 'april': '04',
-        'mei': '05', 'juni': '06', 'juli': '07', 'agustus': '08',
-        'september': '09', 'oktober': '10', 'november': '11', 'desember': '12'
-    }
+# Allow importing shared utilities from the sibling 'helpers' directory
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from helpers.scraping_utils import normalize_to_iso_date, parse_month_name_date, rename_to_standard_columns
 
-    # cari pola tanggal DD NamaBulan YYYY di teks
-    match = re.search(r'(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})', teks)
-    if match:
-        day = match.group(1).zfill(2)
-        month = bulan.get(match.group(2).lower(), '01')
-        year = match.group(3)
-        return f"{year}-{month}-{day}"
 
-    return None
+# Constants
 
-# ============================== Fungsi bantu: Bersihkan teks konten ==============================
-def clean_teks(teks):
-    if not teks or teks == 'N/A':
-        return teks
-    teks = re.sub(r'Baca Juga.*', '', teks, flags=re.IGNORECASE | re.DOTALL)
-    teks = re.sub(r'\n{3,}', '\n\n', teks)
-    return teks.strip()
+BISNIS_SEARCH_URL = "https://search.bisnis.com/"
 
-# ============================== Fungsi bantu: Dapatkan total halaman ==============================
-def get_total_pages_bisnis(soup) -> int:
-    pagination_list = soup.find("ol", class_="pagingList")
-    if not pagination_list:
-        print("  -> Tidak menemukan <ol class='pagingList'>, asumsi 1 halaman.")
-        return 1 
-    page_links = pagination_list.find_all("a", href=True)
+# HTTP headers sent with every request to avoid bot-detection blocks
+REQUEST_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/121.0.0.0 Safari/537.36"
+    )
+}
+
+# Delay in seconds between paginated requests (rate-limit courtesy)
+REQUEST_DELAY_SECONDS = 1.5
+
+# HTTP request timeout in seconds
+REQUEST_TIMEOUT = 10
+
+# CSS classes for elements to strip from article body before extracting text
+BISNIS_UNWANTED_CLASSES = ["billboard", "baca-juga-box", "baca-juga-inline"]
+
+
+# Content Utilities (Bisnis-specific)
+
+def clean_article_text(text: str) -> str:
+    """
+    Clean Bisnis.com article text by removing boilerplate and extra blank lines.
+    """
+    if not text or text == "N/A":
+        return text
+
+    # Remove "Baca Juga ..." blocks (case-insensitive, including everything after)
+    text = re.sub(r"Baca Juga.*", "", text, flags=re.IGNORECASE | re.DOTALL)
+
+    # Collapse 3+ consecutive blank lines into 2
+    text = re.sub(r"\n{3,}", "\n\n", text)
+
+    return text.strip()
+
+
+# Pagination
+
+def get_total_pages(soup: BeautifulSoup) -> int:
+    """
+    Return the total pagination pages from a Bisnis.com results page.
+    """
+    pagination = soup.find("ol", class_="pagingList")
+    if not pagination:
+        print("[Pagination] <ol class='pagingList'> not found — assuming 1 page.")
+        return 1
+
+    page_links = pagination.find_all("a", href=True)
     if not page_links:
-        print("  -> 'pagingList' ditemukan, tapi tidak ada link (a), asumsi 1 halaman.")
+        print("[Pagination] Pagination element found but contains no links — assuming 1 page.")
         return 1
-    nums = []
-    for a in page_links:
-        page_text = a.get_text(strip=True)
-        if page_text.isdigit():
-            nums.append(int(page_text))
-    if not nums:
-        return 1
-    return max(nums)
 
-# ============================== Fungsi utama: Scrape Bisnis.com ==============================
-def scrap_all_article(keyword, halaman, headers):
-    url = f"https://search.bisnis.com/?q={keyword}" + (f"&page={halaman}" if halaman > 1 else "")
+    page_numbers = [
+        int(a.get_text(strip=True))
+        for a in page_links
+        if a.get_text(strip=True).isdigit()
+    ]
+
+    return max(page_numbers) if page_numbers else 1
+
+
+# Page Fetching
+
+def fetch_search_results_page(keyword: str, page: int) -> tuple[list, BeautifulSoup | None]:
+    """
+    Return article cards and page soup from a Bisnis.com search results page.
+    """
+    params: dict = {"q": keyword}
+    if page > 1:
+        params["page"] = page
+
     try:
-        r = requests.get(url, headers=headers, timeout=10)
-        r.raise_for_status() 
-        soup = BeautifulSoup(r.content, 'html.parser')
-        return soup.find_all('div', class_='artItem'), soup
-    except Exception as e:
-        print(f"  -> Gagal mengambil halaman {halaman}: {e}")
+        response = requests.get(
+            BISNIS_SEARCH_URL, params=params,
+            headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT,
+        )
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, "html.parser")
+        return soup.find_all("div", class_="artItem"), soup
+
+    except Exception as exc:
+        print(f"[Fetch] Failed to fetch page {page}: {exc}")
         return [], None
 
-# ============================== Fungsi bantu: Ambil konten artikel ==============================    
-def get_article_content(url, headers):
+
+def fetch_article_content(url: str) -> str:
+    """
+    Fetch a Bisnis.com article and return its cleaned body text.
+    """
     try:
-        r = requests.get(url, headers=headers, timeout=10)
-        r.raise_for_status()
-        soup = BeautifulSoup(r.content, 'html.parser')
-        main_container = soup.find('article', class_='detailsContent')
-        if not main_container:
-            print(f"    -> Peringatan: Tidak menemukan 'detailsContent', mencari di 'div.col--main' {url}")
-            main_container = soup.find('div', class_='col--main')
-            if not main_container:
-                print(f"    -> Gagal menemukan kontainer konten di {url}")
-                return 'N/A'
-        for junk_ad in main_container.find_all('div', class_='billboard'):
-            junk_ad.decompose()
-        for junk_baca in main_container.find_all('div', class_='baca-juga-box'):
-            junk_baca.decompose()
-        for junk_baca_inline in main_container.find_all(class_='baca-juga-inline'):
-            junk_baca_inline.decompose()
-        elements = main_container.find_all(['p', 'li'])
-        text_lines = []
-        for el in elements:
-            text = el.get_text(strip=True)
-            if text:
-                text_lines.append(text)
+        response = requests.get(url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        # Locate the article body container
+        container = soup.find("article", class_="detailsContent")
+        if not container:
+            print(f"[Content] 'detailsContent' not found, trying 'col--main': {url}")
+            container = soup.find("div", class_="col--main")
+        if not container:
+            print(f"[Content] No content container found: {url}")
+            return "N/A"
+
+        # Remove non-content elements before extracting text.
+        # Collect first, then decompose to avoid stale-reference errors.
+        for css_class in BISNIS_UNWANTED_CLASSES:
+            elements_to_remove = container.find_all(class_=css_class)
+            for el in elements_to_remove:
+                el.decompose()
+
+        # Extract text from paragraph and list-item elements
+        text_lines = [
+            el.get_text(strip=True)
+            for el in container.find_all(["p", "li"])
+            if el.get_text(strip=True)
+        ]
+
         if not text_lines:
-            return 'N/A' 
-        konten = '\n\n'.join(text_lines)
-        return clean_teks(konten)
-    except Exception as e:
-        print(f"    -> Gagal ambil konten {url}: {e}")
-        return 'N/A'
+            return "N/A"
 
-# ============================== Fungsi utama: Scrape dan filter artikel ==============================
-def scrape_bisnis(keyword, tanggal, headers):
-    hasil = []
-    
-    print("Mengambil halaman 1 untuk cek pagination...")
-    item_halaman_1, soup_halaman_1 = scrap_all_article(keyword, 1, headers)
-    
-    if not soup_halaman_1:
-        print("Gagal mengambil halaman pertama. Proses dihentikan.")
+        return clean_article_text("\n\n".join(text_lines))
+
+    except Exception as exc:
+        print(f"[Content] Failed to fetch content from {url}: {exc}")
+        return "N/A"
+
+
+# Article Card Parsing
+
+def parse_article_card(item, target_date: str, target_dt: datetime) -> tuple[dict | None, bool]:
+    """
+    Parse one article card and return a match result plus a stop flag.
+    """
+    try:
+        title_tag = item.find("h4", class_="artTitle")
+        if not title_tag:
+            return None, False
+
+        title    = title_tag.get_text(strip=True)
+        link     = item.find("a", class_="artLink")["href"]
+        raw_date = item.find("div", class_="artDate").get_text(strip=True)
+        iso_date = parse_month_name_date(raw_date)
+
+        if not iso_date:
+            return None, False
+
+        article_dt = datetime.strptime(iso_date, "%Y-%m-%d")
+
+        if article_dt < target_dt:
+            # Article is older than target — signal caller to stop pagination
+            return None, True
+
+        if iso_date == target_date:
+            return {"judul": title, "link": link, "tanggal": iso_date}, False
+
+        # Article is newer than target — skip silently
+        return None, False
+
+    except Exception as exc:
+        print(f"[Parse] Error parsing article card: {exc}")
+        return None, False
+
+
+# Orchestration
+
+def scrape_bisnis_news(keyword: str, target_date: str) -> list[dict]:
+    """
+    Scrape Bisnis.com articles for the given keyword and publication date.
+    """
+    matched_articles: list[dict] = []
+    target_dt = datetime.strptime(target_date, "%Y-%m-%d")
+
+    # --- Fetch page 1 and read total page count ---
+    print(f"[Scrape] Fetching page 1 to check pagination...")
+    page_items, first_page_soup = fetch_search_results_page(keyword, page=1)
+
+    if not first_page_soup:
+        print("[Scrape] Failed to load page 1 — aborting.")
         return []
-    
-    total_halaman = get_total_pages_bisnis(soup_halaman_1)
-    print(f"Ditemukan total {total_halaman} halaman.")
-    
-    should_stop = False
-    target_date = datetime.strptime(tanggal, "%Y-%m-%d")
-    
-    for i in item_halaman_1:
-        try:
-            judul_tag = i.find('h4', class_='artTitle')
-            if not judul_tag:
-                continue
-            judul = judul_tag.get_text(strip=True)
-            link = i.find('a', class_='artLink')['href']
-            tanggal_asli = i.find('div', class_='artDate').get_text(strip=True)
-            tgl = change_format_date(tanggal_asli)
-            
-            if tgl:
-                article_date = datetime.strptime(tgl, "%Y-%m-%d")
-                if article_date < target_date:
-                    print(f"Ditemukan artikel dengan tanggal lebih lama ({tgl}) di halaman 1, berhenti scraping")
-                    should_stop = True
-                    break
-                elif tgl == tanggal:
-                    hasil.append({'judul': judul, 'link': link, 'tanggal': tgl})
-        except Exception as e:
-            print(f"  -> Error parsing artikel di halaman 1: {e}")
-            continue
-    
-    if not should_stop:
-        for halaman in range(2, total_halaman + 1):
-            print(f"Mengambil daftar artikel halaman {halaman}/{total_halaman}...")
-            item_list, _ = scrap_all_article(keyword, halaman, headers)
-            
-            if not item_list:
-                print(f"  -> Tidak ada item di halaman {halaman}, mungkin selesai.")
-                break 
-            
-            for i in item_list:
-                try:
-                    judul_tag = i.find('h4', class_='artTitle')
-                    if not judul_tag:
-                        continue
-                    judul = judul_tag.get_text(strip=True)
-                    link = i.find('a', class_='artLink')['href']
-                    tanggal_asli = i.find('div', class_='artDate').get_text(strip=True)
-                    tgl = change_format_date(tanggal_asli)
-                    
-                    if tgl:
-                        article_date = datetime.strptime(tgl, "%Y-%m-%d")
-                        if article_date < target_date:
-                            print(f"Ditemukan artikel dengan tanggal lebih lama ({tgl}) di halaman {halaman}, berhenti scraping")
-                            should_stop = True
-                            break
-                        elif tgl == tanggal:
-                            hasil.append({'judul': judul, 'link': link, 'tanggal': tgl})
-                except Exception as e:
-                    print(f"  -> Error parsing artikel di halaman {halaman}: {e}")
-                    continue
-            
-            if should_stop:
+
+    total_pages = get_total_pages(first_page_soup)
+    print(f"[Scrape] Total pages: {total_pages}")
+
+    # --- Process page 1 ---
+    stop_early = False
+    for item in page_items:
+        article, stop_early = parse_article_card(item, target_date, target_dt)
+        if article:
+            matched_articles.append(article)
+        if stop_early:
+            print(f"[Scrape] Article older than {target_date} found on page 1 — stopping.")
+            break
+
+    # --- Paginate through remaining pages ---
+    if not stop_early:
+        for page_num in range(2, total_pages + 1):
+            print(f"[Scrape] Fetching page {page_num}/{total_pages}...")
+            page_items, _ = fetch_search_results_page(keyword, page=page_num)
+
+            if not page_items:
+                print(f"[Scrape] Page {page_num} returned no items — stopping.")
                 break
-            
-            time.sleep(1.5)
-    
-    print(f"\nDitemukan {len(hasil)} artikel yang cocok dengan tanggal {tanggal}.")
-    
-    if hasil:
-        print("Mulai mengambil konten untuk artikel yang difilter...")
-        for i, h in enumerate(hasil):
-            print(f"  ({i+1}/{len(hasil)}) Mengambil konten: {h['judul'][:50]}...")
-            h['konten'] = get_article_content(h['link'], headers)
-            time.sleep(1.5)
-    
-    return hasil
 
-# ============================== Fungsi bantu: Simpan ke Excel ==============================
-def reformat(data):
-    df = pd.DataFrame(data)
-    df = df.rename(columns={
-        'judul' : 'title', 
-        'tanggal' : 'date', 
-        'link' : 'url', 
-        'konten' : 'content'
-    })
-    return df
+            for item in page_items:
+                article, stop_early = parse_article_card(item, target_date, target_dt)
+                if article:
+                    matched_articles.append(article)
+                if stop_early:
+                    print(f"[Scrape] Article older than {target_date} found on page {page_num} — stopping.")
+                    break
 
-# ============================== Main script ==============================
-def main_bisnis_indonesia(keyword="Purbaya", tanggal="2025-11-12"):
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/121.0.0.0 Safari/537.36"
-        )
-    }
-    print(f"Memulai scrape Bisnis.com untuk keyword: '{keyword}' pada tanggal: {tanggal}")
-    data = scrape_bisnis(keyword, tanggal, headers)
-    if not data:  
-        print(f"Tidak ada artikel ditemukan untuk keyword '{keyword}' pada tanggal {tanggal}")
+            if stop_early:
+                break
+
+            time.sleep(REQUEST_DELAY_SECONDS)
+
+    print(f"\n[Scrape] List scraping complete. {len(matched_articles)} article(s) matched on {target_date}.")
+
+    # --- Fetch full article content for each matched article ---
+    if matched_articles:
+        print(f"[Scrape] Fetching full content for {len(matched_articles)} article(s)...")
+        for i, article in enumerate(matched_articles, start=1):
+            print(f"[Scrape] ({i}/{len(matched_articles)}) {article['judul'][:50]}...")
+            article["konten"] = fetch_article_content(article["link"])
+            time.sleep(REQUEST_DELAY_SECONDS)
+
+    return matched_articles
+
+
+# Public Entry Point
+
+def main_bisnis_indonesia(
+    keyword: str = "Purbaya",
+    tanggal: str = "2025-11-12",
+) -> pd.DataFrame | None:
+    """
+    Run Bisnis.com scraping and return results as a DataFrame.
+    """
+    # Normalise any supported date format to ISO before passing downstream
+    iso_date = normalize_to_iso_date(tanggal)
+    if not iso_date:
+        print(f"[Main] Warning: could not normalise tanggal='{tanggal}' — using as-is.")
+        iso_date = tanggal
+
+    print(f"[Main] Keyword : '{keyword}'")
+    print(f"[Main] Target  : {iso_date}")
+
+    articles = scrape_bisnis_news(keyword, iso_date)
+
+    if not articles:
+        print(f"[Main] No articles found for keyword='{keyword}' on {iso_date}.")
         return None
-    df = reformat(data)
+
+    df = pd.DataFrame(articles)
+
     if df.empty:
-        print("DataFrame kosong setelah reformatting.")
+        print("[Main] DataFrame is empty after construction.")
         return None
-    print(f"Berhasil scrape {len(df)} artikel") 
+
+    # Rename internal keys to project-standard column names
+    df = rename_to_standard_columns(df)
+
+    print(f"[Main] Successfully scraped {len(df)} article(s).")
     return df
+
+
+# Script Entry Point
 
 if __name__ == "__main__":
-    data = main_bisnis_indonesia()
-    print(data)
+    from dotenv import load_dotenv
+    load_dotenv()  # Load .env only when run directly, not when imported
+
+    result = main_bisnis_indonesia(
+        keyword="Purbaya",
+        tanggal="2025-11-12",
+    )
+
+    if result is not None:
+        print(result)
+
+        # Output filename kept in Indonesian as per project convention
+        result.to_excel("bisnis_indonesia_results.xlsx", index=False, engine="openpyxl")
+        print(f"\n[Output] Saved to 'bisnis_indonesia_results.xlsx'")
+        print(f"[Output] Total articles : {len(result)}")
+        print(f"[Output] Columns        : {', '.join(result.columns)}")

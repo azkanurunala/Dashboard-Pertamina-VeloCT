@@ -1,185 +1,238 @@
-import time
-import pandas as pd
-from datetime import datetime
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-from bs4 import BeautifulSoup
-from urllib.parse import quote
-import sys
 import os
+import sys
+import time
+import traceback
+from datetime import datetime
+from urllib.parse import quote
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import pandas as pd
+from bs4 import BeautifulSoup
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from helpers.scraping_helper import setup_driver
+from helpers.scraping_utils import normalize_to_iso_date
 
-def get_oldest_article_date(page_source):
-    soup = BeautifulSoup(page_source, "html.parser")
-    dates = []
+
+# Constants
+
+SCMP_SEARCH_BASE = "https://www.scmp.com/search"
+
+# Seconds to wait after each scroll for new content to render
+SCROLL_RENDER_DELAY = 10
+
+# Seconds to wait for initial page load before scrolling
+PAGE_LOAD_DELAY = 10
+
+# Maximum number of scroll iterations before stopping
+MAX_SCROLLS = 50
+
+
+# Scroll Helpers
+
+def _get_oldest_article_date(page_source: str) -> datetime | None:
+    """
+    Extract the oldest visible article datetime from an SCMP search page by parsing <time> elements, or return None if unavailable.
+    """
+    soup  = BeautifulSoup(page_source, "html.parser")
+    dates: list[datetime] = []
+
     for time_tag in soup.find_all("time"):
-        dt = time_tag.get("datetime")
-        if not dt:
+        raw = time_tag.get("datetime")
+        if not raw:
             continue
         try:
-            date_obj = datetime.fromisoformat(dt.replace("Z", "+00:00"))
-            date_obj = date_obj.replace(tzinfo=None)
-            dates.append(date_obj)
-        except:
+            dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+            dates.append(dt.replace(tzinfo=None))
+        except ValueError:
             pass
+
     return min(dates) if dates else None
 
-def extract_articles(page_source):
-    soup = BeautifulSoup(page_source, "html.parser")
-    articles = []
-    article_containers = soup.find_all("div", {"data-qa": "ContentItemSearch-Container"})
-    print(f"Found {len(article_containers)} article containers")
-    for idx, container in enumerate(article_containers, 1):
+
+def _scroll_until_date(driver, target_date: datetime) -> None:
+    """
+    Scroll SCMP search results until reaching the target date or no additional content loads.
+    """
+    print(f"[Scroll] Target stop date: {target_date.date()}")
+    last_height = driver.execute_script("return document.body.scrollHeight")
+
+    for i in range(1, MAX_SCROLLS + 1):
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(SCROLL_RENDER_DELAY)
+
+        oldest = _get_oldest_article_date(driver.page_source)
+        if oldest:
+            print(f"[Scroll {i}/{MAX_SCROLLS}] Oldest article: {oldest.date()}")
+            if oldest <= target_date:
+                print("[Scroll] Target date reached — stopping.")
+                break
+        else:
+            print(f"[Scroll {i}/{MAX_SCROLLS}] No dates found yet.")
+
+        new_height = driver.execute_script("return document.body.scrollHeight")
+        if new_height == last_height:
+            print("[Scroll] No new content loaded — stopping.")
+            break
+        last_height = new_height
+
+    print(f"[Scroll] Finished after {i} scroll(s).")
+
+
+# Article Extraction
+
+def _extract_articles(page_source: str) -> list[dict]:
+    """
+    Extract SCMP article metadata from search results page source, including title, date, URL, and summary.
+    """
+    soup       = BeautifulSoup(page_source, "html.parser")
+    containers = soup.find_all("div", {"data-qa": "ContentItemSearch-Container"})
+    print(f"[Extract] {len(containers)} article container(s) found.")
+
+    articles: list[dict] = []
+
+    for idx, container in enumerate(containers, start=1):
         try:
             link_tag = container.find("a", {"data-qa": "BaseLink-renderAnchor-StyledAnchor"})
             if not link_tag or not link_tag.get("href"):
                 continue
             url = f"https://www.scmp.com{link_tag['href']}"
-            
+
             title_tag = container.find("span", {"data-qa": "ContentHeadline-Headline"})
             if not title_tag:
                 continue
             title = title_tag.get_text(strip=True)
+
             summary_tag = container.find("h3", {"data-qa": "ContentSummary-ContainerWithTag"})
-            summary = summary_tag.get_text(strip=True) if summary_tag else ""
+            summary     = summary_tag.get_text(strip=True) if summary_tag else ""
+
             time_tag = container.find("time")
             if not time_tag or not time_tag.get("datetime"):
                 continue
-            date_str = time_tag['datetime']
-            try:
-                dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-                date_formatted = dt.strftime("%Y-%m-%d")
-            except:
-                date_formatted = date_str 
-            print(f" [{idx}] {title[:50]}...")
-            print(f"      Date: {date_formatted}")
+
+            dt             = datetime.fromisoformat(time_tag["datetime"].replace("Z", "+00:00"))
+            date_formatted = dt.strftime("%Y-%m-%d")
+
+            print(f"  [{idx}] {title[:50]}... | {date_formatted}")
             if summary:
-                print(f"      Summary: {summary[:60]}...")
+                print(f"         {summary[:60]}...")
+
             articles.append({
-                "title": title,
-                "date": date_formatted,
-                "url": url,
-                "content": summary
+                "title":   title,
+                "date":    date_formatted,
+                "url":     url,
+                "content": summary,
             })
-        except Exception as e:
-            print(f" [{idx}] Error: {e}")
-            continue 
+
+        except Exception as exc:
+            print(f"  [{idx}] Error: {exc}")
+            continue
+
     return articles
 
-def scroll_until_date(driver, target_date, delay=10, max_scroll=50):
-    print(f"Target stop date: {target_date.date()}")
-    last_height = driver.execute_script("return document.body.scrollHeight")
-    for i in range(max_scroll):
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(delay)
-        oldest_date = get_oldest_article_date(driver.page_source)
-        if oldest_date:
-            print(f"[Scroll {i+1}/{max_scroll}] Oldest article: {oldest_date.date()}")
-            if oldest_date <= target_date:
-                print("Target date reached → STOP")
-                break
-        else:
-            print(f"[Scroll {i+1}/{max_scroll}] No date found yet")
-        new_height = driver.execute_script("return document.body.scrollHeight")
-        if new_height == last_height:
-            print("Tidak ada konten baru, stop scrolling")
-            break
-        last_height = new_height
-    print(f"Scrolling finished after {i+1} scrolls")
 
-def scrape_scmp(keyword: str, tanggal: str = None):
+# Orchestration
+
+def scrape_scmp(keyword: str, tanggal: str | None = None) -> pd.DataFrame | None:
+    """
+    Scrape SCMP search results for a keyword, scroll until the target date is reached, and return same-day articles as a DataFrame.
+    """
+    # Resolve and normalise target date
     if tanggal is None:
-        target_date = pd.Timestamp.now().normalize()
-        tanggal_str = target_date.strftime("%Y-%m-%d")
+        iso_date = datetime.now().strftime("%Y-%m-%d")
     else:
-        tanggal_str = tanggal
-        target_date = pd.Timestamp(tanggal)
-    if target_date.tz is not None:
-        target_date = target_date.tz_localize(None)
-    
-    encoded = quote(keyword)
-    search_url = f"https://www.scmp.com/search/{encoded}?q={encoded}"
-    
+        iso_date = normalize_to_iso_date(str(tanggal))
+        if not iso_date:
+            print(f"[Scrape] Warning: could not normalise tanggal='{tanggal}' — using today.")
+            iso_date = datetime.now().strftime("%Y-%m-%d")
+
+    target_dt = datetime.strptime(iso_date, "%Y-%m-%d")  # tz-naive
+
+    encoded    = quote(keyword)
+    search_url = f"{SCMP_SEARCH_BASE}/{encoded}?q={encoded}"
+
     print("=" * 60)
     print("SCRAPING SCMP")
-    print(f"Keyword: {keyword}")
-    print(f"Tanggal: {tanggal_str}")
-    print(f"Target date (tz-naive): {target_date}")
-    print(f"URL: {search_url}")
+    print(f"Keyword : {keyword}")
+    print(f"Date    : {iso_date}")
+    print(f"URL     : {search_url}")
     print("=" * 60)
-    print("\nStarting Chrome driver...")
+
     driver = setup_driver()
     try:
-        print("Loading search page...")
+        print("[Scrape] Loading search page...")
         driver.get(search_url)
-        time.sleep(10)
-        print("\nStarting scroll...\n")
-        scroll_until_date(
-            driver=driver,
-            target_date=target_date,
-            delay=10,
-            max_scroll=50
-        )
-        print("\nExtracting articles...\n")
-        articles = extract_articles(driver.page_source)
-        print(f"\nTotal articles extracted: {len(articles)}")
-        if not articles:
-            print("Tidak ada artikel ditemukan")
-            return None
-        df = pd.DataFrame(articles)
-        df['date'] = pd.to_datetime(df['date'], errors='coerce')
-        if df['date'].dt.tz is not None:
-            df['date'] = df['date'].dt.tz_localize(None)
-        if len(df) > 0:
-            print(f"  df['date'] timezone: {df['date'].dt.tz}")
-            print(f"  First date value: {df['date'].iloc[0]}")
-        df = df[df['date'].dt.date == target_date.date()]
-        df = df.sort_values('date', ascending=False).reset_index(drop=True)
-        df['date'] = df['date'].dt.date
-        print(f"\nArtikel setelah filter: {len(df)}")
-        print("\nDataFrame shape:", df.shape)
-        print("\nPreview:")
-        print(df[['title', 'date', 'content']].head())
-        return df  
-    except Exception as e:
-        print(f"\nError: {e}")
-        import traceback
-        traceback.print_exc()
-        return None 
-    finally:
-        print("\nClosing driver...")
-        driver.quit()
+        time.sleep(PAGE_LOAD_DELAY)
 
-def main_scmp(keyword: str, tanggal: str = None):
-    df = scrape_scmp(keyword, tanggal)
-    if df is not None and len(df) > 0:
-        print("\n" + "=" * 60)
-        print(f"HASIL SCRAPING")
-        print("=" * 60)
-        print(f"Total artikel: {len(df)}")
-        print("\nSample data:")
-        print(df.head(10).to_string())
-        return df
-    else:
-        print("\nTidak ada data untuk dikembalikan")
+        print("\n[Scrape] Scrolling...\n")
+        _scroll_until_date(driver, target_date=target_dt)
+
+        print("\n[Scrape] Extracting articles...\n")
+        articles = _extract_articles(driver.page_source)
+        print(f"[Scrape] {len(articles)} total article(s) extracted.")
+
+        if not articles:
+            return None
+
+        df = pd.DataFrame(articles)
+
+        # Normalise date column and filter to target date
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        if df["date"].dt.tz is not None:
+            df["date"] = df["date"].dt.tz_localize(None)
+
+        df   = df[df["date"].dt.date == target_dt.date()]
+        df   = df.sort_values("date", ascending=False).reset_index(drop=True)
+        df["date"] = df["date"].dt.date
+
+        print(f"[Scrape] {len(df)} article(s) after date filter ({iso_date}).")
+        return df if not df.empty else None
+
+    except Exception as exc:
+        print(f"[Scrape] Error: {exc}")
+        traceback.print_exc()
         return None
 
+    finally:
+        print("[Scrape] Closing driver...")
+        driver.quit()
+
+
+# Public Entry Point
+
+def main_scmp(keyword: str, tanggal: str | None = None) -> pd.DataFrame | None:
+    """
+    Run the SCMP scraping workflow for a keyword and date, returning a DataFrame or None if no articles are found.
+    """
+    df = scrape_scmp(keyword, tanggal)
+
+    if df is None or df.empty:
+        print("[Main] No articles found.")
+        return None
+
+    print("\n" + "=" * 60)
+    print("HASIL SCRAPING")
+    print("=" * 60)
+    print(f"Total artikel: {len(df)}")
+    print("\nSample data:")
+    print(df.head(10).to_string())
+    return df
+
+
+# Script Entry Point
+
 if __name__ == "__main__":
-    df = main_scmp(
-        keyword="geopolitical risks",
-        tanggal="2026-01-06" 
-    )
-    if df is not None and len(df) > 0:
+    from dotenv import load_dotenv
+    load_dotenv()
+
+    result = main_scmp(keyword="geopolitical risks", tanggal="2026-03-05")
+
+    if result is not None:
         output_file = f"scmp_scraping_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        # df.to_excel(output_file, index=False, engine='openpyxl')
-        print(f"\nData berhasil disimpan ke: {output_file}")
-        print(f"Total artikel: {len(df)}")
-        print("\nPreview data:")
-        print(df[['title', 'date']].to_string())
-        print(df)
+        result.to_excel(output_file, index=False, engine="openpyxl")
+        print(f"\n[Output] Saved to '{output_file}'")
+        print(f"[Output] Total articles : {len(result)}")
+        print(f"[Output] Columns        : {', '.join(result.columns.astype(str))}")
+        print("\nPreview:")
+        print(result[["title", "date"]].to_string())
     else:
-        print("\nTidak ada data untuk disimpan")
+        print("\n[Output] No articles found.")

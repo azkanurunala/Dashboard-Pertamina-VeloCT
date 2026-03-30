@@ -1,287 +1,395 @@
-import requests
+import os
+import re
+import sys
+import time
 import xml.etree.ElementTree as ET
 from datetime import datetime
-from bs4 import BeautifulSoup
+
 import pandas as pd
-import time
-import re
-import gzip
-import io
-import os
-import sys
+import requests
+from bs4 import BeautifulSoup
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Allow importing shared utilities from the sibling 'helpers' directory
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from helpers.scraping_helper import fetch_xml
+from helpers.scraping_utils import (
+    extract_news_sitemap_entry,
+    get_element_text,
+    normalize_to_iso_date,
+    rename_to_standard_columns,
+)
 
-def get_text_from_element(element):
-    if element is None:
-        return ""
-    text = ''.join(element.itertext()).strip()
-    return text if text else ""
+# Constant
 
-def get_main_sitemap():
-    url = "https://www.kompas.com/sitemap.xml"
-    content = fetch_xml(url)
-    return ET.fromstring(content)
+KOMPAS_SITEMAP_URL = "https://www.kompas.com/sitemap.xml"
 
-def is_sitemap_index(root, ns):
-    has_sitemap_tags = root.findall('.//sm:sitemap', ns)
-    has_url_tags = root.findall('.//sm:url', ns)
+NS_SITEMAP = {
+    "sm": "http://www.sitemaps.org/schemas/sitemap/0.9",
+    "news": "http://www.google.com/schemas/sitemap-news/0.9",
+}
+
+# HTTP headers sent with every article content request
+REQUEST_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/121.0.0.0 Safari/537.36"
+    )
+}
+
+# HTTP request timeout in seconds
+REQUEST_TIMEOUT = 15
+
+# Maximum recursion depth when traversing nested sitemap indexes
+MAX_SITEMAP_DEPTH = 3
+
+# Delay in seconds between sitemap fetch requests
+SITEMAP_FETCH_DELAY = 0.15
+
+# Delay in seconds between article sub-page requests
+ARTICLE_PAGE_DELAY = 0.5
+
+# Delay in seconds between article content fetches
+CONTENT_FETCH_DELAY = 1.0
+
+# CSS classes of Kompas-specific non-content elements to remove before parsing
+KOMPAS_UNWANTED_CLASSES = [
+    "kompasidRec__wrap", "kompasidRec__subs", "kompasidRec__title",
+    "articleRelated", "article__related", "inner__sidebar",
+    "inject-baca-juga", "ads-on-body",
+]
+
+# Prefixes that identify non-content lines (cross-links, CTAs, etc.)
+KOMPAS_BOILERPLATE_PREFIXES = re.compile(
+    r"^(baca\s+juga|download\s+sekarang|dalam\s+segala\s+situasi)",
+    re.IGNORECASE,
+)
+
+# Sitemap Traversa
+
+def _is_sitemap_index(root: ET.Element) -> bool:
+    """
+    Determine whether a sitemap XML root represents an index (has <sitemap> tags and no <url> tags).
+    """
+    has_sitemap_tags = root.findall(".//sm:sitemap", NS_SITEMAP)
+    has_url_tags     = root.findall(".//sm:url",     NS_SITEMAP)
     return len(has_sitemap_tags) > 0 and len(has_url_tags) == 0
 
-def get_all_article_sitemaps(root, depth=0, max_depth=3):
-    ns = {'sm': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
-    article_sitemaps = []
-    if depth > max_depth:
-        print(f"[WARN] Max depth reached ({max_depth})")
-        return article_sitemaps
-    sitemap_tags = root.findall('.//sm:sitemap', ns)
-    if not sitemap_tags:
+
+def _collect_article_sitemaps(root: ET.Element, depth: int = 0) -> list[str]:
+    """
+    Recursively traverse sitemap indexes to collect Kompas news article sitemap URLs while respecting depth limits and filtering relevant paths.
+    """
+    if depth > MAX_SITEMAP_DEPTH:
+        print(f"[Sitemap] Warning: max depth {MAX_SITEMAP_DEPTH} reached.")
         return []
-    for sitemap_tag in sitemap_tags:
-        loc = sitemap_tag.find('sm:loc', ns)
-        if loc is None:
+
+    article_sitemaps: list[str] = []
+    indent = "  " * depth
+
+    for sitemap_tag in root.findall(".//sm:sitemap", NS_SITEMAP):
+        loc = sitemap_tag.find("sm:loc", NS_SITEMAP)
+        href = get_element_text(loc)
+
+        if not href or "news" not in href.lower():
             continue
-        href = get_text_from_element(loc)
-        if not href:
-            continue
-        if 'news' not in href.lower():
-            continue
-        print(f"{'  ' * depth}[INFO] Checking: {href}")
+
+        print(f"{indent}[Sitemap] Checking: {href}")
+
         try:
             content = fetch_xml(href)
             subroot = ET.fromstring(content)
-            if is_sitemap_index(subroot, ns):
-                print(f"{'  ' * depth}  └─ Sitemap index, drilling down...")
-                nested = get_all_article_sitemaps(subroot, depth + 1, max_depth)
+
+            if _is_sitemap_index(subroot):
+                print(f"{indent}  └─ Sitemap index — drilling down...")
+                nested = _collect_article_sitemaps(subroot, depth + 1)
                 article_sitemaps.extend(nested)
             else:
-                url_tags = subroot.findall('.//sm:url', ns)
-                print(f"{'  ' * depth}  └─ Article sitemap! Found {len(url_tags)} URLs")
+                url_count = len(subroot.findall(".//sm:url", NS_SITEMAP))
+                print(f"{indent}  └─ Article sitemap — {url_count} URLs found.")
                 article_sitemaps.append(href)
-            time.sleep(0.1)
-        except Exception as e:
-            print(f"{'  ' * depth}  └─ [ERROR] {e}")
+
+            time.sleep(SITEMAP_FETCH_DELAY)
+
+        except Exception as exc:
+            print(f"{indent}  └─ [Error] {exc}")
             continue
+
     return article_sitemaps
 
-def extract_news_info(url_tag, ns):
-    loc_tag = url_tag.find('sm:loc', ns)
-    if loc_tag is None:
-        return None
-    link = get_text_from_element(loc_tag)
-    if not link:
-        return None
-    news_ns = {'news': 'http://www.google.com/schemas/sitemap-news/0.9'}
-    title = ""
-    pubdate_raw = ""
-    keywords = ""
-    news_tag = url_tag.find('news:news', news_ns)
-    if news_tag is not None:
-        t = news_tag.find('news:title', news_ns)
-        p = news_tag.find('news:publication_date', news_ns)
-        k = news_tag.find('news:keywords', news_ns)
-        title = get_text_from_element(t)
-        pubdate_raw = get_text_from_element(p)
-        keywords = get_text_from_element(k)
-    date_only = pubdate_raw.split('T')[0] if 'T' in pubdate_raw else pubdate_raw or '-'
-    return {
-        'title': title or '(No Title)',
-        'link': link,
-        'pubdate': pubdate_raw,
-        'date': date_only,
-        'keywords': keywords
-    }
+# Keyword Searc
 
-def get_kompas_news_by_keyword(keyword):
+def find_articles_by_keyword(keyword: str) -> list[dict]:
+    """
+    Crawl Kompas sitemap tree to find and return articles whose title or keywords match the given keyword using case-insensitive whole-word matching.
+    """
     try:
-        root = get_main_sitemap()
-    except Exception as e:
-        print(f"[ERROR] Failed to fetch main sitemap: {e}")
+        root = ET.fromstring(fetch_xml(KOMPAS_SITEMAP_URL))
+    except Exception as exc:
+        print(f"[Sitemap] Failed to fetch main sitemap: {exc}")
         return []
-    print("[INFO] Crawling sitemap tree to find article sitemaps...")
-    article_sitemaps = get_all_article_sitemaps(root)
+
+    print("[Sitemap] Crawling sitemap tree to find article sitemaps...")
+    article_sitemaps = _collect_article_sitemaps(root)
+
     if not article_sitemaps:
-        print("[WARN] No article sitemaps found.")
+        print("[Sitemap] No article sitemaps found.")
         return []
-    print(f"\n[INFO] Found {len(article_sitemaps)} article sitemap(s).")
-    print("[INFO] Starting keyword search...\n")
-    
-    results = []
-    keyword_pattern = r'\b' + re.escape(keyword.strip().lower()) + r'\b'  # ✅ TAMBAH BARIS INI
-    ns = {'sm': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
-    
-    for idx, sitemap_url in enumerate(article_sitemaps, 1):
-        print(f"[INFO] ({idx}/{len(article_sitemaps)}) Processing: {sitemap_url}")
+
+    print(f"\n[Search] Found {len(article_sitemaps)} article sitemap(s). Starting keyword search...\n")
+
+    # Compile a whole-word, case-insensitive pattern for the keyword
+    keyword_pattern = re.compile(
+        r"\b" + re.escape(keyword.strip().lower()) + r"\b"
+    )
+
+    results: list[dict] = []
+
+    for idx, sitemap_url in enumerate(article_sitemaps, start=1):
+        print(f"[Search] ({idx}/{len(article_sitemaps)}) Processing: {sitemap_url}")
+
         try:
             content = fetch_xml(sitemap_url)
             subroot = ET.fromstring(content)
-            urls = subroot.findall('.//sm:url', ns)
-            print(f"   URLs in this sitemap: {len(urls)}")
-            for url_tag in urls:
-                info = extract_news_info(url_tag, ns)
-                if not info or not info.get('link'):
+            url_tags = subroot.findall(".//sm:url", NS_SITEMAP)
+            print(f"   URLs in this sitemap: {len(url_tags)}")
+
+            for url_tag in url_tags:
+                info = extract_news_sitemap_entry(url_tag)
+                if not info:
                     continue
-                title = info.get('title') or ""
-                keywords = info.get('keywords') or ""
-                link = info.get('link') or ""
-                
-                # ✅ GANTI BARIS INI
-                if (re.search(keyword_pattern, title.lower()) or 
-                    re.search(keyword_pattern, keywords.lower())):
+
+                title    = (info.get("title")    or "").lower()
+                keywords = (info.get("keywords") or "").lower()
+
+                if keyword_pattern.search(title) or keyword_pattern.search(keywords):
                     results.append({
-                        'Judul': title if title else link,
-                        'Link': link,
-                        'Tanggal': info.get('date') if info.get('date') else '-'
+                        "Judul":   info["title"] or info["link"],
+                        "Link":    info["link"],
+                        "Tanggal": info["date"] or "-",
                     })
-            
+
             print(f"   Matching articles so far: {len(results)}")
-        except Exception as e:
-            print(f"[ERROR] Failed to process {sitemap_url}: {e}")
+
+        except Exception as exc:
+            print(f"[Search] Error processing {sitemap_url}: {exc}")
             continue
-        time.sleep(0.15)
-    print(f"\n[INFO] Total articles with keyword '{keyword}': {len(results)}")
+
+        time.sleep(SITEMAP_FETCH_DELAY)
+
+    print(f"\n[Search] Total articles matching '{keyword}': {len(results)}")
     return results
 
-def bersihkan_konten(content_div):
+# Content Cleaning (Kompas-specific
+
+def _clean_article_content(content_div: BeautifulSoup) -> str:
+    """
+    Clean Kompas article content by removing non-content elements and extracting relevant text into normalized paragraphs.
+    """
     if not content_div:
         return "-"
-    unwanted_selectors = ["aside", "script", "style", "iframe", "noscript"]
-    for sel in unwanted_selectors:
-        for tag in content_div.find_all(sel):
-            tag.decompose()
-    unwanted_classes = ["kompasidRec__wrap", "kompasidRec__subs", "kompasidRec__title", "articleRelated", "article__related", "inner__sidebar", "inject-baca-juga", "ads-on-body"]
-    for kelas in unwanted_classes:
-        for tag in content_div.find_all(class_=kelas):
-            tag.decompose()
-    for comment in content_div.find_all(string=lambda text: isinstance(text, str) and '<!--' in text):
-        comment.extract()
-    elements = content_div.find_all(["p", "li", "h2", "h3"])
-    paragraphs = []
-    for e in elements:
-        text = e.get_text(strip=True)
+
+    # Remove noise tags unconditionally
+    for tag in content_div.find_all(["aside", "script", "style", "iframe", "noscript"]):
+        tag.decompose()
+
+    # Collect Kompas-specific non-content divs, then decompose (two-pass to
+    # avoid stale-reference errors from decomposing during iteration)
+    unwanted = [
+        tag
+        for css_class in KOMPAS_UNWANTED_CLASSES
+        for tag in content_div.find_all(class_=css_class)
+    ]
+    for tag in unwanted:
+        tag.decompose()
+
+    # Extract text from content elements
+    paragraphs: list[str] = []
+    for el in content_div.find_all(["p", "li", "h2", "h3"]):
+        text = el.get_text(strip=True)
+
         if not text or len(text) < 5:
             continue
-        if re.search(r'^(baca\s+juga|download\s+sekarang|dalam\s+segala\s+situasi)', text, re.IGNORECASE):
+
+        # Skip boilerplate lines (e.g. "Baca Juga", "Download Sekarang")
+        if KOMPAS_BOILERPLATE_PREFIXES.search(text):
             continue
+
         paragraphs.append(text)
+
     if not paragraphs:
         return "-"
-    content = "\n\n".join(paragraphs)
-    content = re.sub(r'\s+', ' ', content).strip()
-    return content
 
-def get_total_pages(soup):
+    # Normalise internal whitespace and join
+    content = "\n\n".join(paragraphs)
+    return re.sub(r"\s+", " ", content).strip()
+
+# Pagination (Kompas-specific
+
+def _get_total_article_pages(soup: BeautifulSoup) -> int:
+    """
+    Read the total sub-page count from Kompas article pagination.
+
+    Kompas encodes page numbers in ``?page=N`` query parameters on
+    ``<a class="paging__link">`` anchors inside ``<div class="paging__wrap">``.
+
+    Parameters
+    ----------
+    soup : BeautifulSoup
+        Parsed HTML of an article page.
+
+    Returns
+    -------
+    int
+        Highest page number found, or 1 if pagination is absent.
+    """
     paging_wrap = soup.select_one("div.paging__wrap")
     if not paging_wrap:
         return 1
-    paging_items = paging_wrap.select("div.paging__item")
-    if not paging_items:
-        return 1
+
     max_page = 1
-    for item in paging_items:
-        link = item.select_one("a.paging__link")
-        if not link:
+    for link in paging_wrap.select("a.paging__link"):
+        href = link.get("href", "")
+        if "?page=" not in href:
             continue
-        href = link.get('href', '')
-        if '?page=' in href:
-            try:
-                page_num = int(href.split('?page=')[-1].split('&')[0])
-                if page_num > max_page:
-                    max_page = page_num
-            except (ValueError, IndexError):
-                continue
+        try:
+            page_num = int(href.split("?page=")[-1].split("&")[0])
+            max_page = max(max_page, page_num)
+        except (ValueError, IndexError):
+            continue
+
     return max_page
 
-def fetch_article_content(url):
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-    }
-    all_content = []
+# Article Content Fetchin
+
+def fetch_article_content(url: str) -> str:
+    """
+    Extract the highest Kompas article page number from pagination links, defaulting to 1 if none exist.
+    """
+    all_content: list[str] = []
+    base_url = url.split("?")[0]  # Strip any existing query parameters
+
     try:
-        base_url = url.split('?')[0]
-        r = requests.get(base_url, headers=headers, timeout=15)
-        r.raise_for_status()
-        soup = BeautifulSoup(r.content, "html.parser")
+        # --- Page 1 ---
+        response = requests.get(base_url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, "html.parser")
+
         content_div = soup.select_one("div.read__content")
         if not content_div:
-            print(f"[WARN] Missing content div in {base_url}")
+            print(f"[Content] Content div not found: {base_url}")
             return "N/A"
-        cleaned_content = bersihkan_konten(content_div)
-        if cleaned_content and cleaned_content != "-":
-            all_content.append(cleaned_content)
-        total_pages = get_total_pages(soup)
+
+        cleaned = _clean_article_content(content_div)
+        if cleaned and cleaned != "-":
+            all_content.append(cleaned)
+
+        # --- Sub-pages 2..N ---
+        total_pages = _get_total_article_pages(soup)
         if total_pages > 1:
-            print(f"   Total pages detected: {total_pages}")
+            print(f"   [Content] {total_pages} sub-pages detected.")
+
             for page_num in range(2, total_pages + 1):
                 page_url = f"{base_url}?page={page_num}"
-                print(f"   Fetching page {page_num}: {page_url}")
-                r_page = requests.get(page_url, headers=headers, timeout=15)
+                print(f"   [Content] Fetching sub-page {page_num}: {page_url}")
+
+                r_page = requests.get(page_url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
                 r_page.raise_for_status()
-                current_soup = BeautifulSoup(r_page.content, "html.parser")
-                content_div = current_soup.select_one("div.read__content")
+                page_soup = BeautifulSoup(r_page.content, "html.parser")
+
+                content_div = page_soup.select_one("div.read__content")
                 if not content_div:
-                    print(f"[WARN] Missing content div in page {page_num}")
+                    print(f"   [Content] Content div not found on sub-page {page_num}.")
                     continue
-                cleaned_content = bersihkan_konten(content_div)
-                if cleaned_content and cleaned_content != "-":
-                    all_content.append(cleaned_content)
-                time.sleep(0.5)
+
+                cleaned = _clean_article_content(content_div)
+                if cleaned and cleaned != "-":
+                    all_content.append(cleaned)
+
+                time.sleep(ARTICLE_PAGE_DELAY)
+
         if not all_content:
-            print(f"[WARN] No valid content found in {url}")
+            print(f"[Content] No valid content found: {url}")
             return "N/A"
+
         return "\n\n".join(all_content)
-    except Exception as e:
-        print(f"[ERROR] Failed to fetch content {url}: {e}")
+
+    except Exception as exc:
+        print(f"[Content] Failed to fetch {url}: {exc}")
         return "N/A"
 
-def scrape_kompas(keyword, date=None):
-    articles = get_kompas_news_by_keyword(keyword)
+# Orchestratio
+
+def scrape_kompas(keyword: str, date: str | datetime | None = None) -> list[dict]:
+    """
+    Fetch Kompas articles by keyword with optional date filtering and populate each result with its full content.
+    """
+    articles = find_articles_by_keyword(keyword)
+
     if not articles:
-        print("[INFO] No articles found for this keyword.")
+        print("[Scrape] No articles found for this keyword.")
         return []
-    if date:
+
+    # --- Optional date filter ---
+    if date is not None:
         if isinstance(date, datetime):
-            date = date.strftime('%Y-%m-%d')
+            iso_date = date.strftime("%Y-%m-%d")
         else:
-            date = str(date)
-        articles = [a for a in articles if a.get('Tanggal') == date]
-        print(f"[INFO] After date filter ({date}), remaining: {len(articles)} articles.")
+            iso_date = normalize_to_iso_date(str(date)) or str(date)
+
+        articles = [a for a in articles if a.get("Tanggal") == iso_date]
+        print(f"[Scrape] After date filter ({iso_date}): {len(articles)} article(s) remaining.")
+
     if not articles:
         return []
-    for i, a in enumerate(articles, 1):
-        print(f"[INFO] ({i}/{len(articles)}) Fetching content: {a['Link']}")
-        a['Konten'] = fetch_article_content(a['Link'])
-        time.sleep(1.0)
+
+    # --- Fetch full content for each matched article ---
+    for i, article in enumerate(articles, start=1):
+        print(f"[Scrape] ({i}/{len(articles)}) Fetching content: {article['Link']}")
+        article["Konten"] = fetch_article_content(article["Link"])
+        time.sleep(CONTENT_FETCH_DELAY)
+
     return articles
 
-def reformat(data):
-    df = pd.DataFrame(data)
-    df = df.rename(
-        columns={
-            'Judul' : 'title', 
-            'Tanggal' : 'date', 
-            'Link' : 'url', 
-            'Konten' : 'content'
-        }
-    )
-    return df
+# Public Entry Poin
 
-def main_kompas(keyword="MotoGP", tanggal="2025-11-16"):
+def main_kompas(keyword: str = "MotoGP", tanggal: str = "2025-11-16") -> pd.DataFrame | None:
+    """
+    Run Kompas scraping workflow for a keyword and date, returning a standardized DataFrame or None if no results or errors occur.
+    """
     try:
-        data = scrape_kompas(keyword, date=tanggal)
-        if not data:
-            print("No articles found.")
+        articles = scrape_kompas(keyword, date=tanggal)
+
+        if not articles:
+            print("[Main] No articles found.")
             return None
-        df = reformat(data)
+
+        df = rename_to_standard_columns(pd.DataFrame(articles))
+
         if df.empty:
-            print("No articles found after formatting.")
+            print("[Main] No articles found after formatting.")
             return None
-        print(f"Successfully scraped {len(df)} articles from Kompas")
+
+        print(f"[Main] Successfully scraped {len(df)} article(s) from Kompas.")
         return df
-    except Exception as e:
-        print(f"Error in main_kompas: {e}")
+
+    except Exception as exc:
+        print(f"[Main] Unexpected error: {exc}")
         return None
 
-if __name__ == '__main__':
-    print(main_kompas(keyword="Ekonomi", tanggal="2026-01-28"))
+# Script Entry Poin
+
+if __name__ == "__main__":
+    from dotenv import load_dotenv
+    load_dotenv()  # Load .env only when run directly, not when imported
+
+    result = main_kompas(keyword="Ekonomi", tanggal="2026-01-28")
+
+    if result is not None:
+        print(result)
+
+        # Output filename kept in Indonesian as per project convention
+        result.to_excel("kompas_results.xlsx", index=False, engine="openpyxl")
+        print(f"\n[Output] Saved to 'kompas_results.xlsx'")
+        print(f"[Output] Total articles : {len(result)}")
+        print(f"[Output] Columns        : {', '.join(result.columns)}")
