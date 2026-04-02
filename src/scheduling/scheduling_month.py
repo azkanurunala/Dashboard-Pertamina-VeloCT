@@ -12,6 +12,7 @@ from code_scrapping.bioetanol_esdm_scrape import main_bioetanol_esdm
 from code_scrapping.scrape_sandp_data import main_petrochemical_short_term, main_price_forecast_short_term_bbm
 from code_scrapping.scrape_sipsn import main_sipsn_scraper
 from code_scrapping.iaea_pris import main_iaea_scraper
+from code_scrapping.kapasitas_esdm import main_ebtke_scraper
 
 
 def run_monthly_tasks():
@@ -100,6 +101,16 @@ def run_monthly_tasks():
             print("\n" + "=" * 70)
             print("MONTHLY TASKS COMPLETED")
             print("=" * 70 + "\n")
+
+        # ==== STEP 7: Scraping Data Kapasitas EBT ====
+        if current_day == 28: 
+            print(f"\nSTEP 7: Menjalankan Scraping Data Kapasitas EBT")
+            try:
+                main_ebtke_scraper()
+                print("Scraping data kapasitas EBT selesai")
+            except Exception as e:
+                print(f"ERROR pada Scraping Data Kapasitas EBT: {e}")
+                traceback.print_exc()
 
     except Exception as e:
         print(f"\nERROR FATAL SAAT MENJALANKAN MONTHLY TASKS: {e}")

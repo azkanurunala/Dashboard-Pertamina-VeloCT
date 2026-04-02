@@ -1,210 +1,229 @@
-import requests
-import xml.etree.ElementTree as ET
-from datetime import datetime
-from bs4 import BeautifulSoup
-import pandas as pd
+import html
 import json
+import os
 import re
+import sys
+from datetime import datetime
+
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from helpers.scraping_utils import (
+    NS_NEWS,
+    NS_SITEMAP,
+    extract_news_sitemap_entry,
+    normalize_to_iso_date,
+    rename_to_standard_columns,
+)
 
 
-def parse_oilprice_xml(keyword=None, date_filter=None):
-    url = "https://oilprice.com/googlenews.xml"
-    print(f"[INFO] Fetching OilPrice.com news XML: {url}")
+# Constants
+
+OILPRICE_SITEMAP_URL = "https://oilprice.com/googlenews.xml"
+
+REQUEST_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/121.0.0.0 Safari/537.36"
+    )
+}
+REQUEST_TIMEOUT    = 15
+MIN_CONTENT_LENGTH = 10    # minimum <p> character length to include
+
+
+# Sitemap Parsing
+
+def _parse_sitemap(
+    keyword: str | None = None,
+    iso_date: str | None = None,
+) -> list[dict]:
+    """
+    Parse the OilPrice sitemap with optional keyword and date filters, returning matching article metadata.
+    """
+    import xml.etree.ElementTree as ET
+
+    print(f"[Sitemap] Fetching {OILPRICE_SITEMAP_URL}")
     try:
-        r = requests.get(url, timeout=15)
-        r.raise_for_status()
-        root = ET.fromstring(r.content)
-        ns = {
-            'sm': 'http://www.sitemaps.org/schemas/sitemap/0.9',
-            'news': 'http://www.google.com/schemas/sitemap-news/0.9'
-        }
-        articles = []
-        url_tags = root.findall('.//sm:url', ns)
-        print(f"[INFO] Found {len(url_tags)} total articles in XML")
-        keyword_lower = keyword.lower() if keyword else None
-        for url_tag in url_tags:
-            loc = url_tag.find('sm:loc', ns)
-            if loc is None or not loc.text:
-                continue
-            link = loc.text.strip()
-            news_tag = url_tag.find('news:news', ns)
-            if news_tag is None:
-                continue
-            title_tag = news_tag.find('news:title', ns)
-            date_tag = news_tag.find('news:publication_date', ns)
-            keywords_tag = news_tag.find('news:keywords', ns)
-            title = title_tag.text.strip() if title_tag is not None and title_tag.text else "(No Title)"
-            pubdate_raw = date_tag.text.strip() if date_tag is not None and date_tag.text else ""
-            keywords = keywords_tag.text.strip() if keywords_tag is not None and keywords_tag.text else ""
-            date_only = pubdate_raw.split('T')[0] if 'T' in pubdate_raw else pubdate_raw
-            if keyword_lower:
-                title_match = keyword_lower in title.lower()
-                keywords_match = keyword_lower in keywords.lower()
-                if not (title_match or keywords_match):
-                    continue
-            if date_filter:
-                if isinstance(date_filter, datetime):
-                    date_filter_str = date_filter.strftime('%Y-%m-%d')
-                else:
-                    date_filter_str = str(date_filter)
-                if date_only != date_filter_str:
-                    continue
-            articles.append({
-                'Judul': title,
-                'Tanggal': date_only,
-                'Link': link
-            })
-        filter_info = []
-        if keyword:
-            filter_info.append(f"keyword '{keyword}'")
-        if date_filter:
-            filter_info.append(f"date {date_filter}")
-        filter_text = " with " + " and ".join(filter_info) if filter_info else ""
-        print(f"[INFO] Found {len(articles)} matching articles{filter_text}")
-        return articles
-    except Exception as e:
-        print(f"[ERROR] Failed to parse XML: {e}")
+        response = requests.get(OILPRICE_SITEMAP_URL, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        root = ET.fromstring(response.content)
+    except Exception as exc:
+        print(f"[Sitemap] Failed to fetch/parse XML: {exc}")
         return []
 
+    url_tags = root.findall(".//sm:url", NS_SITEMAP)
+    print(f"[Sitemap] {len(url_tags)} total entries in sitemap.")
 
-def fetch_article_content(url):
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-    }
-    
-    try:
-        r = requests.get(url, headers=headers, timeout=15)
-        r.raise_for_status()
-        
-        soup = BeautifulSoup(r.content, "html.parser")
-        
-        json_ld_scripts = soup.find_all('script', {'type': 'application/ld+json'})
-        
-        for script in json_ld_scripts:
-            try:
-                data = json.loads(script.string)
-                
-                if isinstance(data, dict) and data.get('@type') == 'NewsArticle':
-                    article_body = data.get('articleBody', '')
-                    
-                    if article_body:
-                        article_body = article_body.replace('&nbsp;', ' ')
-                        article_body = article_body.replace('&rsquo;', "'")
-                        article_body = article_body.replace('&ldquo;', '"')
-                        article_body = article_body.replace('&rdquo;', '"')
-                        article_body = re.sub(r'\s+', ' ', article_body)
-                        article_body = article_body.strip()
-                        
-                        print(f"[SUCCESS] Extracted {len(article_body)} characters")
-                        return article_body
-            except json.JSONDecodeError:
+    keyword_lower = keyword.lower() if keyword else None
+    articles: list[dict] = []
+
+    for url_tag in url_tags:
+        info = extract_news_sitemap_entry(url_tag)
+        if not info:
+            continue
+
+        # Date filter
+        if iso_date and info["date"] != iso_date:
+            continue
+
+        # Keyword filter — substring match against title and keywords fields
+        if keyword_lower:
+            if (
+                keyword_lower not in info["title"].lower()
+                and keyword_lower not in info["keywords"].lower()
+            ):
                 continue
-        
-        print(f"[WARN] No JSON-LD found, trying HTML parsing...")
-        
-        article_body = soup.select_one("div#article-content.wysiwyg.clear")
-        if not article_body:
-            print(f"[WARN] No article content found")
-            return "N/A"
-        
-        content_parts = []
-        for elem in article_body.find_all(['p']):
-            text = elem.get_text(strip=True)
-            if text and len(text) > 10:
-                content_parts.append(text)
-        
-        if content_parts:
-            content = "\n\n".join(content_parts)
-            print(f"[SUCCESS] Extracted {len(content)} characters from HTML")
-            return content
-        
-        return "N/A"
-        
-    except Exception as e:
-        print(f"[ERROR] Failed to fetch content: {e}")
-        return "N/A"
 
+        articles.append({
+            "Judul":   info["title"],
+            "Tanggal": info["date"],
+            "Link":    info["link"],
+        })
 
-def scrape_oilprice(keyword=None, date_filter=None):
-    articles = parse_oilprice_xml(keyword, date_filter)
-    if not articles:
-        print("[INFO] No articles found.")
-        return []
-    
-    for i, article in enumerate(articles, 1):
-        print(f"\n[{i}/{len(articles)}] {article['Judul'][:60]}...")
-        article['Konten'] = fetch_article_content(article['Link'])
-    
+    # Log applied filters
+    active_filters = []
+    if keyword:
+        active_filters.append(f"keyword='{keyword}'")
+    if iso_date:
+        active_filters.append(f"date={iso_date}")
+    filter_text = f" with {', '.join(active_filters)}" if active_filters else ""
+    print(f"[Sitemap] {len(articles)} matching article(s){filter_text}.")
+
     return articles
 
 
-def reformat(data):
-    if not data:
-        print("[WARN] No data to save.")
-        return None
-    df = pd.DataFrame(data)
-    df = df.rename(
-        columns={
-            'Judul': 'title', 
-            'Tanggal': 'date', 
-            'Link': 'url', 
-            'Konten': 'content'
-        }
-    )
-    return df
+# Article Content Fetching
 
-
-def save_to_excel(df, filename='oilprice_results.xlsx'):
+def _fetch_article_content(url: str) -> str:
+    """
+    Fetch an OilPrice article and return cleaned body text using JSON-LD first, with HTML parsing as fallback.
+    """
     try:
-        df.to_excel(filename, index=False, engine='openpyxl')
-        print(f"\n✅ Data berhasil disimpan ke: {filename}")
-        print(f"   Total rows: {len(df)}")
-        print(f"   Columns: {', '.join(df.columns.tolist())}")
-        return True
-    except Exception as e:
-        print(f"\n❌ Gagal menyimpan ke Excel: {e}")
-        return False
+        response = requests.get(url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        # --- Strategy 1: JSON-LD NewsArticle.articleBody ---
+        for script in soup.find_all("script", type="application/ld+json"):
+            try:
+                data = json.loads(script.string or "")
+            except (json.JSONDecodeError, TypeError):
+                continue
+
+            if isinstance(data, dict) and data.get("@type") == "NewsArticle":
+                article_body = data.get("articleBody", "")
+                if article_body:
+                    # Unescape HTML entities and normalise whitespace
+                    article_body = html.unescape(article_body)
+                    article_body = re.sub(r"\s+", " ", article_body).strip()
+                    print(f"[Content] JSON-LD: extracted {len(article_body)} characters.")
+                    return article_body
+
+        # --- Strategy 2: HTML fallback ---
+        print(f"[Content] No JSON-LD found — falling back to HTML parsing.")
+        article_body = soup.select_one("div#article-content.wysiwyg.clear")
+        if not article_body:
+            print(f"[Content] Content container not found: {url}")
+            return "N/A"
+
+        paragraphs = [
+            p.get_text(strip=True)
+            for p in article_body.find_all("p")
+            if len(p.get_text(strip=True)) > MIN_CONTENT_LENGTH
+        ]
+
+        if not paragraphs:
+            return "N/A"
+
+        content = "\n\n".join(paragraphs)
+        print(f"[Content] HTML: extracted {len(content)} characters.")
+        return content
+
+    except Exception as exc:
+        print(f"[Content] Failed to fetch content: {exc}")
+        return "N/A"
 
 
-def main_oilprice(keyword=None, tanggal=None, save_excel=True):
-    print(f"\n{'='*60}")
-    print(f"OilPrice.com News Scraper (JSON-LD Method)")
-    print(f"{'='*60}\n")
-    
-    data = scrape_oilprice(keyword, tanggal)
-    if not data:  
-        print("[INFO] No articles to save.")
+# Orchestration
+
+def scrape_oilprice(
+    keyword: str | None = None,
+    tanggal: str | None = None,
+) -> pd.DataFrame | None:
+    """
+    Scrape OilPrice articles via sitemap with optional keyword and date filtering, returning a DataFrame with full content.
+    """
+    iso_date = normalize_to_iso_date(str(tanggal)) if tanggal else None
+    if tanggal and not iso_date:
+        print(f"[Scrape] Warning: could not normalise tanggal='{tanggal}' — ignoring date filter.")
+
+    articles = _parse_sitemap(keyword=keyword, iso_date=iso_date)
+
+    if not articles:
+        print("[Scrape] No articles found.")
         return None
-    
-    df = reformat(data)
-    
-    if df is None or df.empty:
-        print("[WARN] No data to return")
-        return None
-    
-    print(f"\n{'='*60}")
-    print(f"[SUCCESS] Scraped {len(df)} articles")
-    print(f"{'='*60}")
-    
-    print("\nPreview:")
-    print(df[['title', 'date']].to_string(index=False))
-    
-    if save_excel:
-        filename = f"oilprice_{keyword.replace(' ', '_')}_{tanggal}.xlsx" if keyword and tanggal else "oilprice_results.xlsx"
-        save_to_excel(df, filename)
-    
+
+    for i, article in enumerate(articles, start=1):
+        print(f"\n[Scrape] [{i}/{len(articles)}] {article['Judul'][:60]}...")
+        article["Konten"] = _fetch_article_content(article["Link"])
+
+    df = rename_to_standard_columns(pd.DataFrame(articles))
     return df
 
 
-if __name__ == '__main__':
-    result = main_oilprice(
-        keyword="Oil Price", 
-        tanggal="2025-12-29",
-        save_excel=True
-    )
-    
+# Public Entry Point
+
+def main_oilprice(
+    keyword: str | None = None,
+    tanggal: str | None = None,
+) -> pd.DataFrame | None:
+    """
+    Run the OilPrice scraping workflow with optional keyword and date filters, returning a DataFrame or None if no results are found.
+    """
+    print(f"\n{'=' * 60}")
+    print("OilPrice.com News Scraper")
+    print(f"{'=' * 60}")
+    print(f"[Main] Keyword : {keyword or '(no keyword filter)'}")
+    print(f"[Main] Target  : {tanggal or '(no date filter)'}\n")
+
+    df = scrape_oilprice(keyword=keyword, tanggal=tanggal)
+
+    if df is None or df.empty:
+        print("[Main] No articles found.")
+        return None
+
+    print(f"\n{'=' * 60}")
+    print(f"[Main] Successfully scraped {len(df)} article(s).")
+    print(f"{'=' * 60}")
+    print("\nPreview:")
+    print(df[["title", "date"]].to_string(index=False))
+
+    return df
+
+
+# Script Entry Point
+
+if __name__ == "__main__":
+    from dotenv import load_dotenv
+    load_dotenv()
+
+    result = main_oilprice(keyword="Oil Price", tanggal="2026-03-06")
+
     if result is not None:
-        print(f"\n{'='*60}")
-        print("Content Preview (first article):")
-        print(f"{'='*60}")
-        print(result.iloc[0]['content'][:500] + "...")
+        kw_slug  = (result.iloc[0]["title"][:20].replace(" ", "_") if not result.empty else "results")
+        filename = (
+            f"oilprice_{result.iloc[0].get('date', 'unknown')}.xlsx"
+            if not result.empty
+            else "oilprice_results.xlsx"
+        )
+        result.to_excel(filename, index=False, engine="openpyxl")
+        print(f"\n[Output] Saved to '{filename}'")
+        print(f"[Output] Total articles : {len(result)}")
+        print(f"[Output] Columns        : {', '.join(result.columns)}")
+        print(f"\n{'=' * 60}")
+        print("Content preview (first article):")
+        print(f"{'=' * 60}")
+        print(result.iloc[0]["content"][:500] + "...")

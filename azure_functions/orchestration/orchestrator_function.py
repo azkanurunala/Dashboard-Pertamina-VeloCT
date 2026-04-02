@@ -104,7 +104,11 @@ CATEGORY_KEYWORDS = {
     'indeks kepercayaan knsmn': [
         'indeks kepercayaan konsumen', 'indeks kepercayaan pelanggan',
         'ekspektasi konsumen', 'kondisi ekonomi terkini', 'kepercayaan konsumen',
-        'kondisi ekonomi saat ini'],
+        'kondisi ekonomi saat ini',
+        # Bank Indonesia official terminology (IKK/IKE/IEK full forms)
+        'indeks keyakinan konsumen', 'keyakinan konsumen',
+        'indeks kondisi ekonomi', 'indeks ekspektasi konsumen',
+        'survei konsumen'],
     'indeks kinerja manufaktur': [
         'indeks kinerja manufaktur', 'kinerja manufaktur',
         'purchasing manufaktur index', 'manufaktur index', 'manufacturing index', 'pmi'],

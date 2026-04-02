@@ -184,7 +184,9 @@ class SchedulerFunction(ISchedulerFunction):
             
             afternoon_keywords = [
                 "minyak", "energi", "BBM", "biodiesel", "bioetanol", "pertamina",
-                "harga minyak", "pasar energi", "bahan bakar", "energi terbarukan"
+                "harga minyak", "pasar energi", "bahan bakar", "energi terbarukan",
+                "indeks", "konsumen", "bi rate", "suku bunga", "ritel", "manufaktur",
+                "neraca perdagangan", "inflasi", "ihsg", "indonia", "jasa"
             ]
             
             # Set date range for today

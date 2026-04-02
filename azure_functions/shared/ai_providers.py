@@ -91,9 +91,9 @@ class GeminiProvider(IAIProvider):
             }
         }
         
-        # Endpoint can be overridden via env
-        base_url = os.getenv("GEMINI_API_ENDPOINT") or self.config.api_endpoint
-        url = f"{base_url}?key={self.api_key}"
+        # Build URL dynamically from model_name — no need for COPILOT_API_ENDPOINT
+        model_name = self.config.model_name or "gemini-3.0-flash"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={self.api_key}"
         
         max_retries = 8
         retry_delay = 10

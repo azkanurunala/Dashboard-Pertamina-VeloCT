@@ -1,253 +1,343 @@
+import os
+import re
+import sys
+import time
+from datetime import datetime
+
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-import pandas as pd
-from datetime import datetime, timedelta
-import re
-import locale
-import time
-import os
+
+# Allow importing shared utilities from the sibling 'helpers' directory
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from helpers.scraping_utils import normalize_to_iso_date, parse_month_name_date, resolve_relative_date
 
 
-locale.setlocale(locale.LC_TIME, "C")
-# ============================== Fungsi: Bersihkan dan format tanggal ==============================
-def clean_date(raw_date: str) -> str:
-    now = datetime.now()
-    raw_date = raw_date.replace("|", "").strip().lower()
-    if "menit yang lalu" in raw_date or "jam yang lalu" in raw_date:
-        match_jam = re.search(r"(\d+)\s*jam", raw_date)
-        hours_ago = int(match_jam.group(1)) if match_jam else 0
-        match_menit = re.search(r"(\d+)\s*menit", raw_date)
-        minutes_ago = int(match_menit.group(1)) if match_menit else 0
-        delta = timedelta(hours=hours_ago, minutes=minutes_ago)
-        target_datetime = now - delta
-        return target_datetime.strftime("%d %b %Y")
-    if match_hari := re.search(r"(\d+)\s*hari(?:\s*yang)?\s*lalu", raw_date):
-        days_ago = int(match_hari.group(1))
-        target_date = now - timedelta(days=days_ago)
-        return target_date.strftime("%d %b %Y")
-    if match_tanggal := re.match(r"(\d{1,2}\s+\w+\s+\d{4})", raw_date):
-        return match_tanggal.group(1).strip()
-    return raw_date 
+# Constants
 
-# ============================== FUNGSI: Ambil konten artikel ==============================
-def scrape_article_content(url: str, headers: dict) -> str:
+BLOOMBERG_TECHNOZ_BASE_URL   = "https://www.bloombergtechnoz.com"
+BLOOMBERG_TECHNOZ_SEARCH_URL = f"{BLOOMBERG_TECHNOZ_BASE_URL}/search"
+
+# HTTP headers sent with every request to avoid bot-detection blocks
+REQUEST_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/121.0.0.0 Safari/537.36"
+    )
+}
+
+# Delay in seconds between paginated list requests (rate-limit courtesy)
+REQUEST_DELAY_SECONDS = 1.0
+
+# HTTP request timeout in seconds
+REQUEST_TIMEOUT = 10
+
+# Maximum number of sub-pages to fetch per article (safety guard)
+MAX_ARTICLE_PAGES = 10
+
+# Date format used internally throughout this scraper for display/comparison
+DISPLAY_DATE_FORMAT = "%d %b %Y"
+
+
+# Date Utilities (Bloomberg Technoz-specific)
+
+def parse_bloomberg_date(raw_date: str) -> str:
+    """
+    Parse a Bloomberg Technoz date string into a normalized display format.
+    """
+    cleaned = raw_date.replace("|", "").strip().lower()
+
+    # --- Relative date (e.g. "3 jam yang lalu", "2 hari lalu") ---
+    iso = resolve_relative_date(cleaned)
+    if iso:
+        return datetime.strptime(iso, "%Y-%m-%d").strftime(DISPLAY_DATE_FORMAT)
+
+    # --- Absolute date with Indonesian or English month name ---
+    iso = parse_month_name_date(cleaned)
+    if iso:
+        return datetime.strptime(iso, "%Y-%m-%d").strftime(DISPLAY_DATE_FORMAT)
+
+    return cleaned  # Fallback: return sanitised string unchanged
+
+
+# Pagination
+
+def get_total_pages(soup: BeautifulSoup) -> int:
+    """
+    Return total pages from a Bloomberg Technoz results page.
+    """
+    pagination = soup.find("ul", class_="pagging") if soup else None
+    if not pagination:
+        return 1
+
+    page_numbers = [
+        int(m.group(1))
+        for a in pagination.find_all("a", href=True)
+        if (m := re.search(r"pagenum=(\d+)", a["href"]))
+    ]
+
+    return max(page_numbers) if page_numbers else 1
+
+
+# Article Content Fetching
+
+def fetch_article_content(url: str) -> str:
+    """
+    Fetch a Bloomberg Technoz article and return its combined text.
+    """
+    all_text_lines: list[str] = []
+
     try:
-        all_text_lines = []
-        page = 1
-        while True:
-            if page == 1:
-                page_url = url
-            else:
-                page_url = f"{url}/{page}"
-            print(f"  [Konten] Mengambil halaman {page}: {page_url}")
-            r = requests.get(page_url, headers=headers, timeout=10)
-            r.raise_for_status()
-            soup = BeautifulSoup(r.text, "lxml")
+        for page in range(1, MAX_ARTICLE_PAGES + 1):
+            # Page 1 uses the canonical URL; subsequent pages append /N
+            page_url = url if page == 1 else f"{url}/{page}"
+            print(f"  [Content] Fetching sub-page {page}: {page_url}")
+
+            response = requests.get(page_url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, "lxml")
+
+            # Locate article body containers on this sub-page
             articles = soup.find_all("div", class_="article")
             if not articles:
-                print(f"  [Konten] Tidak ada article di halaman {page}, berhenti.")
+                print(f"  [Content] No article div on sub-page {page} — stopping.")
                 break
+
             found_content = False
             for article in articles:
                 detail_div = article.find("div", class_="detail-in")
                 if not detail_div:
                     continue
+
                 found_content = True
+
+                # Collect paragraph text, skipping "Baca Juga" cross-links
                 for p in detail_div.find_all("p"):
                     text = p.get_text(strip=True)
                     if text and "Baca Juga" not in text:
                         all_text_lines.append(text)
+
+                # Collect ordered list items
                 for ol in detail_div.find_all("ol"):
                     for li in ol.find_all("li", recursive=False):
                         text = li.get_text(strip=True)
                         if text:
                             all_text_lines.append(text)
+
             if not found_content:
-                print(f"  [Konten] Tidak ada konten di halaman {page}, berhenti.")
+                print(f"  [Content] No usable content on sub-page {page} — stopping.")
                 break
+
+            # Bloomberg Technoz signals the final sub-page with a "No more pages" div
             status_div = soup.find("div", class_="status")
             if status_div:
                 no_more = status_div.find("div", class_="no-more")
                 if no_more and no_more.get_text(strip=True) == "No more pages":
-                    print(f"  [Konten] Mencapai akhir artikel.")
+                    print(f"  [Content] End of article reached on sub-page {page}.")
                     break
-            page += 1
-            if page > 10:
-                print(f"  [Konten] Batas maksimal 10 halaman tercapai.")
-                break
-            time.sleep(1) 
-        print(f"  [Konten] Total baris text dari semua halaman: {len(all_text_lines)}")
-        content = "\n".join(all_text_lines)
-        return content
-        
-    except Exception as e:
-        print(f"  [Konten] Gagal mengambil artikel {url}: {e}")
+
+            time.sleep(REQUEST_DELAY_SECONDS)
+
+        print(f"  [Content] {len(all_text_lines)} text lines collected across all sub-pages.")
+        return "\n".join(all_text_lines)
+
+    except Exception as exc:
+        print(f"  [Content] Failed to fetch article {url}: {exc}")
         import traceback
         traceback.print_exc()
         return ""
-            
-# ============================== Fungsi: Ambil total jumlah halaman dari pagination ==============================
-def get_total_pages(soup) -> int:
-    pagination = soup.find("ul", class_="pagging") if soup else None
-    if not pagination:
-        return 1 
-    page_links = pagination.find_all("a", href=True)
-    nums = []
-    for a in page_links:
-        match = re.search(r"pagenum=(\d+)", a["href"])
-        if match:
-            nums.append(int(match.group(1)))
-    return max(nums) if nums else 1
 
-# ============================== Fungsi: Parse DAFTAR halaman ==============================
-def parse_page_list(url: str, headers: dict, base_url: str):
+
+# Search Results Page Parsing
+
+def fetch_search_results_page(url: str) -> tuple[list[dict], BeautifulSoup | None]:
+    """
+    Fetch a Bloomberg Technoz search results page, extract valid article data (title, date, link), and return it along with the parsed HTML for optional pagination handling.
+    """
     try:
-        r = requests.get(url, headers=headers, timeout=10)
-        r.raise_for_status()
-    except Exception as e:
-        print(f"Gagal mengakses halaman list {url}: {e}")
+        response = requests.get(url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+    except Exception as exc:
+        print(f"[Fetch] Failed to access {url}: {exc}")
         return [], None
-    soup = BeautifulSoup(r.text, "html.parser")
-    cards = soup.find_all("div", class_="card-box")
-    page_results = []
-    for card in cards:
-        a_tag = card.find("a", href=True)
-        title_tag = card.find("h2", class_="title")
-        date_tag = card.find("span", class_="cl-gray")
-        title = title_tag.get_text(strip=True) if title_tag else ""
-        link = a_tag["href"] if a_tag else ""
-        if link and not link.startswith("http"):
-            link = base_url + link
-        raw_date = date_tag.get_text(strip=True) if date_tag else ""
-        pub_date = clean_date(raw_date)
-        if not title or not link:
-            continue 
-        page_results.append({
-            "title": title,
-            "date": pub_date,
-            "link": link,
-        })  
-    return page_results, soup
 
-# ============================== Fungsi utama (MODIFIKASI): Scrape semua halaman ==============================
-def scrape_bloomberg_technoz_all(query: str, headers: dict, filter_date: str = None):
-    base_url = "https://www.bloombergtechnoz.com"
-    search_base = f"{base_url}/search?query={query}&type=berita"
-    
-    filter_datetime = None
+    soup  = BeautifulSoup(response.text, "html.parser")
+    cards = soup.find_all("div", class_="card-box")
+    articles: list[dict] = []
+
+    for card in cards:
+        a_tag      = card.find("a", href=True)
+        title_tag  = card.find("h2", class_="title")
+        date_tag   = card.find("span", class_="cl-gray")
+
+        title    = title_tag.get_text(strip=True) if title_tag else ""
+        raw_date = date_tag.get_text(strip=True)  if date_tag  else ""
+        link     = a_tag["href"]                  if a_tag     else ""
+
+        # Ensure URL is absolute
+        if link and not link.startswith("http"):
+            link = BLOOMBERG_TECHNOZ_BASE_URL + link
+
+        if not title or not link:
+            continue  # Skip incomplete cards
+
+        articles.append({
+            "title": title,
+            "date":  parse_bloomberg_date(raw_date),
+            "link":  link,
+        })
+
+    return articles, soup
+
+
+# Orchestration
+
+def scrape_bloomberg_technoz_news(
+    query: str,
+    filter_date: str | None = None,
+) -> list[dict]:
+    """
+    Scrape Bloomberg Technoz articles by query with optional date filtering, paginate results with early stopping, and enrich each article with full content.
+    """
+    search_url = f"{BLOOMBERG_TECHNOZ_SEARCH_URL}?query={query}&type=berita"
+
+    # Parse filter_date into a datetime for comparison
+    filter_dt: datetime | None = None
     if filter_date:
         try:
-            filter_datetime = datetime.strptime(filter_date, "%d %b %Y")
-            print(f"Filter tanggal: {filter_datetime.strftime('%d %b %Y')}")
-        except Exception as e:
-            print(f"Warning: Gagal parse filter_date '{filter_date}': {e}")
-            filter_datetime = None
-    
-    all_results, soup_first = parse_page_list(search_base, headers, base_url)
-    total_pages = get_total_pages(soup_first)
-    print(f"Ditemukan total {total_pages} halaman hasil untuk '{query}'")
-    
-    should_stop = False
-    
-    if filter_datetime and all_results:
-        for r in all_results[:]:
-            try:
-                article_date = datetime.strptime(r["date"], "%d %b %Y")
-                if article_date < filter_datetime:
-                    print(f"Ditemukan berita dengan tanggal lebih lama ({r['date']}) di halaman 1, berhenti scraping")
-                    should_stop = True
-                    break
-            except Exception as e:
-                print(f"Warning: Gagal parse tanggal '{r['date']}': {e}")
-        all_results = [r for r in all_results if datetime.strptime(r["date"], "%d %b %Y") == filter_datetime]
-    
-    if not should_stop:
+            filter_dt = datetime.strptime(filter_date, DISPLAY_DATE_FORMAT)
+            print(f"[Scrape] Target date: {filter_dt.strftime(DISPLAY_DATE_FORMAT)}")
+        except ValueError as exc:
+            print(f"[Scrape] Warning: could not parse filter_date='{filter_date}': {exc}")
+
+    # --- Page 1: fetch results and detect total page count ---
+    print(f"[Scrape] Fetching page 1...")
+    all_results, first_page_soup = fetch_search_results_page(search_url)
+    total_pages = get_total_pages(first_page_soup)
+    print(f"[Scrape] Total pages: {total_pages}")
+
+    # Apply date filter to page 1 results
+    all_results, stop_early = _filter_by_date(all_results, filter_dt, page_num=1)
+
+    # --- Paginate through remaining pages ---
+    if not stop_early:
         for page_num in range(2, total_pages + 1):
-            print(f"\nMengambil halaman {page_num}/{total_pages}...")
-            next_url = f"{search_base}&pagenum={page_num}"
-            page_results, _ = parse_page_list(next_url, headers, base_url)
-            
+            print(f"\n[Scrape] Fetching page {page_num}/{total_pages}...")
+            page_url     = f"{search_url}&pagenum={page_num}"
+            page_results, _ = fetch_search_results_page(page_url)
+
             if not page_results:
-                print(f"Tidak ada hasil di halaman {page_num}, berhenti.")
+                print(f"[Scrape] Page {page_num} returned no results — stopping.")
                 break
-            
-            if filter_datetime:
-                matching_results = []
-                for r in page_results:
-                    try:
-                        article_date = datetime.strptime(r["date"], "%d %b %Y")
-                        if article_date < filter_datetime:
-                            print(f"Ditemukan berita dengan tanggal lebih lama ({r['date']}) di halaman {page_num}, berhenti scraping")
-                            should_stop = True
-                            break
-                        elif article_date == filter_datetime:
-                            matching_results.append(r)
-                    except Exception as e:
-                        print(f"Warning: Gagal parse tanggal '{r['date']}': {e}")
-                
-                all_results.extend(matching_results)
-                if should_stop:
-                    break
-            else:
-                all_results.extend(page_results)
-            
-            time.sleep(1)
-    
-    print(f"\nScraping daftar selesai. Total berita yang lolos filter: {len(all_results)}")
-    
+
+            matched, stop_early = _filter_by_date(page_results, filter_dt, page_num)
+            all_results.extend(matched)
+
+            if stop_early:
+                break
+
+            time.sleep(REQUEST_DELAY_SECONDS)
+
+    print(f"\n[Scrape] List scraping complete. {len(all_results)} article(s) passed the filter.")
+
     if not all_results:
-        print("Tidak ada berita yang lolos filter.")
         return []
-    
-    final_results_with_content = []
-    total_filtered = len(all_results)
-    print(f"\nMemulai pengambilan konten untuk {total_filtered} berita yang relevan...")
-    
-    for i, article in enumerate(all_results, 1):
-        print(f"[{i}/{total_filtered}] Mengambil konten: {article['title']}")
-        konten = scrape_article_content(article['link'], headers)
-        article['konten'] = konten
-        final_results_with_content.append(article)
-    
-    print("Pengambilan konten selesai.")
-    return final_results_with_content
+
+    # --- Fetch full article content for each matched article ---
+    print(f"\n[Scrape] Fetching full content for {len(all_results)} article(s)...")
+    for i, article in enumerate(all_results, start=1):
+        print(f"[Scrape] [{i}/{len(all_results)}] {article['title']}")
+        article["konten"] = fetch_article_content(article["link"])
+
+    print("[Scrape] Content fetching complete.")
+    return all_results
 
 
-# ============================== Main script (MODIFIKASI) ==============================
-def main_bloomberg_technoz(query: str, filter_tanggal: str = None, output_filename: str = None):
+def _filter_by_date(
+    articles: list[dict],
+    filter_dt: datetime | None,
+    page_num: int,
+) -> tuple[list[dict], bool]:
+    """
+    Filter articles by target date, returning matches and a stop flag when older articles are encountered to halt further pagination.
+    """
+    if not filter_dt:
+        return articles, False
+
+    matched: list[dict] = []
+    stop_early = False
+
+    for article in articles:
+        try:
+            article_dt = datetime.strptime(article["date"], DISPLAY_DATE_FORMAT)
+        except ValueError:
+            print(f"[Filter] Could not parse date '{article['date']}' — skipped.")
+            continue
+
+        if article_dt < filter_dt:
+            print(f"[Filter] Page {page_num}: article dated {article['date']} is older than target — stopping.")
+            stop_early = True
+            break
+        elif article_dt == filter_dt:
+            matched.append(article)
+
+    return matched, stop_early
+
+
+# Public Entry Point
+
+def main_bloomberg_technoz(
+    query: str,
+    filter_tanggal: str | None = None,
+) -> pd.DataFrame | None:
+    """
+    Scrape Bloomberg Technoz articles for a query with normalized date filtering and return the results as a clean, structured DataFrame.
+    """
+    # Default to today if no date supplied
     if filter_tanggal is None:
-        filter_tanggal = datetime.now().strftime("%d %b %Y")
+        filter_tanggal = datetime.now().strftime("%Y-%m-%d")
+
+    # Normalise to ISO first, then convert to the display format used internally
+    iso_date = normalize_to_iso_date(filter_tanggal)
+    if iso_date:
+        display_date = datetime.strptime(iso_date, "%Y-%m-%d").strftime(DISPLAY_DATE_FORMAT)
     else:
-        if re.match(r"\d{4}-\d{2}-\d{2}", filter_tanggal):
-            try:
-                temp_date = datetime.strptime(filter_tanggal, "%Y-%m-%d")
-                filter_tanggal = temp_date.strftime("%d %b %Y")
-                print(f"Format tanggal dikonversi: {filter_tanggal}")
-            except Exception as e:
-                print(f"Warning: Gagal konversi tanggal '{filter_tanggal}': {e}")
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/121.0.0.0 Safari/537.36"
-        )
-    }
-    print(f"Memulai scraping untuk query='{query}' dengan filter tanggal='{filter_tanggal}'\n")
-    results = scrape_bloomberg_technoz_all(query, headers, filter_date=filter_tanggal)
+        print(f"[Main] Warning: could not normalise filter_tanggal='{filter_tanggal}' — using as-is.")
+        display_date = filter_tanggal
+
+    print(f"[Main] Query  : '{query}'")
+    print(f"[Main] Target : {display_date}\n")
+
+    results = scrape_bloomberg_technoz_news(query, filter_date=display_date)
+
     if not results:
-        print("\nTidak ada hasil ditemukan.")
+        print("\n[Main] No articles found.")
         return None
+
     df = pd.DataFrame(results)
-    df['date'] = pd.to_datetime(df['date'], format="%d %b %Y")
-    df['date'] = df['date'].dt.date
-    df = df.rename(
-        columns={
-            'konten' : 'content', 
-            'link' : 'url'
-        }
-    )
+    df["date"] = pd.to_datetime(df["date"], format=DISPLAY_DATE_FORMAT, errors="coerce").dt.date
+    df = df.rename(columns={"konten": "content", "link": "url"})
+
     return df
 
+
+# Script Entry Point
+
 if __name__ == "__main__":
-    df = main_bloomberg_technoz("Biodiesel", filter_tanggal="2025-09-20")
-    print(df)
+    from dotenv import load_dotenv
+    load_dotenv()  # Load .env only when run directly, not when imported
+
+    result = main_bloomberg_technoz(
+        query="Biodiesel",
+        filter_tanggal="2025-09-20",
+    )
+
+    if result is not None:
+        print(result)
+
+        # Output filename kept in Indonesian as per project convention
+        result.to_excel("bloomberg_technoz_results.xlsx", index=False, engine="openpyxl")
+        print(f"\n[Output] Saved to 'bloomberg_technoz_results.xlsx'")
+        print(f"[Output] Total articles : {len(result)}")
+        print(f"[Output] Columns        : {', '.join(result.columns)}")

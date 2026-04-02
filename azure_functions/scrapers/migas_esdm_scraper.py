@@ -329,7 +329,7 @@ Return ONLY the JSON object, no other text."""
             }
         }
         
-        model = os.getenv('GEMINI_VISION_MODEL', 'gemini-2.0-flash')
+        model = os.getenv('GEMINI_VISION_MODEL', 'gemini-3.0-flash')
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
         
         await self._ensure_session()

@@ -238,14 +238,12 @@ class BankIndonesiaScraper(BaseNewsScraper):
         """
         try:
             target_date = end_date.strftime("%Y-%m-%d")
-            keyword = keywords[0] if keywords else None
-            
             self.logger.info(f"Scraping Bank Indonesia for date: {target_date}")
-            if keyword:
-                self.logger.info(f"Keyword filter: {keyword}")
+            if keywords:
+                self.logger.info(f"Keyword filter: {keywords}")
             
             # Fetch news list
-            page_source = await self._fetch_news_list_selenium(keyword)
+            page_source = await self._fetch_news_list_selenium()
             
             # Extract articles matching date
             article_list, _ = self._extract_articles_from_page(page_source, target_date)
@@ -264,14 +262,20 @@ class BankIndonesiaScraper(BaseNewsScraper):
                     
                     content = await self._extract_article_content(article_data['url'])
                     
-                    # Filter by keyword if specified
-                    if keyword:
-                        keyword_lower = keyword.lower()
-                        title_match = keyword_lower in article_data['title'].lower()
-                        content_match = content != "N/A" and keyword_lower in content.lower()
-                        
-                        if not (title_match or content_match):
-                            self.logger.debug(f"Skipping article - keyword not found")
+                    # Filter by keywords if specified
+                    if keywords:
+                        matched = False
+                        for kw in keywords:
+                            kw_lower = kw.lower()
+                            title_match = kw_lower in article_data['title'].lower()
+                            content_match = content != "N/A" and kw_lower in content.lower()
+                            
+                            if title_match or content_match:
+                                matched = True
+                                break
+                                
+                        if not matched:
+                            self.logger.debug(f"Skipping article - no keywords found")
                             continue
                     
                     article = self._create_article(

@@ -45,8 +45,8 @@ class EnvironmentConfigurationManager(IConfigurationManager):
         
         # Copilot configuration
         self._cache["copilot"] = {
-            "api_endpoint": os.getenv("COPILOT_API_ENDPOINT", os.getenv("GEMINI_API_ENDPOINT", "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent")),
-            "model_name": os.getenv("COPILOT_MODEL_NAME", os.getenv("GEMINI_MODEL_NAME", "gemini-pro")),
+            "api_endpoint": os.getenv("COPILOT_API_ENDPOINT", os.getenv("GEMINI_API_ENDPOINT", "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.0-flash:generateContent")),
+            "model_name": os.getenv("COPILOT_MODEL_NAME", os.getenv("GEMINI_MODEL_NAME", "gemini-3.0-flash")),
             "max_tokens": int(os.getenv("COPILOT_MAX_TOKENS", "4000")),
             "temperature": float(os.getenv("COPILOT_TEMPERATURE", "0.3")),
             "rate_limit_requests_per_minute": int(os.getenv("COPILOT_RATE_LIMIT", "60")),
