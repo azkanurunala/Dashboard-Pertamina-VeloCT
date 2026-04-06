@@ -37,10 +37,10 @@ from scrapers import (
     GoogleNewsScraper, BioenergyTimesScraper, SCMPScraper,
     EnergiesMediaScraper, KontanBBMScraper, KontanBiodieselScraper,
     SAndPNewsScraper,
-    # Data scrapers  
+    # Data scrapers
     IAEAPRISScraper, MigasEIAScraper, CPOPriceScraper, SIPSNDataScraper,
     BiodieselESDMScraper, BioetanolESDMScraper, MigasESDMScraper,
-    SAndPDataScraper
+    SAndPDataScraper, KapasitasEBTScraper
 )
 
 # Set up logging
@@ -67,13 +67,14 @@ SCRAPER_REGISTRY = {
     'biodiesel_esdm': BiodieselESDMScraper,
     'bioetanol_esdm': BioetanolESDMScraper,
     'migas_esdm': MigasESDMScraper,
-    'sandp_data': SAndPDataScraper
+    'sandp_data': SAndPDataScraper,
+    'kapasitas_ebt': KapasitasEBTScraper
 }
 
 # Data sources that return structured dictionaries instead of NewsArticle objects
 DATA_SOURCES = {
-    'iaea_pris', 'migas_eia', 'cpo', 'sipsn', 
-    'biodiesel_esdm', 'bioetanol_esdm', 'migas_esdm', 'sandp_data',
+    'iaea_pris', 'migas_eia', 'cpo', 'sipsn',
+    'biodiesel_esdm', 'bioetanol_esdm', 'migas_esdm', 'sandp_data', 'kapasitas_ebt',
     'iaea_electrical', 'iaea_nuclear_capacity', 'kapasitas_ebt', 'ruptl',
     'wte_komposisi', 'wte_sumber', 'wte_timbulan', 'geopolitik', 'volatilitas',
     'kurs', 'fossil_prediction', 'fosil', 'saf', 'biodesel', 'bioetanol',

@@ -363,11 +363,18 @@ class SchedulerFunction(ISchedulerFunction):
         
         try:
             await self._initialize()
-            
-            # Set date range for the past month
+
+            # Fetch monthly EBT capacity data (API only provides current month)
             end_date = datetime.utcnow()
             start_date = end_date - timedelta(days=30)
             date_range = DateRange(start_date=start_date, end_date=end_date)
+
+            await self._execute_scraping_workflow(
+                sources=["kapasitas_ebt"],
+                keywords=[],
+                date_range=date_range,
+                execution_id=execution_id
+            )
             
             # Get articles from the past month
             filters = ArticleFilters(

@@ -79,92 +79,90 @@ class BankIndonesiaScraper(BaseNewsScraper):
             return f"{year}-{month}-{day}"
         return None
 
-    async def _fetch_news_list_selenium(self, keyword: Optional[str] = None) -> str:
+    async def _fetch_news_list(self) -> str:
         """
-        Fetch news list page using Selenium with optional search.
-        
-        Args:
-            keyword: Optional keyword to search for
-            
+        Fetch news list page using aiohttp (no Selenium required).
+
         Returns:
             Page HTML content
         """
         try:
-            content = await self._fetch_content_selenium(self.news_url)
+            content = await self._fetch_content(self.news_url)
             return content
         except Exception as e:
             self.logger.error(f"Failed to fetch news list: {e}")
-            raise NetworkError(f"Failed to fetch Bank Indonesia news list", 
+            raise NetworkError(f"Failed to fetch Bank Indonesia news list",
                              source=self.source_name, url=self.news_url)
 
-    def _extract_articles_from_page(self, page_source: str, target_date: str) -> tuple:
+    def _extract_articles_from_page(self, page_source: str, start_date: str, end_date: str) -> tuple:
         """
-        Extract articles from page source.
-        
+        Extract articles from page source within a date range.
+
         Args:
             page_source: HTML page source
-            target_date: Target date in YYYY-MM-DD format
-            
+            start_date: Start date in YYYY-MM-DD format (inclusive)
+            end_date: End date in YYYY-MM-DD format (inclusive)
+
         Returns:
             Tuple of (articles_list, should_stop_flag)
         """
         soup = BeautifulSoup(page_source, 'html.parser')
         articles = []
         should_stop = False
-        
+
         news_items = soup.select(self.config.selectors.get("article_list", ".media.media--pers"))
         self.logger.info(f"Found {len(news_items)} news items on page")
-        
-        target_datetime = datetime.strptime(target_date, "%Y-%m-%d")
-        
+
+        start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+        end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+
         for item in news_items:
             try:
                 # Extract title and URL
                 title_elem = item.select_one(self.config.selectors.get("article_title", ".media__title"))
                 if not title_elem:
                     continue
-                
+
                 title = title_elem.get_text(strip=True)
                 url = title_elem.get('href', '')
                 if url and not url.startswith('http'):
                     url = f"{self.config.base_url}{url}"
-                
+
                 # Extract date from subtitle
                 subtitle_elem = item.select_one(self.config.selectors.get("article_subtitle", ".media__subtitle"))
                 if not subtitle_elem:
                     continue
-                
+
                 subtitle_text = subtitle_elem.get_text(strip=True)
                 parts = subtitle_text.split("•")
                 date_str = parts[0].strip() if parts else None
-                
+
                 formatted_date = self._parse_indonesian_date(date_str)
                 if not formatted_date:
                     self.logger.warning(f"Could not parse date: {date_str}")
                     continue
-                
-                article_datetime = datetime.strptime(formatted_date, "%Y-%m-%d")
-                
-                # Check if article is older than target date
-                if article_datetime < target_datetime:
-                    self.logger.info(f"Found older article ({formatted_date}), stopping")
+
+                article_dt = datetime.strptime(formatted_date, "%Y-%m-%d")
+
+                # Stop if article is older than start_date
+                if article_dt < start_dt:
                     should_stop = True
                     break
-                
-                # Only include articles matching target date
-                if formatted_date == target_date:
+
+                # Include if within date range
+                if start_dt <= article_dt <= end_dt:
                     articles.append({
                         'title': title,
                         'date': formatted_date,
                         'url': url,
-                        'content': None  # Will be filled later
+                        'content': None
                     })
                     self.logger.info(f"Match: {title[:60]}... ({formatted_date})")
-                
+
             except Exception as e:
                 self.logger.warning(f"Failed to parse news item: {e}")
                 continue
-        
+
         return articles, should_stop
 
     async def _extract_article_content(self, url: str) -> str:
@@ -178,7 +176,7 @@ class BankIndonesiaScraper(BaseNewsScraper):
             Extracted article content
         """
         try:
-            content = await self._fetch_content_selenium(url)
+            content = await self._fetch_content(url)
             soup = BeautifulSoup(content, 'html.parser')
             
             content_selector = self.config.selectors.get(
@@ -237,16 +235,17 @@ class BankIndonesiaScraper(BaseNewsScraper):
             List of scraped NewsArticle objects
         """
         try:
-            target_date = end_date.strftime("%Y-%m-%d")
-            self.logger.info(f"Scraping Bank Indonesia for date: {target_date}")
+            self.logger.info(f"Scraping Bank Indonesia from {start_date.date()} to {end_date.date()}")
             if keywords:
                 self.logger.info(f"Keyword filter: {keywords}")
-            
+
             # Fetch news list
-            page_source = await self._fetch_news_list_selenium()
-            
-            # Extract articles matching date
-            article_list, _ = self._extract_articles_from_page(page_source, target_date)
+            page_source = await self._fetch_news_list()
+
+            # Extract articles in date range
+            article_list, _ = self._extract_articles_from_page(
+                page_source, start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")
+            )
             
             if not article_list:
                 self.logger.info("No articles found for the target date")

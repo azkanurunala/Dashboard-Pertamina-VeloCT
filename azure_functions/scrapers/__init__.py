@@ -37,6 +37,7 @@ from scrapers.sipsn_scraper import SIPSNDataScraper, scrape_sipsn_data
 from scrapers.biodiesel_esdm_scraper import BiodieselESDMScraper, scrape_biodiesel_esdm
 from scrapers.bioetanol_esdm_scraper import BioetanolESDMScraper, scrape_bioetanol_esdm
 from scrapers.migas_esdm_scraper import MigasESDMScraper, scrape_migas_esdm_icp
+from scrapers.kapasitas_ebt_scraper import KapasitasEBTScraper
 
 __all__ = [
     'BaseNewsScraper',
@@ -64,7 +65,8 @@ __all__ = [
     # ESDM Data Scrapers
     'BiodieselESDMScraper', 'scrape_biodiesel_esdm',
     'BioetanolESDMScraper', 'scrape_bioetanol_esdm',
-    'MigasESDMScraper', 'scrape_migas_esdm_icp'
+    'MigasESDMScraper', 'scrape_migas_esdm_icp',
+    'KapasitasEBTScraper',
 ]
 
 

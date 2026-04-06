@@ -223,17 +223,24 @@ class BPSScraper(BaseNewsScraper):
         page = 0
         total_pages = None
         should_stop = False
-        
-        # Use first keyword if multiple provided
-        search_keyword = keywords[0] if keywords else None
-        
-        self.logger.info(f"Starting BPS scrape with keyword: {search_keyword}")
-        
+        seen_ids = set()  # Dedup — BPS API sometimes returns same page for multiple page numbers
+
+        # Fetch all articles from API (no keyword filter) — filter post-hoc by keywords
+        # BPS API keyword filter only matches the first keyword and misses many relevant articles
+        self.logger.info(f"Starting BPS scrape (no API keyword filter, post-hoc filter: {keywords})")
+
         while not should_stop:
             try:
-                # Fetch news list for current page
-                api_response = await self._get_news_list(page=page, keyword=search_keyword)
+                # Fetch news list for current page without keyword filter
+                api_response = await self._get_news_list(page=page, keyword=None)
                 news_items, metadata = self._parse_api_response(api_response)
+
+                # Stop if API returns same page again (pagination broken without keyword)
+                page_ids = {item.get('news_id') for item in (news_items or [])}
+                if page_ids and page_ids.issubset(seen_ids):
+                    self.logger.info(f"Page {page} returned already-seen items, stopping")
+                    break
+                seen_ids.update(page_ids)
                 
                 if not news_items:
                     self.logger.info(f"No more news items found at page {page}")
