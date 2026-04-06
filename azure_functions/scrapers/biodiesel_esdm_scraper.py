@@ -3,7 +3,6 @@ Biodiesel ESDM Scraper for Azure Functions.
 Scrapes HIP BBN Biodiesel data from ESDM API and PDFs.
 """
 
-import asyncio
 import re
 import sys
 import os
@@ -65,27 +64,40 @@ class BiodieselESDMScraper(BaseNewsScraper):
         keywords = ["HIP", "BBN", "JENIS", "BIODIESEL", "BULAN"]
         return all(keyword in title.upper() for keyword in keywords)
 
-    def _extract_pdf_url_from_html(self, html_content: str) -> Optional[str]:
-        """Extract PDF URL from article content."""
-        if not html_content:
-            return None
-        match = re.search(r'href=["\'](https?://[^"\']*drive\.esdm\.go\.id[^"\']*)["\']', html_content)
-        return match.group(1) if match else None
+    def _extract_month_from_title(self, title: str) -> Optional[str]:
+        """Extract 'Bulan XXXX YYYY' string from article title."""
+        m = re.search(
+            r'Bulan\s+(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+(\d{4})',
+            title, re.IGNORECASE
+        )
+        return f"{m.group(1)} {m.group(2)}" if m else None
+
+    def _extract_hip_from_konten(self, konten: str) -> Optional[float]:
+        """Extract HIP value (IDR/liter) directly from article HTML content."""
+        import html as htmlmod
+        text = htmlmod.unescape(re.sub('<[^>]+>', ' ', konten))
+        text = re.sub(r'\s+', ' ', text)
+        # Pattern: "Rp 14.262/liter" or "Rp. 14.262/liter"
+        m = re.search(r'Rp\.?\s*([\d]{2}[\.\,][\d]{3})\s*/\s*[Ll]iter', text)
+        if m:
+            val = m.group(1).replace('.', '').replace(',', '')
+            return float(val)
+        return None
 
     async def _fetch_articles_from_api(self, limit: int = 200) -> List[Dict]:
-        """Fetch biodiesel articles from ESDM API."""
+        """Fetch biodiesel articles from ESDM API, including HIP from konten."""
         try:
             await self._ensure_session()
-            
+
             api_url = f"{self.config.selectors['api_url']}?kategori_slug=pengumuman&start=0&length={limit}&is_published=true"
-            
+
             async with self._session.get(api_url, timeout=aiohttp.ClientTimeout(total=30)) as response:
                 response.raise_for_status()
                 data = await response.json()
-                
+
                 if 'data' not in data or not data['data']:
                     return []
-                
+
                 articles = []
                 for article in data['data']:
                     title = article.get('judul', '').strip()
@@ -93,18 +105,20 @@ class BiodieselESDMScraper(BaseNewsScraper):
                         date_str = article.get('tanggal_publikasi') or article.get('tgl_upload', '')
                         slug = article.get('slug', '')
                         konten = article.get('konten', '')
-                        pdf_url = self._extract_pdf_url_from_html(konten)
-                        
+                        hip_month = self._extract_month_from_title(title)
+                        hip_value = self._extract_hip_from_konten(konten)
+
                         articles.append({
                             "title": title,
                             "url": f"https://ebtke.esdm.go.id/artikel/pengumuman/{slug}",
                             "date": date_str,
-                            "pdf_url": pdf_url
+                            "hip_month": hip_month,
+                            "hip_value": hip_value,
                         })
-                
+
                 self.logger.info(f"Found {len(articles)} biodiesel articles")
                 return articles
-                
+
         except Exception as e:
             self.logger.error(f"Error fetching articles: {e}")
             return []
@@ -188,66 +202,54 @@ class BiodieselESDMScraper(BaseNewsScraper):
             return None, None
 
     async def _scrape_articles_from_source(
-        self, 
-        keywords: List[str], 
-        start_date: datetime, 
-        end_date: datetime, 
+        self,
+        keywords: List[str],
+        start_date: datetime,
+        end_date: datetime,
         **kwargs
     ) -> List[Dict[str, Any]]:
         """Main entry point for Biodiesel ESDM data scraping."""
         try:
             max_articles = kwargs.get('max_articles', 50)
-            
+            existing_months = set(kwargs.get('existing_months', []))
+
             self.logger.info("Fetching biodiesel articles from ESDM API")
-            
             articles = await self._fetch_articles_from_api(max_articles)
-            
+
             if not articles:
                 self.logger.info("No biodiesel articles found")
                 return []
-            
-            # Filter by date range
-            filtered_articles = []
-            for article in articles:
-                if article.get('pdf_url'):
-                    filtered_articles.append(article)
-            
-            self.logger.info(f"Processing {len(filtered_articles)} articles with PDFs")
-            
-            # Extract data from PDFs
+
             all_data = []
-            for article in filtered_articles[:max_articles]:
-                if not article.get('pdf_url'):
+            for article in articles:
+                hip_month = article.get('hip_month')
+                hip_value = article.get('hip_value')
+
+                if not hip_month or not hip_value:
+                    self.logger.warning(f"Skipping (no HIP data): {article['title'][:60]}")
                     continue
-                
-                self.logger.info(f"Processing: {article['title'][:50]}...")
-                
-                pdf_bytes = await self._download_pdf(article['pdf_url'])
-                if not pdf_bytes:
+
+                if hip_month in existing_months:
+                    self.logger.info(f"Skip (already in DB): {hip_month}")
                     continue
-                
-                hip_value, hip_month = self._extract_hip_from_pdf_bytes(pdf_bytes)
-                
-                if hip_value:
-                    all_data.append({
-                        'published_date': article.get('date'),
-                        'hip_month': hip_month,
-                        'price_idr_liter': int(hip_value * 1000)  # Convert to actual value
-                    })
-                    self.logger.info(f"Extracted HIP: {hip_value} for {hip_month}")
-                
-                await asyncio.sleep(0.5)
-            
+
+                all_data.append({
+                    'published_date': article.get('date') or None,
+                    'hip_month': hip_month,
+                    'price_idr_liter': int(hip_value),
+                })
+                self.logger.info(f"Extracted HIP: {int(hip_value)} for {hip_month}")
+
             results = [{
                 'type': 'data_biodiesel_hip',
                 'data': all_data,
                 'fetch_date': datetime.now().isoformat(),
-                'articles_processed': len(filtered_articles)
+                'articles_processed': len(articles)
             }]
-            
+
             self.logger.info(f"Successfully extracted {len(all_data)} HIP biodiesel entries")
             return results
-            
+
         except Exception as e:
             raise ScrapingError(f"Failed to scrape Biodiesel ESDM: {str(e)}", source=self.source_name)
 
