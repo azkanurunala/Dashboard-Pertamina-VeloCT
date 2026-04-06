@@ -168,7 +168,9 @@ for excel_path in EXCEL_FILES:
                 no_source += 1
                 continue
 
-            content = row[idx_content] if idx_content >= 0 and idx_content < len(row) else None
+            content = row[idx_content] if idx_content >= 0 and idx_content < len(row) else ''
+            if content is None:
+                content = ''
 
             rows_to_insert.append({
                 'id': str(uuid.uuid4()),

@@ -7,7 +7,7 @@ import asyncio
 import re
 import sys
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 
 from bs4 import BeautifulSoup
@@ -271,7 +271,9 @@ class CPOPriceScraper(BaseNewsScraper):
             if last_date and isinstance(last_date, str):
                 last_date_str = last_date
             else:
-                last_date_str = start_date.strftime("%Y-%m-%d")
+                # GAPKI articles are posted 1-4 days after the price date,
+                # so look back 7 days to avoid missing recent entries.
+                last_date_str = (start_date - timedelta(days=7)).strftime("%Y-%m-%d")
             
             self.logger.info(f"Scraping GAPKI CPO prices after {last_date_str}")
             

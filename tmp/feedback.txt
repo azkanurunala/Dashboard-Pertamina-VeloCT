@@ -1,0 +1,119 @@
+Oke itu sudah benar kak, sekarang kita lompat lagi ke issue yang lain, saat ini data berita untuk Indeks Volatilitas tidak muncul, Summary dan Data juga tidak muncul di Power BI yang datanya diambil dari Azure SQL
+
+berikut M Query-nya
+
+Azure SQL
+
+Data
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    Table26_Table = Source{[Name="(Data)Volatilitas",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(Table26_Table, [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Date", type date}, {"Last Price", type number}}),
+    #"Renamed Columns" = Table.RenameColumns(#"Changed Type",{{"Last Price", "Indeks Volatilitas (VIX)"}})
+in
+    #"Renamed Columns"
+
+Summary
+let
+    Source = Sql.Database("pei-dashboard.database.windows.net", "pei-dashboard", [HierarchicalNavigation=true, MultiSubnetFailover=true]),
+    dbo = Source{[Schema="dbo"]}[Data],
+    sentiment_analyses1 = dbo{[Name="sentiment_analyses"]}[Data],
+    
+    FilteredRows = Table.SelectRows(sentiment_analyses1, each [role_context] = "Idx Volatilitas"),
+    
+    RenamedColumns = Table.RenameColumns(FilteredRows, {
+        {"date_range_start", "Tanggal awal"},
+        {"date_range_end", "Tanggal akhir"},
+        {"summary", "Summary"},
+        {"summary_data", "Summary Data"}
+    }),
+    
+    SelectedColumns = Table.SelectColumns(RenamedColumns, {
+        "Tanggal awal", "Tanggal akhir", "Summary", "Summary Data"
+    }),
+    
+    AddRentang = Table.AddColumn(SelectedColumns, "Rentang_IdxVolatilitas", 
+        each Text.PadStart(Text.From(Date.Month([Tanggal awal])), 2, "0") & "/" & Text.PadStart(Text.From(Date.Day([Tanggal awal])), 2, "0") & "/" & Text.From(Date.Year([Tanggal awal])) & " : " & Text.PadStart(Text.From(Date.Month([Tanggal akhir])), 2, "0") & "/" & Text.PadStart(Text.From(Date.Day([Tanggal akhir])), 2, "0") & "/" & Text.From(Date.Year([Tanggal akhir])), type text),
+    
+    SortedRows = Table.Sort(AddRentang, {{"Tanggal awal", Order.Descending}}),
+    
+    ChangedType = Table.TransformColumnTypes(SortedRows, {
+        {"Tanggal awal", type date},
+        {"Tanggal akhir", type date},
+        {"Summary", type text},
+        {"Summary Data", type text},
+        {"Rentang_IdxVolatilitas", type text}
+    })
+in
+    ChangedType
+
+News
+let
+    Source = Sql.Database("pei-dashboard.database.windows.net", "pei-dashboard", [HierarchicalNavigation=true, MultiSubnetFailover=true]),
+    dbo = Source{[Schema="dbo"]}[Data],
+    news_articles = dbo{[Name="news_articles"]}[Data],
+    news_sources = dbo{[Name="news_sources"]}[Data],
+    
+    FilteredArticles = Table.SelectRows(news_articles, each [category] = "indeks volatilitas"),
+    
+    RenamedArticles = Table.RenameColumns(FilteredArticles, {
+        {"title", "title"},
+        {"published_date", "date"},
+        {"url", "url"},
+        {"content", "content"},
+        {"category", "keyword"}
+    }),
+    
+    SelectedArticles = Table.SelectColumns(RenamedArticles, {
+        "title", "date", "url", "content", "source_id", "keyword"
+    }),
+    
+    RenamedSources = Table.RenameColumns(news_sources, {
+        {"id", "source_id"},
+        {"name", "source"}
+    }),
+    
+    SelectedSources = Table.SelectColumns(RenamedSources, {
+        "source_id", "source"
+    }),
+    
+    JoinedTables = Table.NestedJoin(SelectedArticles, {"source_id"}, SelectedSources, {"source_id"}, "news_sources", JoinKind.LeftOuter),
+    
+    ExpandedSource = Table.ExpandTableColumn(JoinedTables, "news_sources", {"source"}, {"source"}),
+    
+    RemovedSourceId = Table.RemoveColumns(ExpandedSource, {"source_id"}),
+    
+    ReorderedColumns = Table.SelectColumns(RemovedSourceId, {
+        "title", "date", "url", "content", "keyword", "source"
+    }),
+    
+    AddBeritaPilihan = Table.AddColumn(ReorderedColumns, "Berita Pilihan", 
+        each "[" & Text.From([date]) & "] " & [title] & " - " & [source]),
+    
+    SortedRows = Table.Sort(AddBeritaPilihan, {{"date", Order.Descending}}),
+    
+    ChangedType = Table.TransformColumnTypes(SortedRows, {
+        {"title", type text},
+        {"date", type date},
+        {"url", type text},
+        {"content", type text},
+        {"keyword", type text},
+        {"source", type text},
+        {"Berita Pilihan", type text}
+    })
+in
+    ChangedType
+
+Sharepoint
+
+Data
+
+Summary
+
+News
