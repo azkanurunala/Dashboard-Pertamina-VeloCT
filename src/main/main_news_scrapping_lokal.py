@@ -81,7 +81,7 @@ SINONIM_DICT = {
     #     ],
     "bioetanol ": [
         "tebu ", 
-        "gula ", # just for bisnis indonesia, kecuali lifestyle.bisnis.com
+        "gula ",
         "molase ", "etanol ", "ethanol ", "bioethanol ", "tetes tebu ",
         "gula tebu ", "industri gula "
         ],
@@ -141,6 +141,34 @@ SINONIM_DICT = {
     #     ],
 }
 
+POST_FILTER_RULES = {
+    "bioetanol ": {
+        # Keyword sinonim yang perlu difilter secondary
+        "tebu ": [
+            "etanol", "bioetanol", "biofuel", "e10", "e5", "e20",
+            "molase", "bioenergi", "bahan bakar", "bbm"
+        ],
+        "gula ": [
+            "etanol", "bioetanol", "biofuel", "e10", "e5", "e20",
+            "molase", "bahan bakar"
+        ],
+        "gula tebu ": [
+            "etanol", "bioetanol", "biofuel", "e10", "e5", "e20",
+            "molase", "bahan bakar"
+        ],
+        "industri gula ": [
+            "etanol", "bioetanol", "biofuel", "e10", "e5", "e20",
+            "molase", "bahan bakar"
+        ],
+        # "etanol ": [
+        #     # Artikel harus menyebut konteks Indonesia/energi,
+        #     # untuk menghindari artikel politik luar negeri (misal Trump vs DeSantis)
+        #     "indonesia", "pertamina", "esdm", "bbm", "bensin",
+        #     "mandatori", "bioetanol", "bahan bakar", "impor"
+        # ],
+    }
+}
+
 # Ketenagalistrikan, energi baru dan terbarukan sub-category keyword filters
 
 EBT_KEYWORDS = [
@@ -168,9 +196,7 @@ SUMBER_DICT = {
     # "neraca perdagangan ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bps],
     # "pertumbuhan domestik bruto ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bps],
     # "biodiesel ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    "bioetanol ": [
-        # scrape_kontan_biodiesel, main_bisnis_indonesia, 
-        main_bloomberg_technoz],
+    "bioetanol ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
     # "RUPTL ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
     # "harga minyak ": [scrape_kontan_bbm, main_bisnis_indonesia, main_bloomberg_technoz],
     # "volume minyak ": [scrape_kontan_bbm, main_bisnis_indonesia, main_bloomberg_technoz],
@@ -336,6 +362,8 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
     semua_keyword = [keyword] + SINONIM_DICT.get(keyword, [])
     sumber = SUMBER_DICT.get(keyword, [main_kompas, main_bisnis_indonesia, scrape_tempo, scrape_kontan])
 
+    post_filter_rules = POST_FILTER_RULES.get(keyword, {})
+     
     for kata in semua_keyword:
         print(f"\n  Kata kunci: '{kata}'")
         hasil_list = []
@@ -368,6 +396,21 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
         if hasil_list:
             df_kata = pd.concat(hasil_list, ignore_index=True)
             df_kata["keyword"] = kata
+            
+             # === POST-FILTER (hanya untuk sinonim yang perlu secondary check) ===
+            secondary_terms = post_filter_rules.get(kata)
+            if secondary_terms:
+                before = len(df_kata)
+                pattern = "|".join(secondary_terms)
+                mask = (
+                    df_kata["title"].str.contains(pattern, case=False, na=False) |
+                    df_kata["content"].str.contains(pattern, case=False, na=False)
+                )
+                df_kata = df_kata[mask].copy()
+                after = len(df_kata)
+                print(f"    Post-filter '{kata}': {before} → {after} artikel ({before - after} dibuang)")
+            # =====================================================================
+
             hasil_final = pd.concat([hasil_final, df_kata], ignore_index=True)
 
     return hasil_final if not hasil_final.empty else EMPTY_DF.copy()
@@ -387,8 +430,8 @@ def main():
         print(f"Authentication failed: {e}")
         return
 
-    tanggal_filter = None
-    # tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    # tanggal_filter = "2026-04-01"
+    tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     print(f"\nTanggal filter: {tanggal_filter}")
 
     # --- Load existing sheets from OneDrive ---
