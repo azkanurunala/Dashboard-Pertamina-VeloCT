@@ -409,9 +409,15 @@ def main_cnbc(
     Run the CNBC scraping workflow with normalized date handling and return a structured DataFrame or None if no results are found.
     """
     # Default to today if no date supplied
-    if tanggal is None:
-        tanggal = datetime.now().strftime("%Y-%m-%d")
-
+    iso_date = None
+    if tanggal is not None:
+        iso_date = normalize_to_iso_date(tanggal)
+        if not iso_date:
+            try:
+                iso_date = datetime.strptime(tanggal, "%d-%m-%Y").strftime("%Y-%m-%d")
+            except ValueError:
+                pass
+        
     # Normalise any supported format to ISO before passing downstream
     iso_date = normalize_to_iso_date(tanggal)
     if not iso_date:

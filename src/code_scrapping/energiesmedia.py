@@ -208,7 +208,7 @@ def scrape_energiesmedia(
 
 def main_energiesmedia(
     keyword: str = "Oil price",
-    tanggal: str | None = "2026-03-07",
+    tanggal: str | None = None,
 ) -> pd.DataFrame | None:
     """
     Run the Energiesmedia scraping workflow for a keyword and optional date, returning a DataFrame or None if no results are found.

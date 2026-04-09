@@ -198,7 +198,7 @@ def scrape_bioenergytimes(
 
 def main_bioenergytimes(
     keyword: str = "SAF Indonesia",
-    tanggal: str | None = "2026-01-12",
+    tanggal: str | None = None,
 ) -> pd.DataFrame | None:
     """
     Run Bioenergytimes scraping and return results as a DataFrame.
