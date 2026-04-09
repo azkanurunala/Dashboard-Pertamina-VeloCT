@@ -203,6 +203,15 @@ def scrape_spglobal(
 
     articles = _search_news(access_token, keyword, start_date, end_date)
 
+    seen = set()
+    unique_articles = []
+    for article in articles:
+        key = (article["title"].strip().lower(), article["date"])
+        if key not in seen:
+            seen.add(key)
+            unique_articles.append(article)
+    articles = unique_articles
+
     if not articles:
         print("[Scrape] No articles found.")
     else:
