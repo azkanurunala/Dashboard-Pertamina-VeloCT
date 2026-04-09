@@ -246,12 +246,21 @@ def scrape_bloomberg_technoz_news(
 
     # --- Fetch full article content for each matched article ---
     print(f"\n[Scrape] Fetching full content for {len(all_results)} article(s)...")
+    
+    keyword_pattern = re.compile(r"\b" + re.escape(query.strip()) + r"\b", re.IGNORECASE)
+    filtered_results: list[dict] = []
+    
     for i, article in enumerate(all_results, start=1):
         print(f"[Scrape] [{i}/{len(all_results)}] {article['title']}")
         article["konten"] = fetch_article_content(article["link"])
-
+        if not keyword_pattern.search(article["title"]) and not keyword_pattern.search(article["konten"]):
+            print(f"[Skip] '{query.strip()}' tidak ditemukan: {article['title']!r}")
+            continue
+        filtered_results.append(article)
+        
     print("[Scrape] Content fetching complete.")
-    return all_results
+    # return all_results
+    return filtered_results
 
 
 def _filter_by_date(
