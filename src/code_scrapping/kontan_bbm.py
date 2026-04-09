@@ -227,7 +227,7 @@ def scrape_kontan_bbm(keyword: str, date: str | datetime | None = None) -> list[
 
 def main_kontan_bioenergi(
     keyword: str = "BBM",
-    tanggal: str | None = "2025-11-10",
+    tanggal: str | None = None,
 ) -> pd.DataFrame | None:
     """
     Scrape Kontan industri/internasional articles with keyword and normalized date filtering, returning a standardized DataFrame.

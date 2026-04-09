@@ -60,7 +60,7 @@ def scrape_kontan_biodiesel(keyword: str, date: str | datetime | None = None) ->
 
 def main_kontan_biodiesel(
     keyword: str = "BBM",
-    tanggal: str | None = "2025-11-10",
+    tanggal: str | None = None,
 ) -> pd.DataFrame | None:
     """
     Scrape Kontan investasi/industri articles with keyword and normalized date filtering, returning a standardized DataFrame.
