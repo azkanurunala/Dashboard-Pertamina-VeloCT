@@ -237,8 +237,8 @@ def main():
         print(f"Authentication failed: {e}")
         return
 
-    # tanggal_filter = "2025-12-02"
-    tanggal_filter = "2026-04-06"
+    # tanggal_filter = "2026-04-06"
+    tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     print(f"\nTanggal filter: {tanggal_filter}")
 
     # --- Load existing sheets from OneDrive ---
