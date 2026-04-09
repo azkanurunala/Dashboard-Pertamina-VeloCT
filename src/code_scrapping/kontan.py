@@ -52,6 +52,7 @@ KONTAN_CONTENT_SELECTORS = [
 # Minimum number of <p> tags required to accept a full-page fallback
 FALLBACK_MIN_PARAGRAPHS = 3
 
+EXCLUDED_SUBDOMAINS = ["insight.kontan.co.id"]
 
 # Sitemap Traversal
 
@@ -199,6 +200,11 @@ def scrape_kontan(
     if not articles:
         return []
 
+    # articles = [
+    #     a for a in articles
+    #     if not any(sub in a["link"] for sub in EXCLUDED_SUBDOMAINS)
+    # ]
+    
     # --- Fetch full content for each matched article ---
     results: list[dict] = []
 
