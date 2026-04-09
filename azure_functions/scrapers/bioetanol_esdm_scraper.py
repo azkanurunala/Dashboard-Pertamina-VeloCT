@@ -65,27 +65,56 @@ class BioetanolESDMScraper(BaseNewsScraper):
         keywords = ["HIP", "BBN", "JENIS", "BIOETANOL", "BULAN"]
         return all(keyword in title.upper() for keyword in keywords)
 
-    def _extract_pdf_url_from_html(self, html_content: str) -> Optional[str]:
-        """Extract PDF URL from article content."""
+    def _extract_month_from_title(self, title: str) -> Optional[str]:
+        """Extract 'Bulan XXXX YYYY' string from article title."""
+        m = re.search(
+            r'Bulan\s+(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+(\d{4})',
+            title, re.IGNORECASE
+        )
+        return f"{m.group(1)} {m.group(2)}" if m else None
+
+    def _extract_gdrive_file_id(self, html_content: str) -> Optional[str]:
+        """Extract Google Drive file ID from article HTML content."""
         if not html_content:
             return None
-        match = re.search(r'href=["\'](https?://[^"\']*drive\.esdm\.go\.id[^"\']*)["\']', html_content)
-        return match.group(1) if match else None
+        m = re.search(r'drive\.google\.com/file/d/([^/?\"\']+)', html_content)
+        return m.group(1) if m else None
+
+    async def _download_gdrive_pdf(self, file_id: str) -> Optional[bytes]:
+        """Download PDF from Google Drive by file ID."""
+        try:
+            await self._ensure_session()
+            url = f"https://drive.google.com/uc?export=download&id={file_id}"
+            async with self._session.get(url, timeout=aiohttp.ClientTimeout(total=60), allow_redirects=True) as r:
+                ct = r.headers.get('content-type', '').lower()
+                if 'pdf' in ct or 'octet' in ct:
+                    return await r.read()
+                # Virus-scan confirm page for large files
+                html = await r.text()
+                m = re.search(r'confirm=([^&"]+)', html)
+                if m:
+                    url2 = f"{url}&confirm={m.group(1)}"
+                    async with self._session.get(url2, timeout=aiohttp.ClientTimeout(total=60), allow_redirects=True) as r2:
+                        return await r2.read()
+            return None
+        except Exception as e:
+            self.logger.error(f"Error downloading GDrive PDF {file_id}: {e}")
+            return None
 
     async def _fetch_articles_from_api(self, limit: int = 200) -> List[Dict]:
         """Fetch bioetanol articles from ESDM API."""
         try:
             await self._ensure_session()
-            
+
             api_url = f"{self.config.selectors['api_url']}?kategori_slug=pengumuman&start=0&length={limit}&is_published=true"
-            
+
             async with self._session.get(api_url, timeout=aiohttp.ClientTimeout(total=30)) as response:
                 response.raise_for_status()
                 data = await response.json()
-                
+
                 if 'data' not in data or not data['data']:
                     return []
-                
+
                 articles = []
                 for article in data['data']:
                     title = article.get('judul', '').strip()
@@ -93,18 +122,19 @@ class BioetanolESDMScraper(BaseNewsScraper):
                         date_str = article.get('tanggal_publikasi') or article.get('tgl_upload', '')
                         slug = article.get('slug', '')
                         konten = article.get('konten', '')
-                        pdf_url = self._extract_pdf_url_from_html(konten)
-                        
+                        gdrive_id = self._extract_gdrive_file_id(konten)
+
                         articles.append({
                             "title": title,
                             "url": f"https://ebtke.esdm.go.id/artikel/pengumuman/{slug}",
                             "date": date_str,
-                            "pdf_url": pdf_url
+                            "hip_month": self._extract_month_from_title(title),
+                            "gdrive_id": gdrive_id,
                         })
-                
+
                 self.logger.info(f"Found {len(articles)} bioetanol articles")
                 return articles
-                
+
         except Exception as e:
             self.logger.error(f"Error fetching articles: {e}")
             return []
@@ -148,10 +178,10 @@ class BioetanolESDMScraper(BaseNewsScraper):
                     data_row = table[row_idx + 2]
                     if col_idx + 1 < len(data_row) and data_row[col_idx + 1]:
                         val = data_row[col_idx + 1]
-                        val_clean = str(val).replace(',', '.').replace(' ', '').strip()
-                        match = re.match(r'^(\d+(?:\.\d+)?)$', val_clean)
-                        if match:
-                            harga_tetes_tebu = float(match.group(1))
+                        # Strip thousand separators (both '.' and ',') then parse as int
+                        val_clean = re.sub(r'[.,]', '', str(val).strip())
+                        if val_clean.isdigit():
+                            harga_tetes_tebu = float(val_clean)
                 
                 # Look for HIP bioetanol header
                 if 'HIP BIOETANOL' in text.upper() or 'HIP BBN' in text.upper():
@@ -169,13 +199,12 @@ class BioetanolESDMScraper(BaseNewsScraper):
                         if month_match:
                             hip_month = month_match.group(0).strip()
                     
-                    # Get value
+                    # Get value — strip thousand separators then parse as int
                     if col_idx + 1 < len(data_row) and data_row[col_idx + 1]:
                         val = data_row[col_idx + 1]
-                        val_clean = str(val).replace(',', '.').replace(' ', '').strip()
-                        match = re.match(r'^(\d+(?:\.\d+)?)$', val_clean)
-                        if match:
-                            hip_value = float(match.group(1))
+                        val_clean = re.sub(r'[.,]', '', str(val).strip())
+                        if val_clean.isdigit():
+                            hip_value = float(val_clean)
         
         return hip_value, hip_month, harga_tetes_tebu
 
@@ -200,66 +229,71 @@ class BioetanolESDMScraper(BaseNewsScraper):
             return None, None, None
 
     async def _scrape_articles_from_source(
-        self, 
-        keywords: List[str], 
-        start_date: datetime, 
-        end_date: datetime, 
+        self,
+        keywords: List[str],
+        start_date: datetime,
+        end_date: datetime,
         **kwargs
     ) -> List[Dict[str, Any]]:
         """Main entry point for Bioetanol ESDM data scraping."""
         try:
             max_articles = kwargs.get('max_articles', 50)
-            
+            existing_months = set(kwargs.get('existing_months', []))
+
             self.logger.info("Fetching bioetanol articles from ESDM API")
-            
             articles = await self._fetch_articles_from_api(max_articles)
-            
+
             if not articles:
                 self.logger.info("No bioetanol articles found")
                 return []
-            
-            # Filter articles with PDFs
-            filtered_articles = [a for a in articles if a.get('pdf_url')]
-            
-            self.logger.info(f"Processing {len(filtered_articles)} articles with PDFs")
-            
-            # Extract data from PDFs
+
             all_data = []
-            for article in filtered_articles[:max_articles]:
-                if not article.get('pdf_url'):
+            for article in articles:
+                hip_month = article.get('hip_month')
+                if not hip_month:
                     continue
-                
-                self.logger.info(f"Processing: {article['title'][:50]}...")
-                
-                pdf_bytes = await self._download_pdf(article['pdf_url'])
+                if hip_month in existing_months:
+                    self.logger.info(f"Skip (already in DB): {hip_month}")
+                    continue
+
+                gdrive_id = article.get('gdrive_id')
+                if not gdrive_id:
+                    self.logger.warning(f"No GDrive link for {hip_month}, skipping")
+                    continue
+
+                self.logger.info(f"Downloading PDF for {hip_month}...")
+                pdf_bytes = await self._download_gdrive_pdf(gdrive_id)
                 if not pdf_bytes:
+                    self.logger.warning(f"Failed to download PDF for {hip_month}")
                     continue
-                
-                hip_value, hip_month, harga_tetes = self._extract_hip_from_pdf_bytes(pdf_bytes)
-                
+
+                hip_value, _, harga_tetes = self._extract_hip_from_pdf_bytes(pdf_bytes)
+
                 if hip_value:
                     entry = {
-                        'date': article.get('date'),
+                        'date': article.get('date') or None,
                         'bulan_hip': hip_month,
-                        'hip_bioetanol_idr_l': int(hip_value * 1000)
+                        'hip_bioetanol_idr_l': int(hip_value),
                     }
                     if harga_tetes:
-                        entry['harga_tetes_tebu'] = int(harga_tetes * 1000)
+                        entry['harga_tetes_tebu'] = int(harga_tetes)
                     all_data.append(entry)
-                    self.logger.info(f"Extracted HIP: {hip_value} for {hip_month}")
-                
+                    self.logger.info(f"Extracted HIP: {int(hip_value * 1000)} for {hip_month}")
+                else:
+                    self.logger.warning(f"Could not extract HIP value from PDF for {hip_month}")
+
                 await asyncio.sleep(0.5)
-            
+
             results = [{
                 'type': 'data_bioetanol_hip',
                 'data': all_data,
                 'fetch_date': datetime.now().isoformat(),
-                'articles_processed': len(filtered_articles)
+                'articles_processed': len(articles)
             }]
-            
+
             self.logger.info(f"Successfully extracted {len(all_data)} HIP bioetanol entries")
             return results
-            
+
         except Exception as e:
             raise ScrapingError(f"Failed to scrape Bioetanol ESDM: {str(e)}", source=self.source_name)
 

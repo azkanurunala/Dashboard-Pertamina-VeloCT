@@ -6,7 +6,7 @@ Fetches energy price data, forecasts, and petrochemical data from S&P Global API
 import asyncio
 import sys
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import List, Optional, Dict, Any
 import aiohttp
 import pandas as pd
@@ -699,9 +699,8 @@ class SAndPDataScraper(BaseNewsScraper):
                 })
             
             elif data_type == 'saf':
-                # Fetch recent SAF and UCO data (last 30 days by default if historical)
                 symbols = list(self.SAF_SYMBOLS.keys())
-                start_date_str = (end_date - timedelta(days=30)).strftime('%Y-%m-%d')
+                start_date_str = start_date.strftime('%Y-%m-%d')
                 end_date_str = end_date.strftime('%Y-%m-%d')
                 
                 df = await self.get_historical_data(symbols, start_date_str, end_date_str)

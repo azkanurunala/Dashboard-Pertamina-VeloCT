@@ -210,8 +210,9 @@ class CPOPriceScraper(BaseNewsScraper):
                     line = line.strip()
                     
                     if "KPB" in line.upper() and "CPO" in line.upper():
-                        # Pattern with date in parentheses
-                        pattern_with_date = r"([\d\.]+)\s*\((\d{1,2})\s*(\w+)['']?\)"
+                        # Pattern with date in parentheses — trailing char can be
+                        # any quote variant (ASCII ', U+2018, U+2019) or nothing
+                        pattern_with_date = r"([\d\.]+)\s*\((\d{1,2})\s*(\w+)[^)]*?\)"
                         matches = list(re.finditer(pattern_with_date, line))
                         
                         if matches:
