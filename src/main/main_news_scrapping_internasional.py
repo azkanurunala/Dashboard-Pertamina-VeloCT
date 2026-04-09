@@ -20,9 +20,9 @@ from code_scrapping.cnbc import main_google_news_cnbc
 from code_scrapping.cnn import main_google_news_cnn
 from code_scrapping.energiesmedia import scrape_energiesmedia
 from code_scrapping.oilprice import scrape_oilprice
-from code_scrapping.scrape_sandp_news import scrape_news_sap
+from code_scrapping.scrape_sandp_news import scrape_spglobal as scrape_news_sap
 from code_scrapping.scmp import main_scmp
-from code_scrapping.the_guardian import scrape_theguardian
+from code_scrapping.the_guardian import scrape_the_guardian as scrape_theguardian
 
 load_dotenv()
 
@@ -33,24 +33,43 @@ ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_FILE_PATH", "/results/(News)Scrapping_n
 # Keyword synonyms
 
 SINONIM_DICT = {
-    "geopolitical risk ": ["geopolitical pressure ", "geopolitics "],
-    # "volatility index ": ["volatilitality "],
-    # "dxy ": ["dollar "],
-    # "purchasing manufaktur index ": ["manufaktur index "],
-    # "purchasing services index ": ["services index "],
+    # "geopolitical risk ": ["geopolitical pressure ", "geopolitics "],
+    # "volatility index ": [
+    #     # "volatility ",
+    #     "market volatility ", "financial volatility "
+    #     ],
+    # "dxy ": [
+    #     # "dollar ",
+    #     "dollar index "
+    #     ],
+    "purchasing manufaktur index ": [
+        "manufaktur index ",
+        "purchasing manufacturing index", "manufacturing pmi "
+        ],
+    "purchasing services index ": [
+        "services index ",
+        "services pmi "
+        ],
     # "oil price ": ["crude oil "],
     # "oil volume ": ["bbm volume "],
-    # "SAF ": ["UCO ", "sustainable aviation fuel ", "used cooking oil ", "CORSIA ", "SAFCo ", "biorefinery ", "bioavtur "],
-    "RON 92 ": [
-        "pertamax ", "RON 95 ", "RON 97 ", "Residual FO ", "Fuel Oil", "Jet Fuel ", "Avtur ",
-        "Kerosene ", "refinery ", "refined products ", "refining ", "oil products ", "Gasoline ",
-        "Heavy Oil ", "Diesel ", "Gasoil ", "Naphtha ", "LPG ", "Biodiesel ", "Biogasoline ",
-        "Petroleum Coke ", "Oil price ", "Fuel cost ", "Fuel price ",
-    ],
-    "Petro ": [
-        "chemical ", "petrochemical ", "aromatic ", "olefin ", "polymer ", "LPG ",
-        "Paraxylene ", "Propylene ", "Benzene ", "Green Coke ",
-    ],
+    # "SAF ": [
+    #     "UCO ", "sustainable aviation fuel ", "used cooking oil ", "CORSIA ", "SAFCo ", "biorefinery ", "bioavtur ",
+    #     "pome "
+    #     ],
+    # "RON 92 ": [
+    #     "pertamax ", "RON 95 ", "RON 97 ", "Residual FO ", "Fuel Oil", "Jet Fuel ", "Avtur ",
+    #     "Kerosene ", "refinery ", "refined products ", "refining ", "oil products ", "Gasoline ",
+    #     "Heavy Oil ", "Diesel ", "Gasoil ", "Naphtha ", "LPG ", "Biodiesel ", "Biogasoline ",
+    #     "Petroleum Coke ", "Oil price ", 
+    #     # "fuel ",
+    #     "fuel cost ", "fuel price ",
+    # ],
+    # "Petrochemical ": [
+    #     "chemical ", "aromatic ", "olefin ", "polymer ", "LPG ",
+    #     "Paraxylene ", "Propylene ", "Benzene ", "Green Coke ",
+    #     "petrochemicals", "petrochemical complex", "aromatic compound", 
+    #     "BTX aromatic", "green petroleum coke", "petroleum coke"
+    # ],
 }
 
 # Scraping sources per keyword
@@ -59,13 +78,13 @@ SUMBER_DICT = {
     # "geopolitical risk ": [main_google_news_cnn, main_google_news_cnbc, main_scmp, scrape_theguardian],
     # "volatility index ": [main_google_news_cnn, main_google_news_cnbc, main_scmp, scrape_theguardian],
     # "dxy ": [main_google_news_cnn, main_google_news_cnbc],
-    # "purchasing manufaktur index ": [scrape_news_sap],
-    # "purchasing services index ": [scrape_news_sap],
+    "purchasing manufaktur index ": [scrape_news_sap],
+    "purchasing services index ": [scrape_news_sap],
     # "oil price ": [scrape_oilprice],
     # "oil volume ": [scrape_oilprice],
     # "SAF ": [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn],
-    "RON 92 ": [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn, scrape_energiesmedia, scrape_bioenergytimes, scrape_theguardian],
-    "Petro ":  [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn, scrape_energiesmedia, scrape_bioenergytimes],
+    # "RON 92 ": [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn, scrape_energiesmedia, scrape_bioenergytimes, scrape_theguardian],
+    # "Petrochemical ":  [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn, scrape_energiesmedia, scrape_bioenergytimes],
 }
 
 # Sheet name → keyword mapping
@@ -74,13 +93,13 @@ SHEET_TO_KEYWORD = {
     # "(News)indeks risiko geopolitik": "geopolitical risk ",
     # "(News)indeks volatilitas": "volatility index ",
     # "(News)Kurs": "dxy ",
-    # "(News)indeks kinerja manufaktur": "purchasing manufaktur index ",
-    # "(News)indeks kinerja jasa": "purchasing services index ",
+    "(News)indeks kinerja manufaktur": "purchasing manufaktur index ",
+    "(News)indeks kinerja jasa": "purchasing services index ",
     # "(News)Harga Minyak": "oil price ",
     # "(News)Volume Minyak": "oil volume ",
     # "(News)SAF": "SAF ",
-    "(News)Crackspread_BBM":    "RON 92 ",
-    "(News)Crackspread_NonBBM": "Petro ",
+    # "(News)Crackspread_BBM":    "RON 92 ",
+    # "(News)Crackspread_NonBBM": "Petrochemical ",
 }
 
 # Sheets to process (must match keys in SHEET_TO_KEYWORD)
@@ -88,13 +107,13 @@ ACTIVE_SHEETS = [
     # "(News)indeks risiko geopolitik",
     # "(News)indeks volatilitas",
     # "(News)Kurs",
-    # "(News)indeks kinerja manufaktur",
-    # "(News)indeks kinerja jasa",
+    "(News)indeks kinerja manufaktur",
+    "(News)indeks kinerja jasa",
     # "(News)Harga Minyak",
     # "(News)Volume Minyak",
     # "(News)SAF",
-    "(News)Crackspread_BBM",
-    "(News)Crackspread_NonBBM",
+    # "(News)Crackspread_BBM",
+    # "(News)Crackspread_NonBBM",
 ]
 
 # Canonical source name overrides
@@ -103,7 +122,7 @@ SOURCE_NAME_MAP = {
     "KONTAN_BIODIESEL": "KONTAN",
     "GOOGLE_NEWS_CNN":  "CNN",
     "GOOGLE_NEWS_CNBC": "CNBC",
-    "NEWS_SAP":         "S&P",
+    "SPGLOBAL":         "S&P",
 }
 
 # Column rename map for standardization
@@ -178,16 +197,23 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
 
             try:
                 data = scrape_func(kata, tanggal_filter)
-                if data:
+                if isinstance(data, pd.DataFrame):
+                    df_temp = data
+                elif data:
                     df_temp = pd.DataFrame(data)
+                else:
+                    df_temp = pd.DataFrame()
+
+                if not df_temp.empty:
                     df_temp["source"] = nama_sumber
                     df_temp = standardize_format(df_temp)
                     hasil_list.append(df_temp)
-                    print(f"    → {len(df_temp)} berita dari {nama_sumber}")
+                    print(f"    {len(df_temp)} berita dari {nama_sumber}")
                 else:
-                    print(f"    → Tidak ada berita dari {nama_sumber}")
+                    print(f"    Tidak ada berita dari {nama_sumber}")
+
             except Exception as e:
-                print(f"    ✗ Gagal scrape {nama_sumber}: {e}")
+                print(f"    Gagal scrape {nama_sumber}: {e}")
 
         if hasil_list:
             df_kata = pd.concat(hasil_list, ignore_index=True)
@@ -212,7 +238,7 @@ def main():
         return
 
     # tanggal_filter = "2025-12-02"
-    tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    tanggal_filter = "2026-04-06"
     print(f"\nTanggal filter: {tanggal_filter}")
 
     # --- Load existing sheets from OneDrive ---
