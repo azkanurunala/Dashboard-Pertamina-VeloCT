@@ -49,9 +49,11 @@ let
         {"source", type text},
         {"keyword", type text},
         {"Berita Pilihan", type text}
-    })
+    }),
+
+    SortedRows = Table.Sort(ChangedType, {{"date", Order.Ascending}})
 in
-    ChangedType
+    SortedRows
 
 
 // ══════════════════════════════════════════════════════
