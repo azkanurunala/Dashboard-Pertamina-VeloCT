@@ -267,7 +267,7 @@ def scrape_tempo(
     """
     Scrape Tempo articles by keyword with an optional date filter using Selenium search first, then RSS fallback, and return each match with full content.
     """
-    kw_lower = keyword.lower().strip()
+    kw_lower = keyword.lower().lstrip()
 
     # Normalise date to ISO — handles both "DD-MM-YYYY" and "YYYY-MM-DD"
     iso_date = normalize_to_iso_date(tanggal) if tanggal else None
@@ -289,9 +289,18 @@ def scrape_tempo(
     if status == "ok" and urls:
         print(f"[Scrape] Selenium search OK: {len(urls)} URLs found.")
 
+        keyword_pattern = re.compile(
+            re.escape(kw_lower.lstrip()), re.IGNORECASE
+        )
+        
         for url in urls:
             title, article_date = _extract_article_meta(url)
 
+            content = _fetch_article_content(url)
+            if not keyword_pattern.search(title) and not keyword_pattern.search(content):
+                print(f"[Skip] Keyword '{kw_lower}' tidak ditemukan di title/content: {title!r}")
+                continue
+            
             if iso_date:
                 if not article_date:
                     print(f"[Skip] No date metadata — skipping: {url}")
@@ -309,7 +318,7 @@ def scrape_tempo(
         print(f"[Scrape] Selenium status='{status}' — falling back to RSS feeds.")
 
         # keyword_pattern = re.compile(r"\b" + re.escape(kw_lower) + r"\b")
-        keyword_pattern = re.compile(r"\b" + re.escape(kw_lower.strip()) + r"\b", re.IGNORECASE)
+        keyword_pattern = re.compile(re.escape(kw_lower), re.IGNORECASE)
         
         for feed_url in TEMPO_RSS_FEEDS:
             try:
