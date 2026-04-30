@@ -26,6 +26,8 @@
     "BLOB_STORAGE_CONNECTION_STRING": "UseDevelopmentStorage=true",
     "AZURE_STORAGE_API_VERSION": "2023-11-03",
     "BPS_API_KEY": "8199b1a60c76d284ee3d2228a51b3743",
+    "EIA_API_KEY": "kODFA7mKVrNKWrGyFiIk5fIdlC1AKGXzba5lJxzY",
+    "THEGUARDIAN_API_KEY": "",
     "ENVIRONMENT": "development",
     "FUNCTIONS_WORKER_PYTHON_PATH": "c:\\RunningProjects\\Dashboard-Pertamina-VeloCT\\azure_functions\\.venv\\Scripts\\python.exe",
     "MORNING_TIMER_SCHEDULE": "0 0 0 * * *",
