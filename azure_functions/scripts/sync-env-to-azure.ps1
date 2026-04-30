@@ -72,16 +72,29 @@ if ($DryRun) {
     exit 0
 }
 
-# Pass each KEY=VALUE as a separate argument so spaces/specials are preserved.
-& az functionapp config appsettings set `
-    --name $FunctionAppName `
-    --resource-group $ResourceGroupName `
-    --settings @pairs `
-    --output none
+# Pass settings via a temp JSON file. Going through `az.cmd` with KEY=VALUE
+# args breaks for values containing CMD metacharacters (e.g. `&` in passwords),
+# because the batch wrapper re-parses arguments before az ever sees them.
+$jsonObjects = $pairs | ForEach-Object {
+    $eq2 = $_.IndexOf("=")
+    @{ name = $_.Substring(0, $eq2); value = $_.Substring($eq2 + 1); slotSetting = $false }
+}
+$tmpJson = [System.IO.Path]::GetTempFileName() + ".json"
+$jsonObjects | ConvertTo-Json -Depth 5 -Compress | Set-Content -Path $tmpJson -Encoding UTF8
 
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "az functionapp config appsettings set failed (exit $LASTEXITCODE)"
-    exit $LASTEXITCODE
+try {
+    & az functionapp config appsettings set `
+        --name $FunctionAppName `
+        --resource-group $ResourceGroupName `
+        --settings "@$tmpJson" `
+        --output none
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "az functionapp config appsettings set failed (exit $LASTEXITCODE)"
+        exit $LASTEXITCODE
+    }
+} finally {
+    Remove-Item $tmpJson -ErrorAction SilentlyContinue
 }
 
 Write-Host "Done." -ForegroundColor Green
