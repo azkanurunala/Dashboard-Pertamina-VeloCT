@@ -64,7 +64,7 @@ class MigasEIAScraper(BaseNewsScraper):
             )
         
         super().__init__(config)
-        self._api_key = os.getenv("EIA_API_KEY", "kODFA7mKVrNKWrGyFiIk5fIdlC1AKGXzba5lJxzY")
+        self._api_key = os.getenv("EIA_API_KEY", "")
 
     async def get_release_dates(self) -> Dict[str, Any]:
         """Get current and next release dates from EIA website."""

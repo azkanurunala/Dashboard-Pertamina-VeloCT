@@ -25,6 +25,46 @@
     "value": "8199b1a60c76d284ee3d2228a51b3743"
   },
   {
+    "name": "SP_USERNAME",
+    "slotSetting": false,
+    "value": "raden.aviandito@pertamina.com"
+  },
+  {
+    "name": "SP_PASSWORD",
+    "slotSetting": false,
+    "value": "Pertamina.Setup1S&P"
+  },
+  {
+    "name": "EIA_API_KEY",
+    "slotSetting": false,
+    "value": "kODFA7mKVrNKWrGyFiIk5fIdlC1AKGXzba5lJxzY"
+  },
+  {
+    "name": "THEGUARDIAN_API_KEY",
+    "slotSetting": false,
+    "value": ""
+  },
+  {
+    "name": "MORNING_TIMER_SCHEDULE",
+    "slotSetting": false,
+    "value": "0 0 0 * * *"
+  },
+  {
+    "name": "AFTERNOON_TIMER_SCHEDULE",
+    "slotSetting": false,
+    "value": "0 0 8 * * *"
+  },
+  {
+    "name": "WEEKLY_TIMER_SCHEDULE",
+    "slotSetting": false,
+    "value": "0 0 14 * * 0"
+  },
+  {
+    "name": "MONTHLY_TIMER_SCHEDULE",
+    "slotSetting": false,
+    "value": "0 0 3 1 * *"
+  },
+  {
     "name": "AI_TYPE",
     "slotSetting": false,
     "value": "AZURE_OPENAI"

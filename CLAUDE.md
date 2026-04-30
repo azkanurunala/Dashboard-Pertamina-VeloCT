@@ -37,7 +37,11 @@ python seed_data.py --dry-run          # Validate CSV seeding without inserting
 python seed_data.py --batch-size 50    # Import CSV data
 
 # Deployment
-./scripts/deploy-functions.ps1         # Deploy to Azure
+scripts\sync-env-to-azure.cmd          # Sync .env -> Azure App Settings (CMD)
+scripts\sync-env-to-azure.cmd -DryRun  # Preview which keys would be pushed
+.\scripts\sync-env-to-azure.ps1        # Same, from PowerShell
+func azure functionapp publish pei-dashboard --build remote   # Deploy code
+./scripts/deploy-functions.ps1         # Deploy script wrapper (legacy)
 ```
 
 ## Architecture
@@ -64,7 +68,8 @@ Timer triggers (daily/weekly/monthly)
 | `shared/models.py` | Core dataclasses: `NewsArticle`, `SentimentAnalysis`, `ExecutionResult`, enums |
 | `shared/database_handler.py` | All DB operations (pyodbc/pymssql, connection pool, retry, dedup by URL+category) |
 | `shared/interfaces.py` | Abstract base contracts for all major components |
-| `shared/config.py` | `EnvironmentConfigurationManager`; reads env vars, falls back to Azure Key Vault |
+| `shared/config.py` | `EnvironmentConfigurationManager`; auto-loads `.env` on import (via `python-dotenv`, `override=False` so Azure App Settings win in cloud), reads env vars, falls back to Azure Key Vault |
+| `scripts/sync-env-to-azure.ps1` / `.cmd` | Reads `.env` and pushes every key to Azure Function App App Settings via `az functionapp config appsettings set` |
 | `shared/ai_providers.py` | Pluggable AI backends (Gemini, Claude, OpenAI) for sentiment analysis |
 | `scrapers/base_scraper.py` | `BaseNewsScraper` with rate limiting, retry, aiohttp, optional Selenium fallback |
 | `UNIFIED_MIGRATION.sql` | **Source of truth for the full DB schema** (30 tables) |
@@ -76,13 +81,28 @@ Two scraper types exist, distinguished in `DATA_SOURCES` set:
 - **News scrapers** → return `List[NewsArticle]` → classified into categories → saved to `news_articles` table
 - **Data scrapers** → return `List[dict]` → saved to type-specific tables (e.g., `data_biodiesel_hip`, `data_oil_prices`)
 
-Scrapers that need Selenium import from `shared/selenium_helper.py` (currently **missing** — `bank_indonesia_scraper.py` and others will fail silently if this file doesn't exist; `SELENIUM_AVAILABLE` will be `False`).
+Scrapers that need Selenium import from `shared/selenium_helper.py` (this file **exists** as of 2026-04-30; `SELENIUM_AVAILABLE` is `True` when the chromedriver is reachable).
 
 ### Category Classification
 
 `_classify_article_categories(title, content)` in `orchestrator_function.py` does **substring matching** (not word boundary) of `CATEGORY_KEYWORDS` dict against `title + content`. Returns the matched category names, or falls back to `['Harga Minyak']`. Power BI queries filter by these exact category strings (e.g., `category = 'indeks kepercayaan knsmn'`).
 
 **Important**: The keywords use BI terminology like `'indeks keyakinan konsumen'` (not `'kepercayaan'`). Short abbreviations like `'ikk'`, `'ike'`, `'iek'` must **not** be added as keywords — they cause false positives (e.g., `'ikk'` matches `'naikkan'`).
+
+### Configuration & Secrets
+
+`.env` (in `azure_functions/.env`) is the **single source of truth** for all secrets and configuration. The flow is:
+
+- **Local runs** (`func start`, pytest, ad-hoc scripts): `shared/config.py` calls `load_dotenv()` on import, which populates `os.environ` from `.env`.
+- **Azure cloud**: Function App **App Settings** are already in `os.environ` before `shared/config.py` runs. `load_dotenv(override=False)` will not override them, so production values always win.
+- **`.env` is gitignored** — never commit it. Use `scripts\sync-env-to-azure.cmd` to push it to Azure App Settings instead of duplicating values into `azure_settings.json` by hand.
+- `local.settings.json` is the legacy per-key store used by Azure Functions Core Tools when running `func start`. Keep it in sync with `.env` (or remove it once the team confirms `.env` covers everything).
+
+Required keys (all in `.env`):
+- DB: `SQL_SERVER_CONNECTION_STRING` (or `DatabaseConnectionString` for Key Vault refs in Azure)
+- AI: `AI_TYPE`, `AZURE_OPENAI_API_KEY` + endpoint, `GEMINI_API_KEY`
+- Scrapers: `SP_USERNAME`, `SP_PASSWORD` (S&P Global), `BPS_API_KEY`, `EIA_API_KEY`, `THEGUARDIAN_API_KEY`
+- Schedules: `MORNING_TIMER_SCHEDULE`, `AFTERNOON_TIMER_SCHEDULE`, `WEEKLY_TIMER_SCHEDULE`, `MONTHLY_TIMER_SCHEDULE` (NCRONTAB)
 
 ### Database
 
@@ -96,8 +116,32 @@ Timer schedules are set via environment variables in CRON format:
 - `MORNING_TIMER_SCHEDULE` — international sources (CNBC, Reuters, Bloomberg, etc.)
 - `AFTERNOON_TIMER_SCHEDULE` — Indonesian/local sources (Bank Indonesia, ESDM, BPS, etc.)
 
+## Deploy Procedure
+
+From `azure_functions/` in cmd or PowerShell (after `az login`):
+
+```
+scripts\sync-env-to-azure.cmd -DryRun     # preview
+scripts\sync-env-to-azure.cmd             # push .env -> Azure App Settings
+func azure functionapp publish pei-dashboard --build remote
+```
+
+Verify after deploy:
+```
+curl https://pei-dashboard-f5eebmdhe2a9dfgs.canadacentral-01.azurewebsites.net/api/health_check_function
+```
+
+The Function App is `pei-dashboard` in resource group `PeiDashboard` (Canada Central).
+
 ## Known Issues
 
-- `shared/selenium_helper.py` does not exist → `bank_indonesia_scraper.py`, `bps_scraper.py`, and other Selenium-dependent scrapers silently fail in Azure (0 articles saved).
 - `news_sources.base_url` for `BANK_INDONESIA` is incorrectly set to `https://www.bank_indonesia.com` (should be `https://www.bi.go.id`).
-- Most scrapers stopped saving data after 2026-02-12; only `S&P Global News`, `EnergiesMedia`, `SCMP` are active as of 2026-03-13.
+- The Guardian, IAEA PRIS, and migas.esdm.go.id may fail from some local networks due to TLS/firewall — they work fine from inside Azure.
+- S&P Global login (used by `sandp_news` and `sandp_data`) requires valid `SP_USERNAME`/`SP_PASSWORD`; if S&P changes its login flow the scraper needs updating.
+
+## Recent fixes (2026-04-30)
+
+- Implemented missing `_extract_article_content_json_ld` method in `scrapers/oilprice_scraper.py` (was referenced but undefined).
+- Added missing `SentimentLabel` import in `orchestration/orchestrator_function.py`.
+- Replaced hardcoded API keys in `theguardian_scraper.py` and `migas_eia_scraper.py` with `os.getenv(...)` — they now require `THEGUARDIAN_API_KEY` and `EIA_API_KEY` env vars.
+- Added `load_dotenv()` in `shared/config.py` so `.env` is automatically loaded for local runs.

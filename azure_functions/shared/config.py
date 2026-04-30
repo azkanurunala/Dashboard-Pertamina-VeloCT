@@ -8,6 +8,19 @@ from dataclasses import asdict
 import json
 import logging
 
+# Load .env from the azure_functions directory if present so that local runs
+# (func start, pytest, ad-hoc scripts) read the same secrets that are pushed
+# to Azure App Settings. In Azure, real App Settings already populate
+# os.environ before this runs, so existing values are preserved (override=False).
+try:
+    from dotenv import load_dotenv
+    _here = os.path.abspath(os.path.dirname(__file__))
+    _dotenv_path = os.path.normpath(os.path.join(_here, "..", ".env"))
+    if os.path.isfile(_dotenv_path):
+        load_dotenv(_dotenv_path, override=False)
+except ImportError:
+    pass
+
 from .models import ScrapingConfig, CopilotConfig, DatabaseConfig
 from .interfaces import IConfigurationManager, ConfigurationError
 

@@ -34,7 +34,7 @@ class TheGuardianNewsScraper(BaseNewsScraper):
                 base_url="https://www.theguardian.com",
                 selectors={
                     "api_base": "https://content.guardianapis.com/search",
-                    "api_key": "997b85f0-96ed-452c-b509-5f62ec918b2a"  # Public test key
+                    "api_key": os.getenv("THEGUARDIAN_API_KEY", "")
                 },
                 rate_limit_delay=0.5,
                 max_retries=3,
