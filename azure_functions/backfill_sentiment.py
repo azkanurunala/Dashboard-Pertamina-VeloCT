@@ -146,7 +146,7 @@ async def fetch_historical_links(target_date):
     return articles
 
 async def run_backfill():
-    os.environ['AI_TYPE'] = 'OPENAI'
+    os.environ['AI_TYPE'] = 'AZURE_OPENAI'
     target_start = datetime(2025, 1, 1)
     target_end = datetime(2026, 3, 14)
     keywords = ["indeks", "konsumen", "bi rate", "suku bunga", "ritel", "manufaktur", "neraca perdagangan", "inflasi", "ihsg", "indonia", "jasa", "ikk", "ike", "iek"]

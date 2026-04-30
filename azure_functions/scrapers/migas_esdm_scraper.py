@@ -211,13 +211,14 @@ class MigasESDMScraper(BaseNewsScraper):
     async def _extract_icp_with_vision_ai(self, pdf_bytes: bytes) -> Tuple[Optional[str], Optional[float], Optional[str], Optional[float]]:
         """
         Fallback: Extract ICP data from scanned PDF using AI Vision API.
-        Supports GEMINI, OPENAI, and COPILOT based on AI_TYPE env var.
-        API key is always from AI_API_KEY.
+        Supports GEMINI, OPENAI, AZURE_OPENAI, CLAUDE based on AI_TYPE env var.
+        API key is read from the provider-specific env var: {AI_TYPE}_API_KEY.
         """
-        ai_type = os.getenv('AI_TYPE', 'GEMINI').upper()
-        api_key = os.getenv('AI_API_KEY')
+        ai_type = os.getenv('AI_TYPE', 'AZURE_OPENAI').upper()
+        key_var = f'{ai_type}_API_KEY'
+        api_key = os.getenv(key_var)
         if not api_key:
-            self.logger.warning("No AI_API_KEY available for Vision OCR fallback")
+            self.logger.warning(f"No {key_var} available for Vision OCR fallback")
             return None, None, None, None
         
         try:
@@ -257,14 +258,16 @@ Extract EXACTLY these values and return as JSON:
 IMPORTANT: The price should be in US dollars per barrel (typically $20-$200 range).
 Return ONLY the JSON object, no other text."""
 
-            # Build request based on AI_TYPE
-            if ai_type == 'GEMINI':
-                response_text = await self._call_gemini_vision(api_key, page_images_b64, prompt_text)
-            elif ai_type in ('OPENAI', 'COPILOT'):
-                # COPILOT uses Azure OpenAI (OpenAI-compatible format)
+            # Build request based on AI_TYPE. GEMINI / OPENAI / AZURE_OPENAI have
+            # native Vision implementations here; other providers fall back to Gemini.
+            if ai_type == 'OPENAI':
                 response_text = await self._call_openai_vision(api_key, page_images_b64, prompt_text)
+            elif ai_type == 'AZURE_OPENAI':
+                response_text = await self._call_azure_openai_vision(api_key, page_images_b64, prompt_text)
             else:
-                # Default to Gemini
+                # GEMINI, CLAUDE, DEEPSEEK, GROQ (or anything else) → use Gemini Vision.
+                # For CLAUDE/DEEPSEEK/GROQ this will fail because api_key format differs;
+                # in that case set AI_TYPE=GEMINI explicitly with a GEMINI_API_KEY for OCR.
                 response_text = await self._call_gemini_vision(api_key, page_images_b64, prompt_text)
             
             if not response_text:
@@ -329,7 +332,7 @@ Return ONLY the JSON object, no other text."""
             }
         }
         
-        model = os.getenv('GEMINI_VISION_MODEL', 'gemini-3.0-flash')
+        model = os.getenv('GEMINI_VISION_MODEL', 'gemini-2.0-flash')
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
         
         await self._ensure_session()
@@ -380,6 +383,47 @@ Return ONLY the JSON object, no other text."""
                 return None
             result = await response.json()
         
+        if 'choices' in result and result['choices']:
+            return result['choices'][0].get('message', {}).get('content', '')
+        return None
+
+    async def _call_azure_openai_vision(self, api_key: str, images_b64: List[str], prompt: str) -> Optional[str]:
+        """Call Azure OpenAI Vision (chat completions) with images. Uses api-key header
+        and max_completion_tokens (required by gpt-5.x deployments)."""
+        content = []
+        for img_b64 in images_b64:
+            content.append({
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/png;base64,{img_b64}",
+                    "detail": "low"
+                }
+            })
+        content.append({"type": "text", "text": prompt})
+
+        endpoint = os.getenv(
+            'AZURE_OPENAI_API_ENDPOINT',
+            'https://peidashboard.openai.azure.com/openai/deployments/gpt-5.4-mini/chat/completions?api-version=2024-12-01-preview'
+        )
+
+        payload = {
+            "messages": [{"role": "user", "content": content}],
+            "max_completion_tokens": 256,
+        }
+
+        headers = {
+            "api-key": api_key,
+            "Content-Type": "application/json"
+        }
+
+        await self._ensure_session()
+        async with self._session.post(endpoint, json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=60)) as response:
+            if response.status != 200:
+                error_text = await response.text()
+                self.logger.warning(f"Azure OpenAI Vision API error ({response.status}): {error_text[:200]}")
+                return None
+            result = await response.json()
+
         if 'choices' in result and result['choices']:
             return result['choices'][0].get('message', {}).get('content', '')
         return None

@@ -1,7 +1,21 @@
-
+import os
+import json
 import pyodbc
 
-conn_str = "Driver={ODBC Driver 17 for SQL Server};Server=tcp:pei-dashboard.database.windows.net,1433;Database=pei-dashboard;Uid=CloudSAa33fbc7c;Pwd=uRahcie3&105272;Encrypt=no;TrustServerCertificate=yes;Connection Timeout=30;"
+
+def _load_conn_str() -> str:
+    conn = os.getenv("SQL_SERVER_CONNECTION_STRING")
+    if not conn:
+        settings_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "local.settings.json"))
+        if os.path.exists(settings_path):
+            with open(settings_path) as f:
+                conn = json.load(f).get("Values", {}).get("SQL_SERVER_CONNECTION_STRING")
+    if not conn:
+        raise RuntimeError("SQL_SERVER_CONNECTION_STRING not set (env var or local.settings.json).")
+    return conn
+
+
+conn_str = _load_conn_str()
 
 def rename_tables():
     tables_to_rename = {

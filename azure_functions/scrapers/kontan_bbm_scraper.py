@@ -22,19 +22,13 @@ from scrapers.exceptions import ScrapingError, NetworkError
 from shared.models import NewsArticle, ScrapingConfig
 
 
-# BBM-related keywords for filtering
-BBM_KEYWORDS = [
-    "bbm", "pertamax", "pertalite", "solar", "dexlite", "biosolar",
-    "fuel", "gasoline", "diesel", "ron 92", "ron 95", "ron 98",
-    "subsidi bbm", "harga bbm", "kenaikan bbm", "penyesuaian bbm",
-    "bahan bakar", "premium", "avtur", "lpg"
-]
-
-
 class KontanBBMScraper(BaseNewsScraper):
     """
     Kontan BBM Specialized Scraper.
-    Filters Kontan articles to only include fuel-related content.
+    Searches Kontan by the keyword passed from the orchestrator (matches src:
+    `kontan_bbm.py` which takes `keyword` as a parameter rather than hardcoding
+    BBM-specific filters). Category filtering happens downstream via
+    CATEGORY_KEYWORDS in the orchestrator.
     """
     
     def __init__(self, config: Optional[ScrapingConfig] = None):
@@ -56,11 +50,6 @@ class KontanBBMScraper(BaseNewsScraper):
             )
         
         super().__init__(config)
-
-    def _is_bbm_related(self, title: str, content: str = "") -> bool:
-        """Check if article is BBM-related based on title and content."""
-        text_to_check = (title + " " + content).lower()
-        return any(keyword in text_to_check for keyword in BBM_KEYWORDS)
 
     def _parse_kontan_date(self, date_str: str) -> Optional[str]:
         """Parse Kontan date format."""
@@ -172,9 +161,7 @@ class KontanBBMScraper(BaseNewsScraper):
                 
                 for article in page_articles:
                     if article['date'] == target_date:
-                        # Check if BBM-related
-                        if self._is_bbm_related(article['title']):
-                            all_articles.append(article)
+                        all_articles.append(article)
                     elif article['date'] and article['date'] < target_date:
                         break
                 
@@ -188,11 +175,7 @@ class KontanBBMScraper(BaseNewsScraper):
             for article_data in all_articles:
                 try:
                     content = await self._extract_article_content(article_data['url'])
-                    
-                    # Double-check BBM relevance with content
-                    if not self._is_bbm_related(article_data['title'], content):
-                        continue
-                    
+
                     article = self._create_article(
                         title=article_data['title'],
                         content=content,

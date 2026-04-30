@@ -82,6 +82,33 @@ class OilPriceNewsScraper(BaseNewsScraper):
         
         return text
 
+    async def _extract_article_content_json_ld(self, url: str) -> str:
+        """Extract article body from a JSON-LD <script> tag, falling back to the
+        base content extractor when JSON-LD is missing or unparseable."""
+        try:
+            html = await self._fetch_content(url)
+            soup = BeautifulSoup(html, "html.parser")
+            for script in soup.select(self.config.selectors.get("json_ld", "script[type='application/ld+json']")):
+                raw = script.string or script.get_text() or ""
+                if not raw.strip():
+                    continue
+                try:
+                    payload = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
+                candidates = payload if isinstance(payload, list) else [payload]
+                for item in candidates:
+                    if not isinstance(item, dict):
+                        continue
+                    body = item.get("articleBody") or item.get("description")
+                    if body:
+                        return self._clean_oilprice_text(body)
+            # Fallback: use the configured CSS selector via base extractor
+            return await self._extract_article_content(url)
+        except Exception as e:
+            self.logger.warning(f"JSON-LD extraction failed for {url}: {e}")
+            return ""
+
     async def _scrape_articles_from_source(self, keywords: List[str], start_date: datetime, end_date: datetime, **kwargs) -> List[NewsArticle]:
         """
         Scrape articles from OilPrice source.

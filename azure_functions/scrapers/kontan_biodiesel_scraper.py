@@ -22,19 +22,12 @@ from scrapers.exceptions import ScrapingError
 from shared.models import NewsArticle, ScrapingConfig
 
 
-# Biodiesel-related keywords for filtering
-BIODIESEL_KEYWORDS = [
-    "biodiesel", "biofuel", "biosolar", "b20", "b30", "b35", "b40", "b50",
-    "fame", "minyak sawit", "kelapa sawit", "cpo", "crude palm oil",
-    "minyak nabati", "sawit", "hip biodiesel", "hip bbn",
-    "bahan bakar nabati", "bioetanol", "ethanol", "etanol"
-]
-
-
 class KontanBiodieselScraper(BaseNewsScraper):
     """
     Kontan Biodiesel Specialized Scraper.
-    Filters Kontan articles to only include biodiesel/biofuel-related content.
+    Searches Kontan by the keyword passed from the orchestrator (matches src:
+    `kontan_biodiesel.py` which takes `keyword` as a parameter). Category
+    filtering happens downstream via CATEGORY_KEYWORDS in the orchestrator.
     """
     
     def __init__(self, config: Optional[ScrapingConfig] = None):
@@ -56,11 +49,6 @@ class KontanBiodieselScraper(BaseNewsScraper):
             )
         
         super().__init__(config)
-
-    def _is_biodiesel_related(self, title: str, content: str = "") -> bool:
-        """Check if article is biodiesel-related based on title and content."""
-        text_to_check = (title + " " + content).lower()
-        return any(keyword in text_to_check for keyword in BIODIESEL_KEYWORDS)
 
     def _parse_kontan_date(self, date_str: str) -> Optional[str]:
         """Parse Kontan date format."""
@@ -169,8 +157,7 @@ class KontanBiodieselScraper(BaseNewsScraper):
                 
                 for article in page_articles:
                     if article['date'] == target_date:
-                        if self._is_biodiesel_related(article['title']):
-                            all_articles.append(article)
+                        all_articles.append(article)
                     elif article['date'] and article['date'] < target_date:
                         break
                 
@@ -183,10 +170,7 @@ class KontanBiodieselScraper(BaseNewsScraper):
             for article_data in all_articles:
                 try:
                     content = await self._extract_article_content(article_data['url'])
-                    
-                    if not self._is_biodiesel_related(article_data['title'], content):
-                        continue
-                    
+
                     article = self._create_article(
                         title=article_data['title'],
                         content=content,

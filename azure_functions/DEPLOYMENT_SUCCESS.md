@@ -130,10 +130,12 @@ Pastikan sudah dikonfigurasi di Azure Portal:
 # Database
 SQL_SERVER_CONNECTION_STRING=<your-connection-string>
 
-# AI/ML
-AI_API_KEY=<your-api-key>
-COPILOT_API_ENDPOINT=<endpoint-url>
-AI_TYPE=GEMINI
+# AI/ML — per-provider env vars. Pick provider via AI_TYPE, set matching {TYPE}_API_KEY.
+AI_TYPE=GEMINI                              # GEMINI | OPENAI | CLAUDE | DEEPSEEK | GROQ
+GEMINI_API_KEY=<your-gemini-key>
+# GEMINI_MODEL_NAME=gemini-2.0-flash        # optional
+# AI_MAX_TOKENS=4000                        # shared tuning
+# AI_TEMPERATURE=0.3
 
 # Storage
 BLOB_STORAGE_CONNECTION_STRING=<storage-connection-string>

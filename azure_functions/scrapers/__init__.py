@@ -39,9 +39,21 @@ from scrapers.bioetanol_esdm_scraper import BioetanolESDMScraper, scrape_bioetan
 from scrapers.migas_esdm_scraper import MigasESDMScraper, scrape_migas_esdm_icp
 from scrapers.kapasitas_ebt_scraper import KapasitasEBTScraper
 
+# Additional lokal/intl scrapers referenced by src SUMBER_DICT
+from scrapers.kontan_scraper import KontanNewsScraper, scrape_kontan_news
+from scrapers.bisnis_indonesia_scraper import BisnisIndonesiaNewsScraper, scrape_bisnis_indonesia_news
+from scrapers.kompas_scraper import KompasNewsScraper, scrape_kompas_news
+from scrapers.tempo_scraper import TempoNewsScraper, scrape_tempo_news
+from scrapers.cnbc_indonesia_scraper import CNBCIndonesiaNewsScraper, scrape_cnbc_indonesia_news
+from scrapers.cnbc_scraper import CNBCNewsScraper, scrape_cnbc_news
+from scrapers.cnn_scraper import CNNNewsScraper, scrape_cnn_news
+from scrapers.theguardian_scraper import TheGuardianNewsScraper, scrape_theguardian_news
+from scrapers.oilprice_scraper import OilPriceNewsScraper, scrape_oilprice_news
+from scrapers.reuters_scraper import ReutersNewsScraper, scrape_reuters_news
+
 __all__ = [
     'BaseNewsScraper',
-    'ScrapingError', 
+    'ScrapingError',
     'RateLimitError',
     'ValidationError',
     'BPSScraper',
@@ -67,6 +79,17 @@ __all__ = [
     'BioetanolESDMScraper', 'scrape_bioetanol_esdm',
     'MigasESDMScraper', 'scrape_migas_esdm_icp',
     'KapasitasEBTScraper',
+    # Additional lokal/intl scrapers referenced by src SUMBER_DICT
+    'KontanNewsScraper', 'scrape_kontan_news',
+    'BisnisIndonesiaNewsScraper', 'scrape_bisnis_indonesia_news',
+    'KompasNewsScraper', 'scrape_kompas_news',
+    'TempoNewsScraper', 'scrape_tempo_news',
+    'CNBCIndonesiaNewsScraper', 'scrape_cnbc_indonesia_news',
+    'CNBCNewsScraper', 'scrape_cnbc_news',
+    'CNNNewsScraper', 'scrape_cnn_news',
+    'TheGuardianNewsScraper', 'scrape_theguardian_news',
+    'OilPriceNewsScraper', 'scrape_oilprice_news',
+    'ReutersNewsScraper', 'scrape_reuters_news',
 ]
 
 

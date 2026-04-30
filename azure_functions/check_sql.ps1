@@ -1,4 +1,15 @@
-$conn_str = "Server=tcp:pei-dashboard.database.windows.net,1433;Database=pei-dashboard;User ID=CloudSAa33fbc7c;Password=uRahcie3&105272;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+# Connection string loaded from SQL_SERVER_CONNECTION_STRING env var (or local.settings.json Values).
+$conn_str = $env:SQL_SERVER_CONNECTION_STRING
+if (-not $conn_str) {
+    $settingsPath = Join-Path $PSScriptRoot "local.settings.json"
+    if (Test-Path $settingsPath) {
+        $settings = Get-Content $settingsPath -Raw | ConvertFrom-Json
+        $conn_str = $settings.Values.SQL_SERVER_CONNECTION_STRING
+    }
+}
+if (-not $conn_str) {
+    throw "SQL_SERVER_CONNECTION_STRING is not set (env var or local.settings.json Values.SQL_SERVER_CONNECTION_STRING)."
+}
 
 $conn = New-Object System.Data.SqlClient.SqlConnection($conn_str)
 $conn.Open()
@@ -18,4 +29,4 @@ while ($reader.Read()) {
 $reader.Close()
 $conn.Close()
 
-Set-Content -Path "C:\RunningProjects\Dashboard-Pertamina-VeloCT\azure_functions\category_output.txt" -Value $output
+Set-Content -Path (Join-Path $PSScriptRoot "category_output.txt") -Value $output

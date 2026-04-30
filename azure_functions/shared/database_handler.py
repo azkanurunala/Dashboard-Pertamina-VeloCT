@@ -554,11 +554,25 @@ class DatabaseHandler(IDatabaseHandler):
         
         return await self._execute_with_retry(_deduplicate_operation)
 
+    # Tables that should use UPSERT (MERGE) instead of plain INSERT.
+    # Key = table name, Value = list of natural key columns used in ON clause.
+    TABLE_UPSERT_KEYS: Dict[str, List[str]] = {
+        'data_eia_market': ['bulan', 'tahun'],
+    }
+
     async def save_structured_data(self, table_name: str, data: List[Dict[str, Any]]) -> int:
-        """Save generic structured data to the specified table."""
+        """Save generic structured data to the specified table.
+
+        For tables listed in TABLE_UPSERT_KEYS, uses MERGE (upsert) so that
+        re-running the scraper updates existing rows rather than inserting duplicates.
+        """
         if not data:
             return 0
-            
+
+        upsert_keys = self.TABLE_UPSERT_KEYS.get(table_name)
+        if upsert_keys:
+            return await self._upsert_structured_data(table_name, data, upsert_keys)
+
         async def _save_operation():
             async with self._get_connection() as conn:
                 cursor = conn.cursor()
@@ -566,15 +580,15 @@ class DatabaseHandler(IDatabaseHandler):
                     columns = list(data[0].keys())
                     placeholders = ', '.join(['%s' for _ in columns])
                     column_names = ', '.join(columns)
-                    
+
                     insert_query = f"INSERT INTO {table_name} ({column_names}) VALUES ({placeholders})"
-                    
+
                     rows = [tuple(item[col] for col in columns) for item in data]
-                    
+
                     self.logger.info(f"💾 save_structured_data: Saving {len(data)} rows to {table_name}")
                     for row in rows:
                         cursor.execute(insert_query, row)
-                    
+
                     conn.commit()
                     self.logger.info(f"🚀 save_structured_data: Successfully saved {len(data)} rows to {table_name}")
                     return len(data)
@@ -582,8 +596,56 @@ class DatabaseHandler(IDatabaseHandler):
                     conn.rollback()
                     self.logger.error(f"❌ save_structured_data: Failed to save to {table_name}: {e}")
                     raise DatabaseError(f"Failed to save structured data to {table_name}: {str(e)}")
-                    
+
         return await self._execute_with_retry(_save_operation)
+
+    async def _upsert_structured_data(
+        self, table_name: str, data: List[Dict[str, Any]], upsert_keys: List[str]
+    ) -> int:
+        """Upsert rows using SQL Server MERGE statement.
+
+        Rows matching on upsert_keys are updated; non-matching rows are inserted.
+        scraped_at is always set to GETUTCDATE() so the last-scrape time is tracked.
+        """
+        async def _upsert_operation():
+            async with self._get_connection() as conn:
+                cursor = conn.cursor()
+                try:
+                    columns = [c for c in data[0].keys() if c != 'scraped_at']
+                    update_cols = [c for c in columns if c not in upsert_keys]
+
+                    # Build MERGE components
+                    source_select = ', '.join(f'%s AS [{c}]' for c in columns)
+                    on_clause    = ' AND '.join(f'target.[{k}] = source.[{k}]' for k in upsert_keys)
+                    update_set   = ', '.join(f'target.[{c}] = source.[{c}]' for c in update_cols)
+                    update_set  += ', target.[scraped_at] = GETUTCDATE()'
+                    insert_cols  = ', '.join(f'[{c}]' for c in columns) + ', [scraped_at]'
+                    insert_vals  = ', '.join(f'source.[{c}]' for c in columns) + ', GETUTCDATE()'
+
+                    merge_sql = f"""
+                        MERGE INTO [{table_name}] AS target
+                        USING (SELECT {source_select}) AS source
+                        ON ({on_clause})
+                        WHEN MATCHED THEN
+                            UPDATE SET {update_set}
+                        WHEN NOT MATCHED THEN
+                            INSERT ({insert_cols}) VALUES ({insert_vals});
+                    """
+
+                    self.logger.info(f"💾 _upsert_structured_data: Upserting {len(data)} rows into {table_name}")
+                    for item in data:
+                        params = tuple(item[c] for c in columns)
+                        cursor.execute(merge_sql, params)
+
+                    conn.commit()
+                    self.logger.info(f"🚀 _upsert_structured_data: Upserted {len(data)} rows into {table_name}")
+                    return len(data)
+                except Exception as e:
+                    conn.rollback()
+                    self.logger.error(f"❌ _upsert_structured_data: Failed for {table_name}: {e}")
+                    raise DatabaseError(f"Failed to upsert into {table_name}: {str(e)}")
+
+        return await self._execute_with_retry(_upsert_operation)
     
     async def execute_query(self, query: str, params: Optional[Dict[str, Any]] = None) -> Any:
         """Execute a raw SQL query."""

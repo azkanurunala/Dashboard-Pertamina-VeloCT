@@ -18,86 +18,29 @@ conn_str = conn_str.replace("Encrypt=yes", "Encrypt=no").replace("TrustServerCer
 # ── Keyword classifier (sama persis dengan orchestrator_function.py) ──────────
 CATEGORY_KEYWORDS = {
     'indeks risiko geopolitik': [
-        'indeks risiko geopolitik', 'tekanan geopolitik', 'geopolitik',
-        'geopolitical risk', 'geopolitical pressure', 'geopolitics'],
+        'indeks risiko geopolitik', 'tekanan geopolitik', 'geopolitik'],
     'indeks volatilitas': [
-        'indeks volatilitas', 'volatilitas', 'volatility index', 'volatility'],
+        'indeks volatilitas', 'volatilitas'],
     'Kurs': [
-        'kurs', 'nilai tukar rupiah', 'dolar', 'dxy', 'dollar', 'nilai tukar'],
+        'kurs', 'nilai tukar rupiah', 'kurs rupiah', 'kurs dolar'],
     'IHSG': [
         'ihsg', 'pasar saham'],
     'Inflasi': [
-        'inflasi', 'inflation'],
+        'inflasi'],
     'BI Rate': [
-        'bi rate', 'suku bunga', 'bunga bi', 'bi 7-day'],
+        'bi rate', 'suku bunga', 'bunga bi'],
     'Indonia': [
         'indonia'],
-    'indeks sales retail': [
-        'indeks sales retail', 'indeks penjualan ritel', 'indeks penjualan retail',
-        'indeks retail', 'indeks ritel'],
-    'indeks kepercayaan knsmn': [
-        'indeks kepercayaan konsumen', 'indeks kepercayaan pelanggan',
-        'ekspektasi konsumen', 'kondisi ekonomi terkini', 'kepercayaan konsumen',
-        'kondisi ekonomi saat ini',
-        'indeks keyakinan konsumen', 'keyakinan konsumen',
-        'indeks kondisi ekonomi', 'indeks ekspektasi konsumen',
-        'survei konsumen'],
-    'indeks kinerja manufaktur': [
-        'indeks kinerja manufaktur', 'kinerja manufaktur',
-        'purchasing manufaktur index', 'manufaktur index', 'manufacturing index', 'pmi'],
-    'indeks kinerja jasa': [
-        'indeks kinerja jasa', 'kinerja jasa',
-        'purchasing services index', 'services index'],
-    'neraca perdagangan': [
-        'neraca perdagangan', 'trade balance'],
-    'PDB': [
-        'pertumbuhan domestik bruto', 'pdb', 'pertumbuhan ekonomi', 'gdp'],
-    'Biodiesel': [
-        'biodiesel', 'minyak kelapa sawit', 'crude palm oil', 'cpo',
-        'minyak sawit', 'kelapa sawit', 'sawit',
-        'hip bbn', 'harga fame', 'harga indeks pasar biodiesel',
-        'b40', 'b50', 'biofuel'],
-    'Bioetanol': [
-        'bioetanol', 'tebu', 'gula', 'molase',
-        'etanol', 'ethanol', 'bioethanol', 'tetes tebu'],
-    'RUPTL': [
-        'ruptl', 'listrik', 'pln', 'ipp', 'pjbl', 'pembangkit',
-        'ketenagalistrikan', 'transmisi', 'distribusi', 'elektrifikasi',
-        'batubara', 'batu bara', 'panas bumi', 'surya',
-        'bess', 'plta', 'pltal', 'pltb', 'pltbg', 'pltbm',
-        'pltd', 'pltg', 'pltgu', 'pltm', 'pltmg', 'pltn',
-        'pltp', 'plts', 'pltsa', 'pltu'],
-    'Harga Minyak': [
-        'harga minyak', 'minyak mentah', 'oil price', 'crude oil',
-        'brent', 'wti'],
-    'Volume Minyak': [
-        'volume minyak', 'volume bbm', 'oil volume'],
-    'Harga Produk Kilang': [
-        'harga produk kilang', 'bbm', 'harga kilang pertamina',
-        'kilang pertamina', 'kilang', 'refinery', 'harga pertamina'],
-    'Volume Produk Kilang': [
-        'volume produk kilang', 'volume kilang pertamina', 'volume kilang',
-        'volume pertamina'],
-    'SAF': [
-        'saf', 'uco', 'corsia', 'safco', 'biorefinery',
-        'minyak jelantah', 'bioavtur', 'sustainable aviation fuel',
-        'used cooking oil'],
     'Crackspread_BBM': [
         'ron 92', 'pertamax', 'ron 95', 'ron 97', 'residual fo',
-        'fuel oil', 'jet fuel', 'avtur', 'kerosene',
+        'fuel oil', 'jet fuel', 'avtur', 'kerosene', 'refinery',
         'refined products', 'refining', 'oil products',
         'gasoline', 'heavy oil', 'diesel', 'gasoil',
-        'naphtha', 'lpg', 'biogasoline', 'petroleum coke', 'crackspread'],
+        'naphtha', 'lpg', 'biodiesel', 'biogasoline', 'petroleum coke',
+        'oil price', 'fuel cost', 'fuel price'],
     'Crackspread_NonBBM': [
-        'petro', 'petrochemical', 'aromatic', 'olefin', 'polymer',
-        'paraxylene', 'propylene', 'benzene', 'green coke'],
-    'Harga EBT': [
-        'lcoe', 'harga jual listrik ebt', 'harga listrik ebt',
-        'tarif listrik ebt', 'energi terbarukan', 'renewable energy'],
-    'Harga WTE': [
-        'wte', 'waste to energy', 'sampah', 'pltsa'],
-    'Nuklir': [
-        'nuklir', 'pltn', 'pembangkit listrik nuklir', 'nuclear'],
+        'petro', 'chemical', 'petrochemical', 'aromatic', 'olefin', 'polymer',
+        'lpg', 'paraxylene', 'propylene', 'benzene', 'green coke'],
 }
 
 def _classify_article_categories(title: str, content: str) -> list:
@@ -108,7 +51,7 @@ def _classify_article_categories(title: str, content: str) -> list:
             if kw.lower() in text:
                 matched.append(category)
                 break
-    return matched if matched else ['Harga Minyak']
+    return matched
 
 
 # ── Main logic ────────────────────────────────────────────────────────────────

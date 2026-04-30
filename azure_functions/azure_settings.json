@@ -25,14 +25,54 @@
     "value": "8199b1a60c76d284ee3d2228a51b3743"
   },
   {
-    "name": "COPILOT_API_ENDPOINT",
+    "name": "AI_TYPE",
     "slotSetting": false,
-    "value": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+    "value": "AZURE_OPENAI"
   },
   {
-    "name": "COPILOT_API_KEY",
+    "name": "GEMINI_API_KEY",
     "slotSetting": false,
     "value": "***REMOVED-GEMINI-KEY***"
+  },
+  {
+    "name": "GEMINI_MODEL_NAME",
+    "slotSetting": false,
+    "value": "gemini-2.0-flash"
+  },
+  {
+    "name": "AZURE_OPENAI_API_KEY",
+    "slotSetting": false,
+    "value": "AgVJFUh1eHJj1BTpuSs8CtjuCNjMH3L6TEk3IANtHSCyQrkxE3beJQQJ99CDACYeBjFXJ3w3AAABACOG3vKy"
+  },
+  {
+    "name": "AZURE_OPENAI_MODEL_NAME",
+    "slotSetting": false,
+    "value": "gpt-5.4-mini"
+  },
+  {
+    "name": "AZURE_OPENAI_API_ENDPOINT",
+    "slotSetting": false,
+    "value": "https://peidashboard.openai.azure.com/openai/deployments/gpt-5.4-mini/chat/completions?api-version=2024-12-01-preview"
+  },
+  {
+    "name": "AI_MAX_TOKENS",
+    "slotSetting": false,
+    "value": "4000"
+  },
+  {
+    "name": "AI_TEMPERATURE",
+    "slotSetting": false,
+    "value": "0.3"
+  },
+  {
+    "name": "AI_RATE_LIMIT",
+    "slotSetting": false,
+    "value": "60"
+  },
+  {
+    "name": "AI_BATCH_SIZE",
+    "slotSetting": false,
+    "value": "10"
   },
   {
     "name": "FUNCTIONS_EXTENSION_VERSION",

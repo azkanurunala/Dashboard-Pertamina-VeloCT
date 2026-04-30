@@ -49,7 +49,7 @@ class CopilotIntegration(ICopilotIntegration):
             self.provider = await AIProviderFactory.create_provider(self.config)
             self._initialized = True
             
-            ai_type = os.getenv("AI_TYPE", "GEMINI").upper()
+            ai_type = os.getenv("AI_TYPE", "AZURE_OPENAI").upper()
             logger.info(f"CopilotIntegration initialized with provider: {ai_type}")
     
     async def analyze_sentiment(self, articles: List[NewsArticle]) -> SentimentAnalysis:
@@ -106,7 +106,7 @@ class CopilotIntegration(ICopilotIntegration):
                 summary=result.get("summary", ""),
                 article_ids=[article.id for article in articles if article.id],
                 analysis_date=datetime.utcnow(),
-                model_version=f"{os.getenv('AI_TYPE', 'GEMINI').lower()}-{self.config.model_name}"
+                model_version=f"{os.getenv('AI_TYPE', 'AZURE_OPENAI').lower()}-{self.config.model_name}"
             )
                 
         except json.JSONDecodeError as e:

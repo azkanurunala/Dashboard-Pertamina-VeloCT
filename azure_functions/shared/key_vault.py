@@ -262,31 +262,34 @@ class KeyVaultManager:
 class MultiAccountKeyVaultManager:
     """
     Manages multiple Key Vault instances for different service accounts.
-    Provides isolation between Copilot, Functions, and SQL Server accounts.
+    Provides isolation between AI, Functions, and SQL Server accounts.
+
+    Note: currently only referenced by tests; production uses the single-vault
+    KeyVaultManager wired via config_manager.get_secret().
     """
-    
+
     def __init__(self):
         """Initialize multi-account Key Vault manager."""
         self._vault_managers: Dict[str, KeyVaultManager] = {}
         self._initialize_vault_managers()
-    
+
     def _initialize_vault_managers(self) -> None:
         """Initialize Key Vault managers for different accounts."""
-        # Copilot account Key Vault
-        copilot_vault_url = os.getenv("COPILOT_KEY_VAULT_URL")
-        if copilot_vault_url:
-            self._vault_managers["copilot"] = KeyVaultManager(copilot_vault_url)
-        
+        # AI provider account Key Vault
+        ai_vault_url = os.getenv("AI_KEY_VAULT_URL")
+        if ai_vault_url:
+            self._vault_managers["ai"] = KeyVaultManager(ai_vault_url)
+
         # Azure Functions account Key Vault
         functions_vault_url = os.getenv("FUNCTIONS_KEY_VAULT_URL")
         if functions_vault_url:
             self._vault_managers["functions"] = KeyVaultManager(functions_vault_url)
-        
+
         # SQL Server account Key Vault
         sql_vault_url = os.getenv("SQL_KEY_VAULT_URL")
         if sql_vault_url:
             self._vault_managers["sql"] = KeyVaultManager(sql_vault_url)
-        
+
         # Default Key Vault (fallback)
         default_vault_url = os.getenv("AZURE_KEY_VAULT_URL")
         if default_vault_url:

@@ -65,34 +65,31 @@ class SchedulerFunction(ISchedulerFunction):
     
     async def daily_morning_routine(self) -> ExecutionResult:
         """
-        Execute the daily morning routine.
-        
-        This routine typically includes:
-        - Scraping news from major international sources
-        - Processing overnight news accumulation
-        - Generating morning briefings
-        
-        Returns:
-            ExecutionResult with execution details
+        Execute the daily morning routine — LOKAL sources (mirrors src
+        scheduling_day_morning.py which runs main_news_scrapping_lokal +
+        main_scraper_cpo + main_sentiment_news_lokal_harian).
         """
         execution_id = f"daily_morning_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
         start_time = datetime.utcnow()
-        
+
         logger.info(f"Starting daily morning routine - Execution ID: {execution_id}")
-        
+
         try:
             await self._initialize()
-            
-            # Define morning routine parameters - International sources
+
+            # Lokal news sources per src/main/main_news_scrapping_lokal.py SUMBER_DICT + cpo
             morning_sources = [
-                "scmp", "bioenergytimes", "energiesmedia", 
-                "migas_eia", "sandp_news", "sandp_data",
-                "google_news", "iaea_pris"
+                # News (lokal)
+                "kontan", "bisnis_indonesia", "kompas", "tempo", "cnbc_indonesia",
+                "bloomberg_technoz", "bank_indonesia", "bps",
+                # Data (lokal daily)
+                "cpo",
             ]
-            
+
+            # Primary keywords per src/main/main_news_scrapping_lokal.py SHEET_TO_KEYWORD (ACTIVE only)
             morning_keywords = [
-                "oil", "energy", "petroleum", "gas", "renewable", "biodiesel",
-                "bioethanol", "crude oil", "energy market", "fuel prices"
+                "indeks risiko geopolitik", "indeks volatilitas", "kurs",
+                "ihsg", "inflasi", "bi rate", "indonia",
             ]
             
             # Set date range for yesterday to today
@@ -157,36 +154,30 @@ class SchedulerFunction(ISchedulerFunction):
     
     async def daily_afternoon_routine(self) -> ExecutionResult:
         """
-        Execute the daily afternoon routine.
-        
-        This routine typically includes:
-        - Scraping news from local Indonesian sources
-        - Processing midday news updates
-        - Generating afternoon market analysis
-        
-        Returns:
-            ExecutionResult with execution details
+        Execute the daily afternoon routine — INTERNATIONAL sources (mirrors src
+        scheduling_day_afternoon.py which runs main_news_scrapping_internasional +
+        main_sentiment_news_internasional_harian + main_saf_daily).
         """
         execution_id = f"daily_afternoon_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
         start_time = datetime.utcnow()
-        
+
         logger.info(f"Starting daily afternoon routine - Execution ID: {execution_id}")
-        
+
         try:
             await self._initialize()
-            
-            # Define afternoon routine parameters - Indonesian/Local sources  
+
+            # Intl news sources per src/main/main_news_scrapping_internasional.py SUMBER_DICT + sandp_data (SAF daily)
             afternoon_sources = [
-                "bank_indonesia", "bps", "kontan_bbm", "kontan_biodiesel",
-                "bloomberg_technoz", "migas_esdm", "biodiesel_esdm", 
-                "bioetanol_esdm", "cpo", "sipsn"
+                # News (intl) — active in src SUMBER_DICT
+                "sandp_news", "cnbc", "cnn", "energiesmedia",
+                "bioenergytimes", "theguardian",
+                # Data (intl daily) — main_saf_daily
+                "sandp_data",
             ]
-            
+
+            # Primary keywords per src/main/main_news_scrapping_internasional.py SHEET_TO_KEYWORD (ACTIVE only)
             afternoon_keywords = [
-                "minyak", "energi", "BBM", "biodiesel", "bioetanol", "pertamina",
-                "harga minyak", "pasar energi", "bahan bakar", "energi terbarukan",
-                "indeks", "konsumen", "bi rate", "suku bunga", "ritel", "manufaktur",
-                "neraca perdagangan", "inflasi", "ihsg", "indonia", "jasa"
+                "RON 92", "Petro",
             ]
             
             # Set date range for today
@@ -251,35 +242,39 @@ class SchedulerFunction(ISchedulerFunction):
     
     async def weekly_summary_routine(self) -> ExecutionResult:
         """
-        Execute the weekly summary routine.
-        
-        This routine typically includes:
-        - Aggregating news from the past week
-        - Generating comprehensive weekly analysis
-        - Creating trend reports and insights
-        
-        Returns:
-            ExecutionResult with execution details
+        Execute the weekly summary routine — mirrors src scheduling_week.py:
+        1. main_sentiment_news_mingguan (Crackspread_BBM + Crackspread_NonBBM sentiment)
+        2. main_saf_weekly + main_crackspeed_bbm_weekly + main_crackspeed_non_bbm_weekly
+           (re-scrape S&P weekly data for SAF and crackspreads)
         """
         execution_id = f"weekly_summary_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
         start_time = datetime.utcnow()
-        
+
         logger.info(f"Starting weekly summary routine - Execution ID: {execution_id}")
-        
+
         try:
             await self._initialize()
-            
+
             # Set date range for the past week
             end_date = datetime.utcnow()
             start_date = end_date - timedelta(days=7)
             date_range = DateRange(start_date=start_date, end_date=end_date)
-            
+
+            # Step 1: Re-scrape S&P weekly data (SAF + Crackspread BBM + Non-BBM)
+            # Mirrors main_saf_weekly + main_crackspeed_bbm_weekly + main_crackspeed_non_bbm_weekly
+            await self._execute_scraping_workflow(
+                sources=["sandp_data"],
+                keywords=["saf", "crackspread_bbm", "crackspread_non_bbm"],
+                date_range=date_range,
+                execution_id=execution_id
+            )
+
             # Get articles from the past week
             filters = ArticleFilters(
                 start_date=start_date,
                 end_date=end_date
             )
-            
+
             articles = await self.db_handler.get_articles(filters)
             
             if not articles:
@@ -346,35 +341,64 @@ class SchedulerFunction(ISchedulerFunction):
     
     async def monthly_aggregation_routine(self) -> ExecutionResult:
         """
-        Execute the monthly aggregation routine.
-        
-        This routine typically includes:
-        - Aggregating news and analysis from the past month
-        - Generating monthly trend reports
-        - Creating comprehensive market insights
-        
-        Returns:
-            ExecutionResult with execution details
+        Execute the monthly aggregation routine — mirrors src scheduling_month.py
+        with conditional date logic:
+        - Every month: EIA, ESDM price, Biodiesel ESDM, Bioetanol ESDM
+        - Day 12: Petrochemical short-term + BBM price forecast short-term (via sandp_data)
+        - Day 15: SIPSN (waste) + IAEA (nuclear)
+        - Day 28: Kapasitas EBT
         """
         execution_id = f"monthly_aggregation_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
         start_time = datetime.utcnow()
-        
+
         logger.info(f"Starting monthly aggregation routine - Execution ID: {execution_id}")
-        
+
         try:
             await self._initialize()
 
-            # Fetch monthly EBT capacity data (API only provides current month)
             end_date = datetime.utcnow()
             start_date = end_date - timedelta(days=30)
             date_range = DateRange(start_date=start_date, end_date=end_date)
+            current_day = end_date.day
 
+            # Always: monthly data scrapers (EIA, ESDM price, Biodiesel ESDM, Bioetanol ESDM)
+            always_sources = ["migas_eia", "migas_esdm", "biodiesel_esdm", "bioetanol_esdm"]
             await self._execute_scraping_workflow(
-                sources=["kapasitas_ebt"],
+                sources=always_sources,
                 keywords=[],
                 date_range=date_range,
                 execution_id=execution_id
             )
+
+            # Day 12: Petrochemical short-term + BBM price forecast short-term
+            if current_day == 12:
+                logger.info("Day 12: scraping petrochemical + BBM price forecast short-term")
+                await self._execute_scraping_workflow(
+                    sources=["sandp_data"],
+                    keywords=["petrochemical", "bbm_forecast_short"],
+                    date_range=date_range,
+                    execution_id=execution_id
+                )
+
+            # Day 15: SIPSN (waste) + IAEA (nuclear)
+            if current_day == 15:
+                logger.info("Day 15: scraping SIPSN + IAEA")
+                await self._execute_scraping_workflow(
+                    sources=["sipsn", "iaea_pris"],
+                    keywords=[],
+                    date_range=date_range,
+                    execution_id=execution_id
+                )
+
+            # Day 28: Kapasitas EBT
+            if current_day == 28:
+                logger.info("Day 28: scraping Kapasitas EBT")
+                await self._execute_scraping_workflow(
+                    sources=["kapasitas_ebt"],
+                    keywords=[],
+                    date_range=date_range,
+                    execution_id=execution_id
+                )
             
             # Get articles from the past month
             filters = ArticleFilters(

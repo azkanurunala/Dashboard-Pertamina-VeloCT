@@ -131,10 +131,19 @@ Key settings that need to be configured in Azure Portal:
 # Database
 SQL_SERVER_CONNECTION_STRING=<your-connection-string>
 
-# AI/ML
-AI_API_KEY=<your-api-key>
-COPILOT_API_ENDPOINT=<endpoint-url>
-AI_TYPE=GEMINI
+# AI/ML — per-provider env vars (no overlap). Pick one via AI_TYPE.
+AI_TYPE=GEMINI                              # GEMINI | OPENAI | CLAUDE | DEEPSEEK | GROQ
+GEMINI_API_KEY=<your-gemini-key>            # required when AI_TYPE=GEMINI
+# GEMINI_MODEL_NAME=gemini-2.0-flash        # optional
+# OPENAI_API_KEY=sk-...                     # only set when AI_TYPE=OPENAI
+# CLAUDE_API_KEY=sk-ant-...                 # only set when AI_TYPE=CLAUDE
+# DEEPSEEK_API_KEY=...                      # only set when AI_TYPE=DEEPSEEK
+# GROQ_API_KEY=...                          # only set when AI_TYPE=GROQ
+# Shared tuning (any provider)
+AI_MAX_TOKENS=4000
+AI_TEMPERATURE=0.3
+AI_RATE_LIMIT=60
+AI_BATCH_SIZE=10
 
 # Storage
 BLOB_STORAGE_CONNECTION_STRING=<storage-connection-string>

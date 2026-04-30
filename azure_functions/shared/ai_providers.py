@@ -91,8 +91,10 @@ class GeminiProvider(IAIProvider):
             }
         }
         
-        # Build URL dynamically from model_name — no need for COPILOT_API_ENDPOINT
-        model_name = self.config.model_name or "gemini-3.0-flash"
+        # Gemini URL embeds the model in the path, so build from model_name.
+        # GEMINI_API_ENDPOINT override is respected only if it already points to the
+        # correct model (otherwise set GEMINI_MODEL_NAME instead).
+        model_name = self.config.model_name or "gemini-2.0-flash"
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={self.api_key}"
         
         max_retries = 8
@@ -181,13 +183,22 @@ class OpenAICompatibleProvider(IAIProvider):
             async with self.session.post(self.endpoint, json=payload) as response:
                 if response.status == 429:
                     raise RateLimitError(f"{self.provider_name} rate limit exceeded")
-                
+
                 response_data = await response.json()
                 if response.status != 200:
                     error_msg = response_data.get("error", {}).get("message", "Unknown error")
                     raise CopilotError(f"{self.provider_name} API failed: {error_msg}")
-                
-                return response_data["choices"][0]["message"]["content"].strip()
+
+                choices = response_data.get("choices") or []
+                if not choices:
+                    raise CopilotError(f"{self.provider_name} returned no choices")
+                message = choices[0].get("message") or {}
+                content = message.get("content")
+                if not content:
+                    raise CopilotError(f"{self.provider_name} returned empty content")
+                return content.strip()
+        except (RateLimitError, CopilotError):
+            raise
         except Exception as e:
             raise CopilotError(f"{self.provider_name} error: {str(e)}")
 
@@ -201,13 +212,13 @@ class ClaudeProvider(IAIProvider):
     """
     Anthropic Claude API implementation.
     """
-    
-    def __init__(self, config: CopilotConfig, api_key: str):
+
+    def __init__(self, config: CopilotConfig, api_key: str, endpoint: Optional[str] = None):
         self.config = config
         self.api_key = api_key
         self.rate_limiter = AIRateLimiter(config.rate_limit_requests_per_minute)
         self.session: Optional[aiohttp.ClientSession] = None
-        self.endpoint = os.getenv("CLAUDE_API_ENDPOINT", "https://api.anthropic.com/v1/messages")
+        self.endpoint = endpoint or "https://api.anthropic.com/v1/messages"
     
     async def _ensure_session(self) -> None:
         if not self.session:
@@ -242,13 +253,21 @@ class ClaudeProvider(IAIProvider):
             async with self.session.post(self.endpoint, json=payload) as response:
                 if response.status == 429:
                     raise RateLimitError("Claude rate limit exceeded")
-                
+
                 response_data = await response.json()
                 if response.status != 200:
                     error_msg = response_data.get("error", {}).get("message", "Unknown error")
                     raise CopilotError(f"Claude API failed: {error_msg}")
-                
-                return response_data["content"][0].get("text", "").strip()
+
+                content_blocks = response_data.get("content") or []
+                if not content_blocks:
+                    raise CopilotError("Claude returned no content blocks")
+                text = content_blocks[0].get("text")
+                if not text:
+                    raise CopilotError("Claude returned empty text")
+                return text.strip()
+        except (RateLimitError, CopilotError):
+            raise
         except Exception as e:
             raise CopilotError(f"Claude error: {str(e)}")
 
@@ -258,72 +277,149 @@ class ClaudeProvider(IAIProvider):
             self.session = None
 
 
+class AzureOpenAIProvider(IAIProvider):
+    """
+    Azure OpenAI implementation. Uses `api-key` header (not Bearer) and
+    `max_completion_tokens` (gpt-5.x rejects `max_tokens`). Temperature is
+    omitted because gpt-5.x deployments only accept the default value.
+    The endpoint must be the full chat-completions URL, e.g.
+    https://<resource>.openai.azure.com/openai/deployments/<deployment>/chat/completions?api-version=2024-12-01-preview
+    """
+
+    def __init__(self, config: CopilotConfig, api_key: str, endpoint: str):
+        self.config = config
+        self.api_key = api_key
+        self.endpoint = endpoint
+        self.rate_limiter = AIRateLimiter(config.rate_limit_requests_per_minute)
+        self.session: Optional[aiohttp.ClientSession] = None
+
+    async def _ensure_session(self) -> None:
+        if not self.session:
+            timeout = aiohttp.ClientTimeout(total=120)
+            headers = {
+                "Content-Type": "application/json",
+                "api-key": self.api_key,
+                "User-Agent": "Azure-Functions-News-Scraper/1.0",
+            }
+            self.session = aiohttp.ClientSession(timeout=timeout, headers=headers)
+
+    async def chat_completion(self,
+                            system_prompt: str,
+                            user_content: str,
+                            max_tokens: Optional[int] = None,
+                            temperature: Optional[float] = None) -> str:
+        await self.rate_limiter.acquire()
+        await self._ensure_session()
+
+        payload = {
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content},
+            ],
+            "max_completion_tokens": max_tokens or self.config.max_tokens,
+        }
+
+        max_retries = 5
+        retry_delay = 10
+        for attempt in range(max_retries + 1):
+            try:
+                async with self.session.post(self.endpoint, json=payload) as response:
+                    if response.status == 429:
+                        if attempt < max_retries:
+                            wait = retry_delay * (2 ** attempt)
+                            logger.warning(f"Azure OpenAI rate limit. Retrying in {wait}s ({attempt + 1}/{max_retries})")
+                            await asyncio.sleep(wait)
+                            continue
+                        raise RateLimitError("Azure OpenAI rate limit exceeded after maximum retries")
+
+                    response_data = await response.json()
+                    if response.status != 200:
+                        error_msg = response_data.get("error", {}).get("message", "Unknown error")
+                        raise CopilotError(f"Azure OpenAI API failed: {error_msg}")
+
+                    choices = response_data.get("choices") or []
+                    if not choices:
+                        raise CopilotError("Azure OpenAI returned no choices")
+                    message = choices[0].get("message") or {}
+                    content = message.get("content")
+                    if not content:
+                        raise CopilotError("Azure OpenAI returned empty content")
+                    return content.strip()
+            except (RateLimitError, CopilotError):
+                raise
+            except Exception as e:
+                if attempt < max_retries:
+                    wait = retry_delay * (2 ** attempt)
+                    logger.warning(f"Azure OpenAI error: {e}. Retrying in {wait}s...")
+                    await asyncio.sleep(wait)
+                    continue
+                raise CopilotError(f"Azure OpenAI error: {str(e)}")
+
+    async def close(self) -> None:
+        if self.session:
+            await self.session.close()
+            self.session = None
+
+
 class AIProviderFactory:
     """
-    Factory for creating AI providers based on configuration.
+    Factory for creating AI providers based on AI_TYPE.
+
+    Strict per-type env var scheme — no cross-type fallbacks:
+        AI_TYPE                → Which provider (GEMINI | OPENAI | AZURE_OPENAI | CLAUDE | DEEPSEEK | GROQ)
+        {TYPE}_API_KEY         → Required. API key for that provider.
+        {TYPE}_API_ENDPOINT    → Optional. Override default endpoint.
+        {TYPE}_MODEL_NAME      → Optional. Override default model.
+
+    Shared tuning params (AI_MAX_TOKENS, AI_TEMPERATURE, AI_RATE_LIMIT, AI_BATCH_SIZE)
+    live on config_manager and apply regardless of provider.
+
+    Setting OPENAI_API_KEY never leaks into a GEMINI run, and vice versa.
     """
-    
+
+    SUPPORTED_TYPES = {"GEMINI", "OPENAI", "AZURE_OPENAI", "CLAUDE", "DEEPSEEK", "GROQ"}
+
     @staticmethod
     async def create_provider(config: Optional[CopilotConfig] = None) -> IAIProvider:
-        ai_type = os.getenv("AI_TYPE", "GEMINI").upper()
-        
-        # Get config if not provided
+        ai_type = os.getenv("AI_TYPE", "AZURE_OPENAI").upper()
+
+        if ai_type not in AIProviderFactory.SUPPORTED_TYPES:
+            raise CopilotError(
+                f"Unsupported AI_TYPE: {ai_type}. "
+                f"Supported: {sorted(AIProviderFactory.SUPPORTED_TYPES)}"
+            )
+
         if not config:
             config = await config_manager.get_copilot_config()
-        
-        # Helper to get secret with fallbacks and KV support
-        async def get_ai_secret(type_name: str) -> Optional[str]:
-            # Try specific env vars first, then generic AI_API_KEY, then legacy AI_API_KEY
-            potential_keys = [f"{type_name}_API_KEY", "AI_API_KEY", "AI_API_KEY", "CopilotApiKey"]
-            if type_name == "GEMINI":
-                potential_keys.append("GeminiApiKey")
-            elif type_name == "OPENAI":
-                potential_keys.append("OpenAIApiKey")
-            elif type_name == "CLAUDE":
-                potential_keys.append("ClaudeApiKey")
-            
-            for key in potential_keys:
-                try:
-                    # config_manager.get_secret handles Key Vault, placeholders, and env vars
-                    val = await config_manager.get_secret(key)
-                    if val and val != "PLACEHOLDER-WILL-BE-CONFIGURED-LATER":
-                        return val
-                except:
-                    continue
-            return None
 
-        api_key = await get_ai_secret(ai_type)
-        
+        # Load API key from ONE env var: {TYPE}_API_KEY (env first, then Key Vault).
+        key_var = f"{ai_type}_API_KEY"
+        api_key = os.getenv(key_var)
         if not api_key:
-            raise CopilotError(f"{ai_type} API key not configured in environment or Key Vault. Set {ai_type}_API_KEY or AI_API_KEY.")
+            try:
+                api_key = await config_manager.get_secret(key_var)
+            except Exception:
+                api_key = None
+        if not api_key:
+            raise CopilotError(
+                f"{key_var} is not configured. Set it as an environment variable "
+                f"or as an Azure Key Vault secret named '{key_var}'."
+            )
 
-        if ai_type == "GEMINI" or ai_type == "COPILOT":
+        # Dispatch — each provider receives endpoint from config (resolved by config_manager
+        # based on AI_TYPE, with {TYPE}_API_ENDPOINT / {TYPE}_MODEL_NAME overrides).
+        if ai_type == "GEMINI":
             return GeminiProvider(config, api_key)
-        
-        elif ai_type == "CLAUDE":
-            return ClaudeProvider(config, api_key)
-        
-        elif ai_type == "OPENAI":
-            # Check for specific endpoints, then generic, then legacy
-            endpoint = os.getenv("OPENAI_API_ENDPOINT") or os.getenv("AI_API_ENDPOINT") or \
-                       os.getenv("CopilotEndpoint") or os.getenv("COPILOT_API_ENDPOINT") or \
-                       "https://api.openai.com/v1/chat/completions"
-            return OpenAICompatibleProvider(config, api_key, endpoint, "OpenAI")
-            
-        elif ai_type == "DEEPSEEK":
-            endpoint = os.getenv("DEEPSEEK_API_ENDPOINT") or os.getenv("AI_API_ENDPOINT") or \
-                       "https://api.deepseek.com/chat/completions"
-            return OpenAICompatibleProvider(config, api_key, endpoint, "DeepSeek")
-            
-        elif ai_type == "GROQ":
-            endpoint = os.getenv("GROQ_API_ENDPOINT") or os.getenv("AI_API_ENDPOINT") or \
-                       "https://api.groq.com/openai/v1/chat/completions"
-            return OpenAICompatibleProvider(config, api_key, endpoint, "Groq")
-            
-        else:
-            # Default to OpenAI compatible for unknown types if endpoint is provided
-            endpoint = os.getenv("AI_API_ENDPOINT") or os.getenv("CopilotEndpoint") or os.getenv("COPILOT_API_ENDPOINT")
-            if endpoint:
-                return OpenAICompatibleProvider(config, api_key, endpoint, ai_type.capitalize())
-            
-            raise CopilotError(f"Unsupported AI type: {ai_type}. Provide AI_API_ENDPOINT for generic OpenAI-compatible providers.")
+        if ai_type == "CLAUDE":
+            return ClaudeProvider(config, api_key, endpoint=config.api_endpoint)
+        if ai_type == "OPENAI":
+            return OpenAICompatibleProvider(config, api_key, config.api_endpoint, "OpenAI")
+        if ai_type == "AZURE_OPENAI":
+            return AzureOpenAIProvider(config, api_key, config.api_endpoint)
+        if ai_type == "DEEPSEEK":
+            return OpenAICompatibleProvider(config, api_key, config.api_endpoint, "DeepSeek")
+        if ai_type == "GROQ":
+            return OpenAICompatibleProvider(config, api_key, config.api_endpoint, "Groq")
+
+        # Unreachable because of the SUPPORTED_TYPES guard above.
+        raise CopilotError(f"Unsupported AI_TYPE: {ai_type}")

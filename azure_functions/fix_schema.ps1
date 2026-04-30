@@ -1,5 +1,16 @@
-$conn_str = "Server=tcp:pei-dashboard.database.windows.net,1433;Database=pei-dashboard;User ID=CloudSAa33fbc7c;Password=uRahcie3&105272;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
-$log_file = "C:\RunningProjects\Dashboard-Pertamina-VeloCT\azure_functions\schema_fix_log.txt"
+# Connection string loaded from SQL_SERVER_CONNECTION_STRING env var (or local.settings.json Values).
+$conn_str = $env:SQL_SERVER_CONNECTION_STRING
+if (-not $conn_str) {
+    $settingsPath = Join-Path $PSScriptRoot "local.settings.json"
+    if (Test-Path $settingsPath) {
+        $settings = Get-Content $settingsPath -Raw | ConvertFrom-Json
+        $conn_str = $settings.Values.SQL_SERVER_CONNECTION_STRING
+    }
+}
+if (-not $conn_str) {
+    throw "SQL_SERVER_CONNECTION_STRING is not set (env var or local.settings.json Values.SQL_SERVER_CONNECTION_STRING)."
+}
+$log_file = Join-Path $PSScriptRoot "schema_fix_log.txt"
 
 "Starting execution..." | Out-File -FilePath $log_file
 

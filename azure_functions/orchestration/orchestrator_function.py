@@ -21,8 +21,8 @@ if _parent_dir not in sys.path:
 
 from shared.interfaces import IOrchestratorFunction, IDatabaseHandler, ICopilotIntegration
 from shared.models import (
-    ExecutionResult, FunctionStatus, DateRange, ArticleFilters, 
-    NewsArticle, SentimentAnalysis
+    ExecutionResult, FunctionStatus, DateRange, ArticleFilters,
+    NewsArticle, SentimentAnalysis, SentimentLabel
 )
 from shared.config import config_manager
 from shared.database_handler import DatabaseHandler
@@ -32,11 +32,16 @@ from shared.logging_config import setup_logging
 
 # Import scrapers
 from scrapers import (
-    # News scrapers
+    # News scrapers (primary)
     BPSScraper, BankIndonesiaScraper, BloombergTechnozScraper,
     GoogleNewsScraper, BioenergyTimesScraper, SCMPScraper,
     EnergiesMediaScraper, KontanBBMScraper, KontanBiodieselScraper,
     SAndPNewsScraper,
+    # News scrapers (referenced by src SUMBER_DICT)
+    KontanNewsScraper, BisnisIndonesiaNewsScraper, KompasNewsScraper,
+    TempoNewsScraper, CNBCIndonesiaNewsScraper, CNBCNewsScraper,
+    CNNNewsScraper, TheGuardianNewsScraper, OilPriceNewsScraper,
+    ReutersNewsScraper,
     # Data scrapers
     IAEAPRISScraper, MigasEIAScraper, CPOPriceScraper, SIPSNDataScraper,
     BiodieselESDMScraper, BioetanolESDMScraper, MigasESDMScraper,
@@ -46,19 +51,33 @@ from scrapers import (
 # Set up logging
 logger = setup_logging(__name__)
 
-# Scraper registry - maps source names to scraper classes
+# Scraper registry - maps source names to scraper classes.
+# Names mirror src SUMBER_DICT entries (src/main/main_news_scrapping_*.py):
+#   lokal: kontan, bisnis_indonesia, kompas, tempo, cnbc_id, bps, bank_indonesia, bloomberg_technoz
+#   intl: sandp_news, google_news_cnbc, google_news_cnn, energiesmedia, bioenergytimes, theguardian
 SCRAPER_REGISTRY = {
-    # News sources
+    # News sources — lokal (src SUMBER_DICT lokal)
+    'kontan': KontanNewsScraper,
+    'kontan_bbm': KontanBBMScraper,
+    'kontan_biodiesel': KontanBiodieselScraper,
+    'bisnis_indonesia': BisnisIndonesiaNewsScraper,
+    'kompas': KompasNewsScraper,
+    'tempo': TempoNewsScraper,
+    'cnbc_indonesia': CNBCIndonesiaNewsScraper,
     'bps': BPSScraper,
     'bank_indonesia': BankIndonesiaScraper,
     'bloomberg_technoz': BloombergTechnozScraper,
-    'google_news': GoogleNewsScraper,
-    'bioenergytimes': BioenergyTimesScraper,
-    'scmp': SCMPScraper,
-    'energiesmedia': EnergiesMediaScraper,
-    'kontan_bbm': KontanBBMScraper,
-    'kontan_biodiesel': KontanBiodieselScraper,
+    # News sources — international (src SUMBER_DICT intl)
     'sandp_news': SAndPNewsScraper,
+    'google_news': GoogleNewsScraper,
+    'cnbc': CNBCNewsScraper,
+    'cnn': CNNNewsScraper,
+    'energiesmedia': EnergiesMediaScraper,
+    'bioenergytimes': BioenergyTimesScraper,
+    'theguardian': TheGuardianNewsScraper,
+    'scmp': SCMPScraper,
+    'oilprice': OilPriceNewsScraper,
+    'reuters': ReutersNewsScraper,
     # Data sources
     'iaea_pris': IAEAPRISScraper,
     'migas_eia': MigasEIAScraper,
@@ -81,91 +100,37 @@ DATA_SOURCES = {
     'crackspread_bbm', 'crackspread_non_bbm'
 }
 
-# Keyword-based category classification — ported from src/main sinonim_dict
-# Maps category name → list of keywords/synonyms to match against article title+content
+# Keyword-based category classification — mirrored from src/main/*.py SINONIM_DICT.
+# Only ACTIVE categories from src are listed here; categories commented-out in src
+# have been removed entirely. Articles not matching any keyword are dropped.
+# Source of truth:
+#   src/main/main_news_scrapping_lokal.py (categories ID-localized)
+#   src/main/main_news_scrapping_internasional.py (Crackspread_BBM, Crackspread_NonBBM)
 CATEGORY_KEYWORDS = {
     'indeks risiko geopolitik': [
-        'indeks risiko geopolitik', 'tekanan geopolitik', 'geopolitik',
-        'geopolitical risk', 'geopolitical pressure', 'geopolitics'],
+        'indeks risiko geopolitik', 'tekanan geopolitik', 'geopolitik'],
     'indeks volatilitas': [
-        'indeks volatilitas', 'volatilitas', 'volatility index', 'volatility'],
+        'indeks volatilitas', 'volatilitas'],
     'Kurs': [
-        'kurs', 'nilai tukar rupiah', 'dolar', 'dxy', 'dollar', 'nilai tukar'],
+        'kurs', 'nilai tukar rupiah', 'kurs rupiah', 'kurs dolar'],
     'IHSG': [
         'ihsg', 'pasar saham'],
     'Inflasi': [
-        'inflasi', 'inflation'],
+        'inflasi'],
     'BI Rate': [
-        'bi rate', 'suku bunga', 'bunga bi', 'bi 7-day'],
+        'bi rate', 'suku bunga', 'bunga bi'],
     'Indonia': [
         'indonia'],
-    'indeks sales retail': [
-        'indeks sales retail', 'indeks penjualan ritel', 'indeks penjualan retail',
-        'indeks retail', 'indeks ritel'],
-    'indeks kepercayaan knsmn': [
-        'indeks kepercayaan konsumen', 'indeks kepercayaan pelanggan',
-        'ekspektasi konsumen', 'kondisi ekonomi terkini', 'kepercayaan konsumen',
-        'kondisi ekonomi saat ini',
-        # Bank Indonesia official terminology (IKK/IKE/IEK full forms)
-        'indeks keyakinan konsumen', 'keyakinan konsumen',
-        'indeks kondisi ekonomi', 'indeks ekspektasi konsumen',
-        'survei konsumen'],
-    'indeks kinerja manufaktur': [
-        'indeks kinerja manufaktur', 'kinerja manufaktur',
-        'purchasing manufaktur index', 'manufaktur index', 'manufacturing index', 'pmi'],
-    'indeks kinerja jasa': [
-        'indeks kinerja jasa', 'kinerja jasa',
-        'purchasing services index', 'services index'],
-    'neraca perdagangan': [
-        'neraca perdagangan', 'trade balance'],
-    'PDB': [
-        'pertumbuhan domestik bruto', 'pdb', 'pertumbuhan ekonomi', 'gdp'],
-    'Biodiesel': [
-        'biodiesel', 'minyak kelapa sawit', 'crude palm oil', 'cpo',
-        'minyak sawit', 'kelapa sawit', 'sawit',
-        'hip bbn', 'harga fame', 'harga indeks pasar biodiesel',
-        'b40', 'b50', 'biofuel'],
-    'Bioetanol': [
-        'bioetanol', 'tebu', 'gula', 'molase',
-        'etanol', 'ethanol', 'bioethanol', 'tetes tebu'],
-    'RUPTL': [
-        'ruptl', 'listrik', 'pln', 'ipp', 'pjbl', 'pembangkit',
-        'ketenagalistrikan', 'transmisi', 'distribusi', 'elektrifikasi',
-        'batubara', 'batu bara', 'panas bumi', 'surya',
-        'bess', 'plta', 'pltal', 'pltb', 'pltbg', 'pltbm',
-        'pltd', 'pltg', 'pltgu', 'pltm', 'pltmg', 'pltn',
-        'pltp', 'plts', 'pltsa', 'pltu'],
-    'Harga Minyak': [
-        'harga minyak', 'minyak mentah', 'oil price', 'crude oil',
-        'brent', 'wti'],
-    'Volume Minyak': [
-        'volume minyak', 'volume bbm', 'oil volume'],
-    'Harga Produk Kilang': [
-        'harga produk kilang', 'bbm', 'harga kilang pertamina',
-        'kilang pertamina', 'kilang', 'refinery', 'harga pertamina'],
-    'Volume Produk Kilang': [
-        'volume produk kilang', 'volume kilang pertamina', 'volume kilang',
-        'volume pertamina'],
-    'SAF': [
-        'saf', 'uco', 'corsia', 'safco', 'biorefinery',
-        'minyak jelantah', 'bioavtur', 'sustainable aviation fuel',
-        'used cooking oil'],
     'Crackspread_BBM': [
         'ron 92', 'pertamax', 'ron 95', 'ron 97', 'residual fo',
-        'fuel oil', 'jet fuel', 'avtur', 'kerosene',
+        'fuel oil', 'jet fuel', 'avtur', 'kerosene', 'refinery',
         'refined products', 'refining', 'oil products',
         'gasoline', 'heavy oil', 'diesel', 'gasoil',
-        'naphtha', 'lpg', 'biogasoline', 'petroleum coke', 'crackspread'],
+        'naphtha', 'lpg', 'biodiesel', 'biogasoline', 'petroleum coke',
+        'oil price', 'fuel cost', 'fuel price'],
     'Crackspread_NonBBM': [
-        'petro', 'petrochemical', 'aromatic', 'olefin', 'polymer',
-        'paraxylene', 'propylene', 'benzene', 'green coke'],
-    'Harga EBT': [
-        'lcoe', 'harga jual listrik ebt', 'harga listrik ebt',
-        'tarif listrik ebt', 'energi terbarukan', 'renewable energy'],
-    'Harga WTE': [
-        'wte', 'waste to energy', 'sampah', 'pltsa'],
-    'Nuklir': [
-        'nuklir', 'pltn', 'pembangkit listrik nuklir', 'nuclear'],
+        'petro', 'chemical', 'petrochemical', 'aromatic', 'olefin', 'polymer',
+        'lpg', 'paraxylene', 'propylene', 'benzene', 'green coke'],
 }
 
 
@@ -173,7 +138,8 @@ def _classify_article_categories(title: str, content: str) -> list:
     """
     Classify an article into categories by matching title+content against
     CATEGORY_KEYWORDS. Returns list of matching category names.
-    Falls back to ['Harga Minyak'] if no keywords match.
+    Returns [] when no keyword matches — articles without a category are dropped
+    by the caller (mirrors src behaviour where unmatched articles are not scraped).
     """
     text = f"{title} {content}".lower()
     matched = []
@@ -182,7 +148,7 @@ def _classify_article_categories(title: str, content: str) -> list:
             if kw.lower() in text:
                 matched.append(category)
                 break  # one match per category is enough
-    return matched if matched else ['Harga Minyak']
+    return matched
 
 
 
@@ -746,10 +712,15 @@ class OrchestratorFunction(IOrchestratorFunction):
                                 await self.db_handler.save_structured_data(table_name, data_list)
                                 articles_saved += len(data_list)
                     else:
-                        # Convert to NewsArticle objects and save to database
-                        # Each article_data already has its category from classification
+                        # Convert to NewsArticle objects and save to database.
+                        # Each article_data already has its category from classification;
+                        # articles without a category (unmatched by CATEGORY_KEYWORDS) are
+                        # already dropped upstream in the per-category fan-out loop.
                         news_articles = []
                         for article_data in items:
+                            category = article_data.get("category")
+                            if not category:
+                                continue  # skip unclassified article (mirrors src behaviour)
                             article = NewsArticle(
                                 title=article_data["title"],
                                 content=article_data["content"],
@@ -757,7 +728,7 @@ class OrchestratorFunction(IOrchestratorFunction):
                                 source=article_data["source"],
                                 published_date=article_data["published_date"],
                                 keywords=article_data["keywords"],
-                                category=article_data.get("category", 'Harga Minyak')
+                                category=category
                             )
                             news_articles.append(article)
                         

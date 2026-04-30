@@ -31,7 +31,7 @@ def get_connection():
 
 async def run_backfill():
     # Set AI type to what the system usually uses (OpenAI/Azure)
-    os.environ['AI_TYPE'] = 'OPENAI'
+    os.environ['AI_TYPE'] = 'AZURE_OPENAI'
     
     # We will search month by month to ensure we find articles through Google News RSS
     months = []

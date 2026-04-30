@@ -43,14 +43,28 @@ class EnvironmentConfigurationManager(IConfigurationManager):
             "retry_delay": int(os.getenv("DB_RETRY_DELAY", "1"))
         }
         
-        # Copilot configuration
+        # AI provider configuration — driven entirely by AI_TYPE.
+        # Each provider uses its own prefix: {TYPE}_API_KEY, {TYPE}_MODEL_NAME, {TYPE}_API_ENDPOINT.
+        # Shared tuning params use AI_ prefix (max_tokens, temperature, rate_limit, batch_size).
+        # No cross-type fallbacks — setting OPENAI_* never affects GEMINI and vice versa.
+        ai_type = os.getenv("AI_TYPE", "AZURE_OPENAI").upper()
+        provider_defaults = {
+            "GEMINI":   {"model": "gemini-2.0-flash",           "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"},
+            "OPENAI":   {"model": "gpt-4o-mini",                "endpoint": "https://api.openai.com/v1/chat/completions"},
+            "AZURE_OPENAI": {"model": "gpt-5.4-mini",           "endpoint": "https://peidashboard.openai.azure.com/openai/deployments/gpt-5.4-mini/chat/completions?api-version=2024-12-01-preview"},
+            "CLAUDE":   {"model": "claude-3-5-sonnet-20241022", "endpoint": "https://api.anthropic.com/v1/messages"},
+            "DEEPSEEK": {"model": "deepseek-chat",              "endpoint": "https://api.deepseek.com/chat/completions"},
+            "GROQ":     {"model": "llama-3.3-70b-versatile",    "endpoint": "https://api.groq.com/openai/v1/chat/completions"},
+        }
+        defaults = provider_defaults.get(ai_type, provider_defaults["AZURE_OPENAI"])
+
         self._cache["copilot"] = {
-            "api_endpoint": os.getenv("COPILOT_API_ENDPOINT", os.getenv("GEMINI_API_ENDPOINT", "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.0-flash:generateContent")),
-            "model_name": os.getenv("COPILOT_MODEL_NAME", os.getenv("GEMINI_MODEL_NAME", "gemini-3.0-flash")),
-            "max_tokens": int(os.getenv("COPILOT_MAX_TOKENS", "4000")),
-            "temperature": float(os.getenv("COPILOT_TEMPERATURE", "0.3")),
-            "rate_limit_requests_per_minute": int(os.getenv("COPILOT_RATE_LIMIT", "60")),
-            "batch_size": int(os.getenv("COPILOT_BATCH_SIZE", "10")),
+            "api_endpoint": os.getenv(f"{ai_type}_API_ENDPOINT", defaults["endpoint"]),
+            "model_name":   os.getenv(f"{ai_type}_MODEL_NAME",   defaults["model"]),
+            "max_tokens":   int(os.getenv("AI_MAX_TOKENS", "4000")),
+            "temperature":  float(os.getenv("AI_TEMPERATURE", "0.3")),
+            "rate_limit_requests_per_minute": int(os.getenv("AI_RATE_LIMIT", "60")),
+            "batch_size":   int(os.getenv("AI_BATCH_SIZE", "10")),
             "role_prompts": self._load_role_prompts()
         }
         
@@ -170,15 +184,30 @@ class EnvironmentConfigurationManager(IConfigurationManager):
         return source_configs.get(source_name.lower(), {})
     
     async def get_copilot_config(self) -> CopilotConfig:
-        """Get Copilot API configuration."""
-        config_data = self._cache["copilot"]
-        
+        """Get AI provider configuration.
+
+        API key is loaded from {TYPE}_API_KEY (env first, then Azure Key Vault).
+        No fallback to generic AI_API_KEY or legacy CopilotApiKey.
+        """
+        config_data = dict(self._cache["copilot"])  # copy so we don't mutate cache
+
         if not config_data["api_endpoint"]:
-            raise ConfigurationError("Copilot API endpoint not configured")
-            
-        # Add API key to config
-        config_data["api_key"] = get_ai_api_key()
-        
+            raise ConfigurationError("AI provider endpoint not configured")
+
+        ai_type = os.getenv("AI_TYPE", "AZURE_OPENAI").upper()
+        key_var = f"{ai_type}_API_KEY"
+
+        api_key = os.getenv(key_var)
+        if not api_key or api_key == "PLACEHOLDER-WILL-BE-CONFIGURED-LATER":
+            api_key = _get_key_vault_secret(key_var) or api_key
+
+        if not api_key or api_key == "PLACEHOLDER-WILL-BE-CONFIGURED-LATER":
+            raise ConfigurationError(
+                f"{key_var} not configured. Set it as an environment variable or "
+                f"an Azure Key Vault secret named '{key_var}'."
+            )
+
+        config_data["api_key"] = api_key
         return CopilotConfig(**config_data)
     
     async def get_database_config(self) -> DatabaseConfig:
@@ -378,60 +407,3 @@ def get_storage_connection_string() -> str:
     return connection_string
 
 
-def get_ai_api_key() -> str:
-    """
-    Get Copilot/AI API key from environment variables or Key Vault.
-    
-    Priority order:
-    1. Direct environment variable (AI_API_KEY)
-    2. Direct environment variable (CopilotApiKey - Legacy)
-    3. Azure Key Vault (using Managed Identity)
-    """
-    # Try direct environment variables first
-    api_key = os.getenv("AI_API_KEY") or os.getenv("CopilotApiKey")
-    
-    # If not found, or placeholder, or Key Vault reference, try to get from Key Vault directly
-    if not api_key or api_key == "PLACEHOLDER-WILL-BE-CONFIGURED-LATER" or api_key.startswith("@Microsoft.KeyVault"):
-        # Try both names in Key Vault
-        for name in ["AI_API_KEY", "CopilotApiKey"]:
-            kv_secret = _get_key_vault_secret(name)
-            if kv_secret:
-                api_key = kv_secret
-                break
-    
-    if not api_key or api_key == "PLACEHOLDER-WILL-BE-CONFIGURED-LATER":
-        raise ConfigurationError(
-            "AI API key not configured. "
-            "Please set AI_API_KEY environment variable."
-        )
-    
-    return api_key
-
-
-def get_copilot_endpoint() -> str:
-    """
-    Get Copilot API endpoint from environment variables or Key Vault.
-    
-    Priority order:
-    1. Direct environment variable (CopilotEndpoint or COPILOT_API_ENDPOINT)
-    2. Azure Key Vault (using Managed Identity)
-    """
-    # Try direct environment variables first
-    endpoint = os.getenv("CopilotEndpoint") or os.getenv("COPILOT_API_ENDPOINT")
-    
-    # If not found, or placeholder, or Key Vault reference, try to get from Key Vault directly
-    if not endpoint or endpoint == "PLACEHOLDER-WILL-BE-CONFIGURED-LATER" or endpoint.startswith("@Microsoft.KeyVault"):
-        # Try both names in Key Vault
-        for name in ["CopilotEndpoint", "COPILOT_API_ENDPOINT"]:
-            kv_secret = _get_key_vault_secret(name)
-            if kv_secret:
-                endpoint = kv_secret
-                break
-    
-    if not endpoint or endpoint == "PLACEHOLDER-WILL-BE-CONFIGURED-LATER":
-        raise ConfigurationError(
-            "Copilot API endpoint not configured. "
-            "Please set CopilotEndpoint or COPILOT_API_ENDPOINT environment variable."
-        )
-    
-    return endpoint

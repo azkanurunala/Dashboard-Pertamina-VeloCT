@@ -19,7 +19,7 @@ def classify(title, content):
             if kw.lower() in text:
                 matched.append(cat)
                 break
-    return matched if matched else ['Harga Minyak']
+    return matched  # empty list if no keyword matches — caller must skip unclassified
 
 def get_connection():
     settings_path = r'c:\RunningProjects\Dashboard-Pertamina-VeloCT\azure_functions\local.settings.json'
@@ -59,8 +59,10 @@ async def backfill():
                 saved = 0
                 for a in articles:
                     cats = classify(a.title, a.content)
-                    cat = cats[0] if cats else 'Harga Minyak'
-                    
+                    if not cats:
+                        continue  # skip unclassified article (mirrors src behaviour)
+                    cat = cats[0]
+
                     # Get or create source
                     source_name = a.source
                     cursor.execute("SELECT id FROM news_sources WHERE name = ?", (source_name,))
