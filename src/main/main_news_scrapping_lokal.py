@@ -39,48 +39,134 @@ ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_FILE_PATH", "/results/(News)Scrapping_n
 # Keyword synonyms — add/remove entries to control what gets searched
 
 SINONIM_DICT = {
-    "indeks risiko geopolitik ": ["tekanan geopolitik ", "geopolitik "],
-    "indeks volatilitas ": ["volatilitas "],
-    "kurs ": [
-        "nilai tukar rupiah ", 
-        # "dolar ", 
-        "kurs rupiah ", "kurs dolar ",
+    # "indeks risiko geopolitik ": ["tekanan geopolitik ", "geopolitik "],
+    # "indeks volatilitas ": ["volatilitas "],
+    # "kurs ": [
+    #     "nilai tukar rupiah ", 
+    #     "dolar ", 
+    #     "kurs rupiah ", "kurs dolar ",
+    #     ],
+    # "ihsg ": ["pasar saham "],
+    # "inflasi ": [],
+    # "bi rate ": ["suku bunga ", "bunga bi "],
+    # "indonia ": [],
+    # "indeks sales retail ": [
+    #     "indeks penjualan ritel ", "indeks ritel "
+    #     "indeks penjualan retail ", "indeks retail ", 
+    #     "survei penjualan eceran "
+    #     ],
+    # "indeks kepercayaan konsumen ": [
+    #     "indeks kepercayaan pelanggan ", "ekspektasi konsumen ", 
+    #     # "kondisi ekonomi terkini ", "kepercayaan konsumen ", "kondisi ekonomi saat ini ",
+    #     "indeks keyakinan konsumen ", "survei konsumen bi ", "keyakinan konsumen "],
+    # "indeks kinerja manufaktur ": [
+    #     "kinerja manufaktur ",
+    #     "pmi manufaktur ", "pmi indonesia "
+    #     ],
+    # "indeks kinerja jasa ": [
+    #     "kinerja jasa ",
+    #     "pmi jasa ", "pmi sektor jasa "
+    #     ],
+    # "neraca perdagangan ": [
+    #     "trade balance ",
+    #     "neraca dagang "
+    #     ],
+    # "pertumbuhan domestik bruto ": [
+    #     "PDB ", "pertumbuhan ekonomi ",
+    #     "produk domestik bruto "
+    #     ],
+    # "biodiesel ": [
+    #     "minyak kelapa sawit ", "crude palm oil ", "CPO ", "minyak sawit ", "kelapa sawit ", "sawit ",
+    #     "HIP BBN Biodesel ", "biodiesel ", "harga fame ", "harga indeks pasar biodiesel ", "b40 ", "b50 ", "biodiesel ", "biofuel "
+    #     ],
+    "bioetanol ": [
+        "tebu ", 
+        "gula ",
+        "molase ", "etanol ", "ethanol ", "bioethanol ", "tetes tebu ",
+        "gula tebu ", "industri gula "
         ],
-    "ihsg ": ["pasar saham "],
-    "inflasi ": [],
-    "bi rate ": ["suku bunga ", "bunga bi "],
-    "indonia ": [],
-    # "indeks sales retail ": ["indeks penjualan ritel ", "indeks penjualan retail ", "indeks retail ", "indeks ritel "],
-    # "indeks kepercayaan konsumen ": ["indeks kepercayaan pelanggan ", "ekspektasi konsumen ", "kondisi ekonomi terkini ", "kepercayaan konsumen ", "kondisi ekonomi saat ini "],
-    # "indeks kinerja manufaktur ": ["kinerja manufaktur "],
-    # "indeks kinerja jasa ": ["kinerja jasa "],
-    # "neraca perdagangan ": ["trade balance "],
-    # "pertumbuhan domestik bruto ": ["PDB ", "pertumbuhan ekonomi "],
-    # "biodiesel ": ["minyak kelapa sawit ", "crude palm oil ", "CPO ", "minyak sawit ", "kelapa sawit ", "sawit ",
-    #                "HIP BBN Biodesel ", "biodiesel ", "harga fame ", "harga indeks pasar biodiesel ", "b40 ", "b50 ", "biodiesel ", "biofuel "],
-    # "bioetanol ": ["tebu ", "gula ", "molase ", "etanol ", "ethanol ", "bioethanol ", "tetes tebu "],
-    # "RUPTL ": ["listrik ", "PLN ", "IPP ", "PJBL ", "pembangkit ", "ketenagalistrikan ",
-    #            "transmisi ", "distribusi ", "elektrifikasi ", "batubara ", "batu bara ", "panas bumi ",
-    #            "surya ", "nuklir ", "BESS ", "PLTA ", "PLTAL ", "PLTB ", "PLTBg ", "PLTBm ", "PLTD ", "PLTG ",
-    #            "PLTGU ", "PLTM ", "PLTMG ", "PLTN ", "PLTP ", "PLTS ", "PLTSa ", "PLTU "],
-    # "harga minyak ": ["minyak mentah "],
-    # "volume minyak ": ["volume bbm ", "minyak mentah "],
-    # "harga produk kilang pertamina ": ["bbm ", "harga kilang pertamina ", "kilang pertamina ", "kilang ", "refinery ", "harga pertamina "],
-    # "volume produk kilang pertamina ": ["bbm ", "volume kilang pertamina ", "volume kilang ", "refinery ", "volume pertamina "],
-    # "SAF ": ["UCO ", "CORSIA ", "SAFCo ", "biorefinery ", "minyak jelantah ", "bioavtur "],
+    # "RUPTL ": [
+    #     # "listrik ", "transmisi ", "distribusi ", 
+    #     "PLN ", "IPP ", "PJBL ", "pembangkit ", "ketenagalistrikan ", 
+    #     "elektrifikasi ", "batubara ", "batu bara ", "panas bumi ",
+    #     "surya ", "nuklir ", "BESS ", "PLTA ", "PLTAL ", "PLTB ", "PLTBg ", "PLTBm ", "PLTD ", "PLTG ",
+    #     "PLTGU ", "PLTM ", "PLTMG ", "PLTN ", "PLTP ", "PLTS ", "PLTSa ", "PLTU ",
+    #     "transmisi listrik ", "transmisi tenaga listrik "
+    #     ],
+    # "harga minyak ": [
+    #     "minyak mentah ",
+    #     "harga minyak mentah ", "icp ", "wti ", "brent "
+    #     ],
+    # "volume minyak ": [
+    #     "volume bbm ", "minyak mentah ",
+    #     "lifting minyak ", "produksi minyak ", "impor minyak mentah "
+    #     ],
+    # "harga produk kilang pertamina ": [
+    #     "bbm ", "harga kilang pertamina ", "kilang pertamina ", "kilang ", "refinery ", "harga pertamina ",
+    #     "harga bbm pertamina ", "harga pertamax ", "harga pertalite ", "harga solar ", "harga avtur ", "rdmp "
+    #     ],
+    # "volume produk kilang pertamina ": [
+    #     "bbm ", "volume kilang pertamina ", "volume kilang ", "refinery ", "volume pertamina ",
+    #     "kilang pertamina ", "produksi bbm ", "rdmp ", "kapasitas kilang ", "kilang balikpapan ", "kilang tuban ", "impor bbm "
+    #     ],
+    # "SAF ": [
+    #     "UCO ", "CORSIA ", "SAFCo ", "biorefinery ", "minyak jelantah ", "bioavtur ",
+    #     "bioavtur pertamina", "pome",
+    #     ],
     # "RON 92 ": [
     #     "pertamax ", "RON 95 ", "RON 97 ", "Residual FO ", "Fuel Oil", "Jet Fuel ", "Avtur ",
     #     "Kerosene ", "refinery ", "refined products ", "refining ", "oil products ", "Gasoline ",
     #     "Heavy Oil ", "Diesel ", "Gasoil ", "Naphtha ", "LPG ", "Biodiesel ", "Biogasoline ",
-    #     "Petroleum Coke ", "Oil price ", "Fuel ",
+    #     "Petroleum Coke ", "Oil price ", 
+    #     # "Fuel ",
+    #     "harga minyak ", "fuel cost ", "fuel price "
     # ],
-    # "Petro ": [
-    #     "chemical ", "petrochemical ", "aromatic ", "olefin ", "polymer ", "LPG ",
+    # "Petrochemical ": [
+    #     "chemical ", "aromatic ", "olefin ", "polymer ", "LPG ",
     #     "Paraxylene ", "Propylene ", "Benzene ", "Green Coke ",
+    #     "petrochemicals ", "petrokimia ", "petrochemical complex ", 
+    #     "aromatic compound ", "BTX aromatic ", "senyawa aromatik ", 
+    #     "green petroleum coke ", "petroleum coke "
     # ],
-    # "LCOE ": ["harga jual listrik EBT ", "harga listrik EBT ", "tarif listrik EBT "],
-    # "WTE ": ["waste to energy ", "sampah "],
-    # "Pembangkit listrik nuklir ": [],
+    # "LCOE ": [
+    #     "harga jual listrik EBT ", "harga listrik EBT ", "tarif listrik EBT "
+    #     ],
+    # "WTE ": [
+    #     "waste to energy ", 
+    #     # "sampah ", # kecuali foto.bisnis.com and hijau.bisnis.com
+    #     "sampah jadi listrik ", "sampah jadi energi ", "insinerator ", "PSEL "
+    #     ],
+    # "Pembangkit listrik nuklir ": [
+    #     "reaktor nuklir ", "energi nuklir "
+    #     ],
+}
+
+POST_FILTER_RULES = {
+    "bioetanol ": {
+        # Keyword sinonim yang perlu difilter secondary
+        "tebu ": [
+            "etanol", "bioetanol", "biofuel", "e10", "e5", "e20",
+            "molase", "bioenergi", "bahan bakar", "bbm"
+        ],
+        "gula ": [
+            "etanol", "bioetanol", "biofuel", "e10", "e5", "e20",
+            "molase", "bahan bakar"
+        ],
+        "gula tebu ": [
+            "etanol", "bioetanol", "biofuel", "e10", "e5", "e20",
+            "molase", "bahan bakar"
+        ],
+        "industri gula ": [
+            "etanol", "bioetanol", "biofuel", "e10", "e5", "e20",
+            "molase", "bahan bakar"
+        ],
+        # "etanol ": [
+        #     # Artikel harus menyebut konteks Indonesia/energi,
+        #     # untuk menghindari artikel politik luar negeri (misal Trump vs DeSantis)
+        #     "indonesia", "pertamina", "esdm", "bbm", "bensin",
+        #     "mandatori", "bioetanol", "bahan bakar", "impor"
+        # ],
+    }
 }
 
 # Ketenagalistrikan, energi baru dan terbarukan sub-category keyword filters
@@ -96,13 +182,13 @@ NUKLIR_KEYWORDS = ["nuklir ", "PLTN "]
 # Scraping sources per keyword
 
 SUMBER_DICT = {
-    "indeks risiko geopolitik ": [main_bloomberg_technoz],
-    "indeks volatilitas ": [main_bloomberg_technoz],
-    "kurs ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
-    "ihsg ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
-    "inflasi ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bps],
-    "bi rate ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
-    "indonia ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
+    # "indeks risiko geopolitik ": [main_bloomberg_technoz],
+    # "indeks volatilitas ": [main_bloomberg_technoz],
+    # "kurs ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    # "ihsg ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    # "inflasi ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bps],
+    # "bi rate ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
+    # "indonia ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
     # "indeks sales retail ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
     # "indeks kepercayaan konsumen ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
     # "indeks kinerja manufaktur ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
@@ -110,7 +196,7 @@ SUMBER_DICT = {
     # "neraca perdagangan ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bps],
     # "pertumbuhan domestik bruto ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bps],
     # "biodiesel ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    # "bioetanol ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
+    "bioetanol ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
     # "RUPTL ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
     # "harga minyak ": [scrape_kontan_bbm, main_bisnis_indonesia, main_bloomberg_technoz],
     # "volume minyak ": [scrape_kontan_bbm, main_bisnis_indonesia, main_bloomberg_technoz],
@@ -118,7 +204,7 @@ SUMBER_DICT = {
     # "volume produk kilang pertamina ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
     # "SAF ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
     # "RON 92 ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    # "Petro ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
+    # "Petrochemical ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
     # "LCOE ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
     # "WTE ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
     # "Pembangkit listrik nuklir ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
@@ -127,13 +213,13 @@ SUMBER_DICT = {
 # Sheet name → keyword mapping
 
 SHEET_TO_KEYWORD = {
-    "(News)indeks risiko geopolitik": "indeks risiko geopolitik ",
-    "(News)indeks volatilitas": "indeks volatilitas ",
-    "(News)Kurs": "kurs ",
-    "(News)IHSG": "ihsg ",
-    "(News)Inflasi": "inflasi ",
-    "(News)BI Rate": "bi rate ",
-    "(News)Indonia": "indonia ",
+    # "(News)indeks risiko geopolitik": "indeks risiko geopolitik ",
+    # "(News)indeks volatilitas": "indeks volatilitas ",
+    # "(News)Kurs": "kurs ",
+    # "(News)IHSG": "ihsg ",
+    # "(News)Inflasi": "inflasi ",
+    # "(News)BI Rate": "bi rate ",
+    # "(News)Indonia": "indonia ",
     # "(News)indeks sales retail": "indeks sales retail ",
     # "(News)indeks kepercayaan knsmn": "indeks kepercayaan konsumen ",
     # "(News)indeks kinerja manufaktur": "indeks kinerja manufaktur ",
@@ -141,7 +227,7 @@ SHEET_TO_KEYWORD = {
     # "(News)neraca perdagangan": "neraca perdagangan ",
     # "(News)PDB": "pertumbuhan domestik bruto ",
     # "(News)Biodiesel": "biodiesel ",
-    # "(News)Bioetanol": "bioetanol ",
+    "(News)Bioetanol": "bioetanol ",
     # "(News)RUPTL": "RUPTL ",
     # "(News)Harga Minyak": "harga minyak ",
     # "(News)Volume Minyak": "volume minyak ",
@@ -149,7 +235,7 @@ SHEET_TO_KEYWORD = {
     # "(News)Volume Produk Kilang": "volume produk kilang pertamina ",
     # "(News)SAF": "SAF ",
     # "(News)Crackspread_BBM": "RON 92 ",
-    # "(News)Crackspread_NonBBM": "Petro ",
+    # "(News)Crackspread_NonBBM": "Petrochemical ",
     # "(News)Harga EBT": "LCOE ",
     # "(News)Harga WTE": "WTE ",
     # "(News)Nuklir": "Pembangkit listrik nuklir ",
@@ -157,13 +243,13 @@ SHEET_TO_KEYWORD = {
 
 # Sheets to process (must match keys in SHEET_TO_KEYWORD)
 ACTIVE_SHEETS = [
-    "(News)indeks risiko geopolitik",
-    "(News)indeks volatilitas",
-    "(News)Kurs",
-    "(News)IHSG",
-    "(News)Inflasi",
-    "(News)BI Rate",
-    "(News)Indonia",
+    # "(News)indeks risiko geopolitik",
+    # "(News)indeks volatilitas",
+    # "(News)Kurs",
+    # "(News)IHSG",
+    # "(News)Inflasi",
+    # "(News)BI Rate",
+    # "(News)Indonia",
     # "(News)indeks sales retail",
     # "(News)indeks kepercayaan knsmn",
     # "(News)indeks kinerja manufaktur",
@@ -171,7 +257,7 @@ ACTIVE_SHEETS = [
     # "(News)neraca perdagangan",
     # "(News)PDB",
     # "(News)Biodiesel",
-    # "(News)Bioetanol",
+    "(News)Bioetanol",
     # "(News)RUPTL",
     # "(News)Harga Minyak",
     # "(News)Volume Minyak",
@@ -276,6 +362,8 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
     semua_keyword = [keyword] + SINONIM_DICT.get(keyword, [])
     sumber = SUMBER_DICT.get(keyword, [main_kompas, main_bisnis_indonesia, scrape_tempo, scrape_kontan])
 
+    post_filter_rules = POST_FILTER_RULES.get(keyword, {})
+     
     for kata in semua_keyword:
         print(f"\n  Kata kunci: '{kata}'")
         hasil_list = []
@@ -287,20 +375,42 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
 
             try:
                 data = scrape_func(kata, tanggal_filter)
-                if data:
+                if isinstance(data, pd.DataFrame):
+                    df_temp = data
+                elif data:
                     df_temp = pd.DataFrame(data)
+                else:
+                    df_temp = pd.DataFrame()
+
+                if not df_temp.empty:
                     df_temp["source"] = nama_sumber
                     df_temp = standardize_format(df_temp)
                     hasil_list.append(df_temp)
-                    print(f"    → {len(df_temp)} berita dari {nama_sumber}")
+                    print(f"    {len(df_temp)} berita dari {nama_sumber}")
                 else:
-                    print(f"    → Tidak ada berita dari {nama_sumber}")
+                    print(f"    Tidak ada berita dari {nama_sumber}")
+
             except Exception as e:
-                print(f"    ✗ Gagal scrape {nama_sumber}: {e}")
+                print(f"    Gagal scrape {nama_sumber}: {e}")
 
         if hasil_list:
             df_kata = pd.concat(hasil_list, ignore_index=True)
             df_kata["keyword"] = kata
+            
+             # === POST-FILTER (hanya untuk sinonim yang perlu secondary check) ===
+            secondary_terms = post_filter_rules.get(kata)
+            if secondary_terms:
+                before = len(df_kata)
+                pattern = "|".join(secondary_terms)
+                mask = (
+                    df_kata["title"].str.contains(pattern, case=False, na=False) |
+                    df_kata["content"].str.contains(pattern, case=False, na=False)
+                )
+                df_kata = df_kata[mask].copy()
+                after = len(df_kata)
+                print(f"    Post-filter '{kata}': {before} → {after} artikel ({before - after} dibuang)")
+            # =====================================================================
+
             hasil_final = pd.concat([hasil_final, df_kata], ignore_index=True)
 
     return hasil_final if not hasil_final.empty else EMPTY_DF.copy()
@@ -320,8 +430,8 @@ def main():
         print(f"Authentication failed: {e}")
         return
 
-    tanggal_filter = None
-    # tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    # tanggal_filter = "2026-04-01"
+    tanggal_filter = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     print(f"\nTanggal filter: {tanggal_filter}")
 
     # --- Load existing sheets from OneDrive ---

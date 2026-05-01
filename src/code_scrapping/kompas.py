@@ -353,7 +353,7 @@ def scrape_kompas(keyword: str, date: str | datetime | None = None) -> list[dict
 
 # Public Entry Poin
 
-def main_kompas(keyword: str = "MotoGP", tanggal: str = "2025-11-16") -> pd.DataFrame | None:
+def main_kompas(keyword: str = "MotoGP", tanggal: str | None = None) -> pd.DataFrame | None:
     """
     Run Kompas scraping workflow for a keyword and date, returning a standardized DataFrame or None if no results or errors occur.
     """

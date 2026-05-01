@@ -127,7 +127,7 @@ def scrape_news_list_page(driver, target_date: str) -> tuple[list[dict], bool]:
     news_items = driver.find_elements(By.CSS_SELECTOR, SELECTOR_NEWS_ITEM)
     print(f"[Scrape] Found {len(news_items)} articles on this page.")
 
-    target_dt = datetime.strptime(target_date, "%Y-%m-%d")
+    target_dt = datetime.strptime(target_date, "%Y-%m-%d") if target_date else None
 
     for idx, item in enumerate(news_items, start=1):
         try:
@@ -152,12 +152,18 @@ def scrape_news_list_page(driver, target_date: str) -> tuple[list[dict], bool]:
             article_dt = datetime.strptime(iso_date, "%Y-%m-%d")
 
             # Results are newest-first; stop once we pass the target date
-            if article_dt < target_dt:
+            if target_dt is None:
+                matched_articles.append({
+                    "title":   title,
+                    "date":    iso_date,
+                    "url":     url,
+                    "content": None,  # Full content is fetched in a later pass
+                })
+            elif article_dt < target_dt:
                 print(f"[Scrape] #{idx}: Article dated {iso_date} is older than target — stopping.")
                 should_stop = True
                 break
-
-            if iso_date == target_date:
+            elif iso_date == target_date:
                 print(f"[Scrape] #{idx}: MATCH — {title[:60]}... ({iso_date})")
                 matched_articles.append({
                     "title":   title,
@@ -240,7 +246,7 @@ def fetch_article_content(driver, url: str) -> str:
 
 # Orchestration
 
-def scrape_bi_news(url: str, keyword: str, target_date: str, headless: bool = True) -> list[dict]:
+def scrape_bi_news(url: str, keyword: str, target_date: str | None = None, headless: bool = True) -> list[dict]:
     """
     Scrape BI news articles matching the target date and fetch their content.
     """
@@ -310,7 +316,7 @@ def scrape_bi_news(url: str, keyword: str, target_date: str, headless: bool = Tr
 
 # Public Entry Point
 
-def main_bank_indonesia(keyword: str, target_date: str) -> pd.DataFrame | None:
+def main_bank_indonesia(keyword: str, target_date: str | None = None) -> pd.DataFrame | None:
     """
     Return BI news articles for the given keyword and date as a DataFrame.
     """

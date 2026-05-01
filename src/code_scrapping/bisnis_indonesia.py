@@ -166,6 +166,9 @@ def parse_article_card(item, target_date: str, target_dt: datetime) -> tuple[dic
 
         article_dt = datetime.strptime(iso_date, "%Y-%m-%d")
 
+        if target_dt is None:
+            return {"judul": title, "link": link, "tanggal": iso_date}, False  # ambil semua
+
         if article_dt < target_dt:
             # Article is older than target — signal caller to stop pagination
             return None, True
@@ -183,12 +186,12 @@ def parse_article_card(item, target_date: str, target_dt: datetime) -> tuple[dic
 
 # Orchestration
 
-def scrape_bisnis_news(keyword: str, target_date: str) -> list[dict]:
+def scrape_bisnis_news(keyword: str, target_date: str | None = None) -> list[dict]:
     """
     Scrape Bisnis.com articles for the given keyword and publication date.
     """
     matched_articles: list[dict] = []
-    target_dt = datetime.strptime(target_date, "%Y-%m-%d")
+    target_dt = datetime.strptime(target_date, "%Y-%m-%d") if target_date else None
 
     # --- Fetch page 1 and read total page count ---
     print(f"[Scrape] Fetching page 1 to check pagination...")
@@ -234,7 +237,8 @@ def scrape_bisnis_news(keyword: str, target_date: str) -> list[dict]:
 
             time.sleep(REQUEST_DELAY_SECONDS)
 
-    print(f"\n[Scrape] List scraping complete. {len(matched_articles)} article(s) matched on {target_date}.")
+    date_info = target_date if target_date else "all dates"
+    print(f"[Scrape] List scraping complete. {len(matched_articles)} article(s) matched on {date_info}.")
 
     # --- Fetch full article content for each matched article ---
     if matched_articles:
@@ -251,13 +255,13 @@ def scrape_bisnis_news(keyword: str, target_date: str) -> list[dict]:
 
 def main_bisnis_indonesia(
     keyword: str = "Purbaya",
-    tanggal: str = "2025-11-12",
+    tanggal: str | None = None,
 ) -> pd.DataFrame | None:
     """
     Run Bisnis.com scraping and return results as a DataFrame.
     """
     # Normalise any supported date format to ISO before passing downstream
-    iso_date = normalize_to_iso_date(tanggal)
+    iso_date = normalize_to_iso_date(tanggal) if tanggal else None
     if not iso_date:
         print(f"[Main] Warning: could not normalise tanggal='{tanggal}' — using as-is.")
         iso_date = tanggal
@@ -291,8 +295,8 @@ if __name__ == "__main__":
     load_dotenv()  # Load .env only when run directly, not when imported
 
     result = main_bisnis_indonesia(
-        keyword="Purbaya",
-        tanggal="2025-11-12",
+        keyword="sawit ",
+        tanggal="2026-01-14",
     )
 
     if result is not None:
