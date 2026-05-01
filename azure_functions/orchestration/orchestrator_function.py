@@ -121,16 +121,55 @@ CATEGORY_KEYWORDS = {
         'bi rate', 'suku bunga', 'bunga bi'],
     'Indonia': [
         'indonia'],
+    'indeks kinerja manufaktur': [
+        'purchasing manufaktur index', 'manufaktur index',
+        'purchasing manufacturing index', 'manufacturing pmi',
+        'kinerja manufaktur', 'pmi manufaktur', 'pmi indonesia'],
+    'indeks kinerja jasa': [
+        'purchasing services index', 'services index', 'services pmi',
+        'kinerja jasa', 'pmi jasa', 'pmi sektor jasa'],
+    'Bioetanol': [
+        'bioetanol', 'tebu', 'gula', 'molase', 'etanol', 'ethanol',
+        'bioethanol', 'tetes tebu', 'gula tebu', 'industri gula'],
     'Crackspread_BBM': [
         'ron 92', 'pertamax', 'ron 95', 'ron 97', 'residual fo',
         'fuel oil', 'jet fuel', 'avtur', 'kerosene', 'refinery',
         'refined products', 'refining', 'oil products',
         'gasoline', 'heavy oil', 'diesel', 'gasoil',
         'naphtha', 'lpg', 'biodiesel', 'biogasoline', 'petroleum coke',
-        'oil price', 'fuel cost', 'fuel price'],
+        'oil price', 'harga minyak', 'fuel cost', 'fuel price'],
     'Crackspread_NonBBM': [
-        'petro', 'chemical', 'petrochemical', 'aromatic', 'olefin', 'polymer',
-        'lpg', 'paraxylene', 'propylene', 'benzene', 'green coke'],
+        'petrochemical', 'petrochemicals', 'petrochemical complex', 'petrokimia',
+        'chemical', 'aromatic', 'aromatic compound', 'btx aromatic', 'senyawa aromatik',
+        'olefin', 'polymer', 'lpg',
+        'paraxylene', 'propylene', 'benzene',
+        'green coke', 'green petroleum coke', 'petroleum coke'],
+}
+
+# Post-filter rules — mirrors POST_FILTER_RULES in
+# src/main/main_news_scrapping_lokal.py. After category classification, articles
+# matched on certain noisy synonyms (e.g. 'tebu', 'gula') are kept only if
+# title or content also mentions one of the secondary terms below.
+# Maps category -> {synonym_keyword: [secondary_terms_required]}.
+POST_FILTER_RULES = {
+    'Bioetanol': {
+        'tebu': [
+            'etanol', 'bioetanol', 'biofuel', 'e10', 'e5', 'e20',
+            'molase', 'bioenergi', 'bahan bakar', 'bbm',
+        ],
+        'gula': [
+            'etanol', 'bioetanol', 'biofuel', 'e10', 'e5', 'e20',
+            'molase', 'bahan bakar',
+        ],
+        'gula tebu': [
+            'etanol', 'bioetanol', 'biofuel', 'e10', 'e5', 'e20',
+            'molase', 'bahan bakar',
+        ],
+        'industri gula': [
+            'etanol', 'bioetanol', 'biofuel', 'e10', 'e5', 'e20',
+            'molase', 'bahan bakar',
+        ],
+    },
 }
 
 
@@ -140,14 +179,30 @@ def _classify_article_categories(title: str, content: str) -> list:
     CATEGORY_KEYWORDS. Returns list of matching category names.
     Returns [] when no keyword matches — articles without a category are dropped
     by the caller (mirrors src behaviour where unmatched articles are not scraped).
+
+    Applies POST_FILTER_RULES as a secondary check: when a category is matched
+    only via a noisy synonym (e.g. 'tebu' for Bioetanol), the article is kept
+    only if title or content also contains one of the required secondary terms.
+    Mirrors POST_FILTER_RULES in src/main/main_news_scrapping_lokal.py.
     """
     text = f"{title} {content}".lower()
     matched = []
     for category, keywords in CATEGORY_KEYWORDS.items():
+        matched_kw = None
         for kw in keywords:
             if kw.lower() in text:
-                matched.append(category)
-                break  # one match per category is enough
+                matched_kw = kw.lower()
+                break
+        if matched_kw is None:
+            continue
+
+        post_rules = POST_FILTER_RULES.get(category, {})
+        secondary_terms = post_rules.get(matched_kw)
+        if secondary_terms:
+            if not any(term.lower() in text for term in secondary_terms):
+                continue  # noisy synonym matched but no secondary term — drop
+
+        matched.append(category)
     return matched
 
 

@@ -196,11 +196,29 @@ class SAndPNewsScraper(BaseNewsScraper):
             
             # Search for articles
             results = await self._search_news(query, start_str, end_str, max_articles)
-            
+
+            # Deduplicate by (title, updatedDate) — mirrors src/code_scrapping/scrape_sandp_news.py
+            if results:
+                seen = set()
+                unique_results = []
+                for item in results:
+                    title_key = (item.get('headline') or "").strip().lower()
+                    date_key = item.get('updatedDate') or ""
+                    key = (title_key, date_key)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    unique_results.append(item)
+                if len(unique_results) != len(results):
+                    self.logger.info(
+                        f"Deduplicated S&P results: {len(results)} -> {len(unique_results)}"
+                    )
+                results = unique_results
+
             if not results:
                 self.logger.info("No articles found")
                 return []
-            
+
             self.logger.info(f"Found {len(results)} articles, fetching content...")
             
             articles = []

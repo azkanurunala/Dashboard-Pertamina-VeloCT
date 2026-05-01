@@ -24,6 +24,11 @@ from scrapers.exceptions import ScrapingError, NetworkError, ContentExtractionEr
 from shared.models import NewsArticle, ScrapingConfig
 
 
+# Subdomains to exclude from Kontan scraping results.
+# Mirrors src/code_scrapping/kontan.py EXCLUDED_SUBDOMAINS.
+EXCLUDED_SUBDOMAINS = ["insight.kontan.co.id"]
+
+
 class KontanNewsScraper(BaseNewsScraper):
     """
     Kontan News Scraper implementation.

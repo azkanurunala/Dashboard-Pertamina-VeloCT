@@ -226,15 +226,35 @@ class TempoNewsScraper(BaseNewsScraper):
                 all_articles_info = all_articles_info[:max_articles]
                 self.logger.info(f"Limited to {max_articles} articles for processing")
             
+            # Compile keyword patterns for post-filter on title+content (case-insensitive,
+            # no word boundary — mirrors src/code_scrapping/tempo.py behaviour)
+            keyword_patterns = []
+            for kw in (keywords or []):
+                kw_lower = (kw or "").lower().lstrip()
+                if kw_lower:
+                    keyword_patterns.append(re.compile(re.escape(kw_lower), re.IGNORECASE))
+
             # Extract content for each article
             articles = []
             for i, article_data in enumerate(all_articles_info):
                 try:
                     self.logger.info(f"Processing article {i+1}/{len(all_articles_info)}: {article_data['title'][:60]}...")
-                    
+
                     # Extract content
                     content = await self._extract_article_content(article_data['url'])
-                    
+
+                    if keyword_patterns:
+                        title_text = article_data['title'] or ""
+                        content_text = content or ""
+                        if not any(
+                            p.search(title_text) or p.search(content_text)
+                            for p in keyword_patterns
+                        ):
+                            self.logger.debug(
+                                f"Skip: keywords not found in title/content: {title_text!r}"
+                            )
+                            continue
+
                     # Parse published date
                     published_date = datetime.utcnow()
                     if article_data['date']:

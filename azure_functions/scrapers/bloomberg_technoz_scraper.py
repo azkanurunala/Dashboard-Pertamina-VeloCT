@@ -291,22 +291,36 @@ class BloombergTechnozScraper(BaseNewsScraper):
                 return []
             
             self.logger.info(f"Found {len(all_articles)} articles, extracting content...")
-            
+
+            # Compile keyword pattern for post-filter (whole-word, case-insensitive)
+            keyword_pattern = None
+            if query:
+                keyword_pattern = re.compile(
+                    r"\b" + re.escape(query.strip()) + r"\b", re.IGNORECASE
+                )
+
             # Extract content for each article
             articles = []
             for i, article_data in enumerate(all_articles):
                 try:
                     self.logger.info(f"Processing {i+1}/{len(all_articles)}: {article_data['title'][:60]}...")
-                    
+
                     content = await self._extract_article_content(article_data['url'])
-                    
+
+                    if keyword_pattern is not None:
+                        title_text = article_data['title'] or ""
+                        content_text = content or ""
+                        if not keyword_pattern.search(title_text) and not keyword_pattern.search(content_text):
+                            self.logger.debug(f"Skip: keyword '{query.strip()}' not found in {title_text!r}")
+                            continue
+
                     article = self._create_article(
                         title=article_data['title'],
                         content=content,
                         url=article_data['url'],
                         published_date=datetime.strptime(article_data['date'], '%Y-%m-%d')
                     )
-                    
+
                     articles.append(article)
                     await asyncio.sleep(1.0)
                     
