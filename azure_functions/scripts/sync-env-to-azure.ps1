@@ -18,7 +18,12 @@ param(
     [string[]]$Skip           = @(
         "TEST_MODE", "USE_MOCK_SERVICES", "DEBUG_MODE",
         "MOCK_EXTERNAL_SERVICES", "FUNCTIONS_WORKER_PYTHON_PATH",
-        "PROPERTY_TEST_ITERATIONS"
+        "PROPERTY_TEST_ITERATIONS",
+        # App Insights settings must come from azure_settings.json or the portal,
+        # never from .env (which holds test-only mock values that would break
+        # production telemetry). See AZURE_OPENAI_MIGRATION.md for the incident.
+        "APPINSIGHTS_INSTRUMENTATIONKEY",
+        "APPLICATIONINSIGHTS_CONNECTION_STRING"
     ),
     [switch]$DryRun
 )

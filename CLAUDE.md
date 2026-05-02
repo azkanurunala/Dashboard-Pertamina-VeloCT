@@ -2,9 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **🔥 Required reading before any AI-provider / sentiment / scraper-OCR work:** [AZURE_OPENAI_MIGRATION.md](AZURE_OPENAI_MIGRATION.md). The system was migrated from Gemini to Azure OpenAI (`gpt-5.4-mini`) on 2026-04-30; that file captures decisions, env vars, gotchas, pending follow-ups, and how to verify the migration is live.
+
+@AZURE_OPENAI_MIGRATION.md
+
 ## Project Overview
 
-This is an **Azure Functions-based automated news scraping and data aggregation system** for Pertamina's energy sector dashboard. It scrapes news from 18+ sources and structured data (oil prices, biofuels, nuclear) from government/market APIs, classifies articles by energy topic via keyword matching, runs AI sentiment analysis via Gemini, and stores everything in Azure SQL Server for Power BI consumption.
+This is an **Azure Functions-based automated news scraping and data aggregation system** for Pertamina's energy sector dashboard. It scrapes news from 18+ sources and structured data (oil prices, biofuels, nuclear) from government/market APIs, classifies articles by energy topic via keyword matching, runs AI sentiment analysis via **Azure OpenAI (gpt-5.4-mini)** (was Gemini before 2026-04-30), and stores everything in Azure SQL Server for Power BI consumption.
 
 All active code lives in `azure_functions/`. The `src/` directory is legacy.
 
