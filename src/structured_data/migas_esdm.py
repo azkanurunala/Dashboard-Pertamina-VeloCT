@@ -1,0 +1,361 @@
+from email.mime import text
+import os
+import re
+import requests
+import pandas as pd
+from bs4 import BeautifulSoup
+from datetime import datetime
+import fitz
+from PIL import Image
+import easyocr
+import io
+import numpy as np
+from io import BytesIO
+from openpyxl import load_workbook
+from dotenv import load_dotenv
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from helpers.onedrive_helper import (
+    get_access_token,
+    download_excel_from_onedrive,
+    upload_excel_to_onedrive
+)
+
+load_dotenv()
+
+ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_DATA_PATH", "/results/(Terstruktur)Data Scraping.xlsx")
+SHEET_NAME = "(Data)Harga Minyak"
+
+_MONTH_TO_NUMBER = {
+    'januari': 1, 'februari': 2, 'maret': 3, 'april': 4, 'mei': 5, 'juni': 6,
+    'juli': 7, 'agustus': 8, 'september': 9, 'oktober': 10, 'november': 11, 'desember': 12
+}
+_NUMBER_TO_MONTH = {v: k.capitalize() for k, v in _MONTH_TO_NUMBER.items()}
+reader = easyocr.Reader(['id', 'en'], gpu=False)
+_MONTH_PATTERN = r"(?:Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)"
+_PRICE_PATTERN = r"US\$[\s]*([\d.,]+)"
+_DATE_PATTERN = rf"Ditetapkan\s+di\s+Jakarta.*?\s+(\d{{1,2}})\s+({_MONTH_PATTERN})\s+(\d{{4}}).*?(?:MENTERI\s+ENERGI|BAHLIL|ttd)"
+
+# ============================== FUNGSI: Baca Excel ==============================
+def read_last_entry_from_excel(access_token, sheet_name):
+    try:
+        excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
+        if excel_buffer is None:
+            print(f"File Excel tidak ditemukan di OneDrive: {ONEDRIVE_FILE_PATH}")
+            return None, None
+        excel_buffer.seek(0)
+        df = pd.read_excel(excel_buffer, sheet_name=sheet_name, engine='openpyxl')
+        if df.empty or "Bulan" not in df.columns or "Tahun" not in df.columns:
+            print("Sheet kosong atau format salah. Semua PDF akan diunduh.")
+            return None, None
+        df["Bulan"] = df["Bulan"].astype(str).str.lower()
+        df["Bulan_Angka"] = df["Bulan"].map(_MONTH_TO_NUMBER)
+        df = df.dropna(subset=["Bulan_Angka"])
+        if df.empty:
+            print("Tidak ada data valid di Excel. Semua PDF akan diunduh.")
+            return None, None
+        df_sorted = df.sort_values(["Tahun", "Bulan_Angka"])
+        last_row = df_sorted.iloc[-1]
+        print(f"Data terakhir di Excel: {last_row['Bulan'].capitalize()} {int(last_row['Tahun'])}")
+        return int(last_row["Tahun"]), int(last_row["Bulan_Angka"])
+    except ValueError:
+        print(f"Sheet '{sheet_name}' tidak ditemukan. Semua PDF akan diunduh.")
+        return None, None
+    except Exception as e:
+        print(f"Error membaca Excel: {e}")
+        return None, None
+
+# ============================== FUNGSI: Fetch HTML ==============================
+def fetch_html_from_website(url: str):
+    try:
+        headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/121.0.0.0 Safari/537.36"
+        )}
+        response = requests.get(url, headers=headers, timeout=30)
+        response.raise_for_status()
+        print("Berhasil mengambil HTML dari website")
+        return response.text
+    except requests.exceptions.RequestException as e:
+        print(f"Error mengakses website: {e}")
+        return None
+
+# ============================== FUNGSI: Ambil Link PDF ==============================
+def extract_relevant_pdf_links(html_content: str, last_year: int | None, last_month: int | None):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    pdf_links = {}
+    tahun_pattern = re.compile(r"20\d{2}")
+    rows = soup.find_all("tr")
+    tahun_row, data_row = next(
+        ((row, rows[i + 1]) for i, row in enumerate(rows[:-1])
+         if any(td.find("b") and tahun_pattern.search(td.find("b").get_text()) for td in row.find_all("td"))),
+        (None, None)
+    )
+    if not tahun_row or not data_row:
+        print("Tidak ditemukan struktur tabel yang valid.")
+        return {}
+    tahun_list = [
+        int(match.group())
+        for td in tahun_row.find_all("td")
+        if (match := tahun_pattern.search(td.get_text()))
+    ]
+    if not tahun_list:
+        print("Tidak ada tahun yang valid ditemukan.")
+        return {}
+    print(f"Ditemukan data untuk tahun: {sorted(set(tahun_list))}")
+    tahun_mulai = last_year or min(tahun_list)
+    data_tds = data_row.find_all("td")
+    for tahun, td in zip(tahun_list, data_tds):
+        if tahun < tahun_mulai:
+            continue
+        for a in td.find_all("a", href=True):
+            bulan_text = a.text.strip().lower()
+            bulan_angka = _MONTH_TO_NUMBER[bulan_text]
+            if tahun == tahun_mulai and last_month and bulan_angka <= last_month:
+                continue
+            href = a["href"]
+            if not href.startswith("http"):
+                href = f"https://migas.esdm.go.id{href}"
+            pdf_links.setdefault(tahun, []).append({
+                "Bulan": bulan_text.capitalize(),
+                "Bulan_Angka": bulan_angka,
+                "url": href
+            })
+    return pdf_links
+
+# ============================== FUNGSI: Download PDF ==============================
+def download_pdfs(pdf_links: dict, folder: str = "../results/hasil-migas-esdm-pdf"):
+    os.makedirs(folder, exist_ok=True)
+    total = sum(len(v) for v in pdf_links.values())
+    print(f"\nMulai download {total} file PDF...\n")
+    for tahun, items in pdf_links.items():
+        for item in items:
+            bulan, url = item["Bulan"], item["url"]
+            filename = f"{tahun}_{bulan}.pdf"
+            path = os.path.join(folder, filename)
+            try:
+                print(f"Downloading {filename} ...")
+                response = requests.get(url, timeout=60)
+                response.raise_for_status()
+                with open(path, "wb") as f:
+                    f.write(response.content)
+                print(f"Selesai: {filename}")
+            except Exception as e:
+                print(f"Gagal download {filename}: {e}")
+
+# ============================== OCR & Ekstraksi Harga dan Bulan ==============================
+def clean_ocr_text(text: str) -> str:
+    text = re.sub(r'\bUSS(\d)', r'US$\1', text)
+    text = re.sub(r'\bUS8(\d{2,3}[.,]\d{2})', r'US$\1', text)
+    text = re.sub(r'\bU\s*[Ss]\s*[8S\$]?\s*(?=\d)', 'US$', text)
+    return text
+
+def extract_icp_from_pdf(filepath: str, start_page: int = 2, end_page: int = 7):
+    try:
+        pdf = fitz.open(filepath)
+        total_pages = len(pdf)
+        start_idx, end_idx = max(0, start_page - 1), min(end_page, total_pages)
+        _KEYWORD_PATTERN = r'harga\s+rata[\s-]+rata\s+minyak\s+mentah'
+        find_month = None
+        find_price = None
+        find_date = None
+        find_brent = None
+        for i in range(start_idx, end_idx):
+            page = pdf[i]
+            pix = page.get_pixmap(dpi=300)
+            img = Image.open(io.BytesIO(pix.tobytes()))
+            results = reader.readtext(np.array(img), detail=0)
+            text = " ".join(results)
+            text = clean_ocr_text(text)
+            # print(f"\n--- Halaman {i+1} ---")
+            # print(text)
+            if not find_date:
+                tanggal_match = re.search(_DATE_PATTERN, text, re.IGNORECASE | re.DOTALL)
+                if tanggal_match:
+                    day = tanggal_match.group(1)
+                    month_nama = tanggal_match.group(2).capitalize()
+                    find_date = f"{day} {month_nama}"
+            if not find_brent:
+                text_upper = text.upper()
+                pattern_slc = r"(?:S\s*L\s*C|SLC)\s+(\d{1,3}[.,]\d{2})"
+                match_brent = re.search(pattern_slc, text_upper)
+                if match_brent:
+                    brent_str = match_brent.group(1).replace(",", ".")
+                    find_brent = float(brent_str)
+                    print(f"Dated Brent: US${find_brent}")
+            if (not find_price or not find_month) and re.search(_KEYWORD_PATTERN, text, re.IGNORECASE):
+                sentences = re.split(r'[.!?]\s+', text)
+                for sentence in sentences:
+                    if not re.search(_KEYWORD_PATTERN, sentence, re.IGNORECASE):
+                        continue
+                    bulan_match = re.search(_MONTH_PATTERN, sentence, re.IGNORECASE)
+                    harga_match = re.search(_PRICE_PATTERN, sentence)
+                    if bulan_match and harga_match:
+                        find_month = bulan_match.group(0).capitalize() 
+                        clean_price = (
+                            harga_match.group(1)
+                            .replace(".", "")  
+                            .replace(",", ".")  
+                            .strip()
+                        )
+                        find_price = float(clean_price)
+                        break 
+            if find_month and find_price and find_date and find_brent:
+                break 
+        return find_month, find_price, find_date, find_brent
+    except Exception as e:
+        print(f"Error membaca {os.path.basename(filepath)}: {e}")
+        return None, None, None, None
+
+def extract_icp_from_all_pdfs(folder: str = "../results/hasil-migas-esdm-pdf"):
+    results = []
+    pdf_files = [f for f in os.listdir(folder) if f.lower().endswith(".pdf")]
+    print(f"\nMengekstrak {len(pdf_files)} file PDF...\n")
+    for file in sorted(pdf_files):
+        filepath = os.path.join(folder, file)
+        bulan, harga, tanggal, harga_brent = extract_icp_from_pdf(filepath)
+        if bulan and harga:
+            match = re.match(r"(\d{4})_", file)
+            tahun = int(match.group(1)) if match else None
+            results.append({
+                "Tahun": tahun, 
+                "Bulan": bulan, 
+                "Harga": f"{harga}",
+                "Harga_Brent": f"{harga_brent}" if harga_brent else None,
+                "Tanggal": tanggal 
+            })
+            try:
+                os.remove(filepath)
+            except Exception as e:
+                print(f"Gagal hapus {file}: {e}")
+        else:
+            print(f"{file}: Tidak ditemukan harga ICP")
+    return pd.DataFrame(results)
+
+# ============================== FUNGSI: Simpan ke OneDrive ==============================
+def save_to_onedrive(access_token, df: pd.DataFrame, sheet_name: str):
+    print("Menyimpan hasil ke OneDrive...")
+    if df.empty:
+        print("DataFrame kosong, tidak ada yang disimpan")
+        return
+    excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
+    if excel_buffer is None:
+        print("File tidak ada di OneDrive, akan membuat baru")
+        df_combined = df
+    else:
+        try:
+            excel_buffer.seek(0)
+            existing_df = pd.read_excel(excel_buffer, sheet_name=sheet_name, engine='openpyxl')
+            df_combined = pd.concat([existing_df, df], ignore_index=True)
+            df_combined.drop_duplicates(subset=["Tahun", "Bulan"], keep="last", inplace=True)
+            df_combined["Bulan_Lower"] = df_combined["Bulan"].astype(str).str.lower()
+            df_combined["Bulan_Angka"] = df_combined["Bulan_Lower"].map(_MONTH_TO_NUMBER)
+            df_combined = df_combined.sort_values(["Tahun", "Bulan_Angka"])
+            df_combined = df_combined.drop(columns=["Bulan_Lower", "Bulan_Angka"])
+            print(f"Merged with existing data. Total rows: {len(df_combined)}")
+        except ValueError:
+            print(f"Sheet '{sheet_name}' tidak ditemukan, membuat sheet baru")
+            df_combined = df
+        except Exception as e:
+            print(f"Error membaca file Excel lama dari OneDrive: {e}")
+            df_combined = df
+    output_buffer = BytesIO()
+    try:
+        if excel_buffer is None:
+            with pd.ExcelWriter(output_buffer, engine='openpyxl', mode='w') as writer:
+                df_combined.to_excel(writer, sheet_name=sheet_name, index=False)
+        else:
+            excel_buffer.seek(0)
+            wb = load_workbook(excel_buffer)
+            visible_sheets = [s for s in wb.worksheets if s.sheet_state == 'visible']
+            if len(visible_sheets) == 0:
+                wb.worksheets[0].sheet_state = 'visible'
+                wb.active = 0
+            for sheet in wb.worksheets:
+                if sheet.sheet_state != 'visible':
+                    sheet.sheet_state = 'visible'
+            if sheet_name in wb.sheetnames:
+                del wb[sheet_name]
+            ws = wb.create_sheet(sheet_name)
+            for col_idx, col_name in enumerate(df_combined.columns, 1):
+                ws.cell(row=1, column=col_idx, value=col_name)
+            for row_idx, row_data in enumerate(df_combined.values, 2):
+                for col_idx, value in enumerate(row_data, 1):
+                    ws.cell(row=row_idx, column=col_idx, value=value)
+            wb.save(output_buffer)
+            wb.close()
+        output_buffer.seek(0)
+        verify_wb = load_workbook(output_buffer)
+        print(f"Verifikasi - Sheet di buffer: {verify_wb.sheetnames}")
+        verify_wb.close()
+        output_buffer.seek(0)
+        print(f"\nUploading ke OneDrive: {ONEDRIVE_FILE_PATH}")
+        upload_excel_to_onedrive(access_token, ONEDRIVE_FILE_PATH, output_buffer)
+        print("Upload selesai!")
+        print(f"Saved to OneDrive: {ONEDRIVE_FILE_PATH}")
+        print(f"Sheet: {sheet_name}")
+        print(f"Total records: {len(df_combined)}")
+    except Exception as e:
+        print(f"Error saving to OneDrive: {e}")
+        import traceback
+        traceback.print_exc()
+
+# ============================== MAIN ==============================
+def main_price_esdm():
+    URL = "https://www.migas.esdm.go.id/post/read/harga-minyak-mentah"
+    print("="*80)
+    print("SCRAPER ICP MIGAS ESDM (OneDrive)")
+    print("="*80)
+    print(f"OneDrive file: {ONEDRIVE_FILE_PATH}")
+    print(f"Sheet: {SHEET_NAME}")
+    print("\nAuthenticating to Microsoft Graph API...")
+    try:
+        access_token = get_access_token()
+        print("Authentication successful")
+    except Exception as e:
+        print(f"Authentication failed: {e}")
+        return
+    last_year, last_month = read_last_entry_from_excel(access_token, SHEET_NAME)
+    html = fetch_html_from_website(URL)
+    if not html:
+        return
+    pdf_links = extract_relevant_pdf_links(html, last_year, last_month)
+    if not pdf_links:
+        print("Tidak ada PDF baru.")
+        return
+    download_pdfs(pdf_links)
+    df = extract_icp_from_all_pdfs("../results/hasil-migas-esdm-pdf")
+    if not df.empty:
+        print("\nHasil Akhir (preview):")
+        print(df.head().to_string(index=False))
+        save_to_onedrive(access_token, df, SHEET_NAME)
+    else:
+        print("Tidak ada data yang berhasil diekstrak.")
+
+if __name__ == "__main__":
+    URL = "https://www.migas.esdm.go.id/post/read/harga-minyak-mentah"
+    print("="*80)
+    print("SCRAPER ICP MIGAS ESDM (OneDrive)")
+    print("="*80)
+    print(f"OneDrive file: {ONEDRIVE_FILE_PATH}")
+    print(f"Sheet: {SHEET_NAME}")
+    print("\nAuthenticating to Microsoft Graph API...")
+    try:
+        access_token = get_access_token()
+        print("Authentication successful")
+    except Exception as e:
+        print(f"Authentication failed: {e}")
+    last_year, last_month = read_last_entry_from_excel(access_token, SHEET_NAME)
+    html = fetch_html_from_website(URL)
+    pdf_links = extract_relevant_pdf_links(html, last_year, last_month)
+    download_pdfs(pdf_links)
+    df = extract_icp_from_all_pdfs("../results/hasil-migas-esdm-pdf")
+    if not df.empty:
+        print("\nHasil Akhir (preview):")
+        print(df.head().to_string(index=False))
+    else:
+        print("Tidak ada data yang berhasil diekstrak.")
