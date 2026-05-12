@@ -48,29 +48,29 @@ SINONIM_DICT: dict[str, list[str]] = {
     #     "services index ", "services pmi ",
     # ],
 
-    # ### Hulu Migas ###
+    # # ### Hulu Migas ###
     # "oil price ": ["crude oil "],
     # "oil volume ": ["bbm volume "],
 
-    ## Produk Kilang Pertamina ###
-    "pertamina oil price ": ["oil price "],
-    "pertamina oil volume ": ["oil volume ", "bbm volume "],
-    "RON 92 ": [
-        "pertamax ", "RON 95 ", "RON 97 ", "Residual FO ", "Fuel Oil", "Jet Fuel ", "Avtur ",
-        "Kerosene ", "refinery ", "refined products ", "refining ", "oil products ", "Gasoline ",
-        "Heavy Oil ", "Diesel ", "Gasoil ", "Naphtha ", "LPG ", "Biodiesel ", "Biogasoline ",
-        "Petroleum Coke ", "Oil price ", "fuel cost ", "fuel price ",
-    ],
-
-    # ### Petrokimia Hulu ###
-    # "Petrochemical ": [
-    #     "chemical ", "aromatic ", "olefin ", "polymer ", "LPG ",
-    #     "Paraxylene ", "Propylene ", "Benzene ", "Green Coke ",
-    #     "petrochemicals ", "petrokimia ", "petrochemical complex ",
-    #     "aromatic compound ", "BTX aromatic ", "senyawa aromatik ",
-    #     "green petroleum coke ", "petroleum coke ", "polyethylene",
-    #     "polypropylene", "etilena", "propilena",
+    # ## Produk Kilang Pertamina ###
+    # "pertamina oil price ": ["oil price "],
+    # "pertamina oil volume ": ["oil volume ", "bbm volume "],
+    # "RON 92 ": [
+    #     "pertamax ", "RON 95 ", "RON 97 ", "Residual FO ", "Fuel Oil", "Jet Fuel ", "Avtur ",
+    #     "Kerosene ", "refinery ", "refined products ", "refining ", "oil products ", "Gasoline ",
+    #     "Heavy Oil ", "Diesel ", "Gasoil ", "Naphtha ", "LPG ", "Biodiesel ", "Biogasoline ",
+    #     "Petroleum Coke ", "Oil price ", "fuel cost ", "fuel price ",
     # ],
+
+    # # ### Petrokimia Hulu ###
+    "Petrochemical ": [
+        "chemical ", "aromatic ", "olefin ", "polymer ", "LPG ",
+        "Paraxylene ", "Propylene ", "Benzene ", "Green Coke ",
+        "petrochemicals ", "petrokimia ", "petrochemical complex ",
+        "aromatic compound ", "BTX aromatic ", "senyawa aromatik ",
+        "green petroleum coke ", "petroleum coke ", "polyethylene",
+        "polypropylene", "etilena", "propilena",
+    ],
 
     # ### Bioenergi ###
     # "SAF ": [
@@ -79,6 +79,73 @@ SINONIM_DICT: dict[str, list[str]] = {
     # ],
 }
 
+# EXCLUDE & FILTER RULES
+
+# --- Global exclude berbasis judul (berlaku semua topik) ---
+GLOBAL_EXCLUDE_TITLE_PATTERNS: list[str] = [
+    # Platts — geopolitik murni
+    "daily update on the war",
+    "altview:",
+    "first take:",
+    "what we are hearing",
+    # Platts — pangan/fertilizer
+    "fertecon daily",
+    "rice daily",
+    # Platts — freight/shipping murni
+    "supramax",
+    "panamax",
+    "container freight",
+]
+
+# --- Global exclude berbasis konten (energiesmedia sains non-relevan) ---
+GLOBAL_EXCLUDE_CONTENT_PATTERNS: list[str] = [
+    "tiny slippery bubbles",
+    "tidal turbine mimics snakes",
+    "supervolcano filling with magma",
+    "lemons hidden energy source",
+    "magnetic levitation fields",
+    "kryptonite twin",
+    "lab-grown crystals",
+    "solar panel like liquid paint",
+    "bats rather disappear",
+    "moon dust hold",
+    "dam lake 24 billion",
+    "hawaii wastes volcanic energy",
+    "blue white solar bricks",
+    "offshore wind farms vast walls",
+]
+
+# --- Post-filter SAF (include filter per sinonim) ---
+_SAF_TERMS_STRICT: list[str] = [
+    "saf", "sustainable aviation fuel", "aviation fuel",
+    "jet fuel", "airline", "aviation",
+    "uco", "used cooking oil", "hefa",
+    "biorefinery", "pome",
+    "renewable diesel", "hvo",
+]
+
+_CORSIA_TERMS: list[str] = [
+    "saf", "sustainable aviation fuel", "aviation",
+    "airline", "jet fuel", "corsia offset",
+]
+
+POST_FILTER_RULES_INTL: dict[str, dict[str, list[str]]] = {
+    "SAF ": {
+        "used cooking oil ":          _SAF_TERMS_STRICT,
+        "UCO ":                       _SAF_TERMS_STRICT,
+        "biorefinery ":               _SAF_TERMS_STRICT,
+        "CORSIA ":                    _CORSIA_TERMS,
+        "sustainable aviation fuel ": _SAF_TERMS_STRICT,
+    },
+    "purchasing manufaktur index ": {
+        "manufacturing pmi ":          ["pmi", "purchasing", "manufaktur", "manufacturing index"],
+        "purchasing manufacturing index": ["pmi", "purchasing", "manufaktur", "manufacturing index"],
+    },
+    "purchasing services index ": {
+        "services pmi ":   ["pmi", "purchasing", "services index", "jasa"],
+        "services index ": ["pmi", "purchasing", "services index", "jasa"],
+    },
+}
 
 # SCRAPING SOURCES PER KEYWORD
 
@@ -90,17 +157,17 @@ SUMBER_DICT: dict[str, list] = {
     # "purchasing manufaktur index ": [scrape_news_sap],
     # "purchasing services index ": [scrape_news_sap],
 
-    # ### Hulu Migas ###
+    # # ### Hulu Migas ###
     # "oil price ": [scrape_oilprice],
     # "oil volume ": [scrape_oilprice],
 
-    ### Produk Kilang Pertamina ###
-    "pertamina oil price ": [scrape_oilprice],
-    "pertamina oil volume ": [scrape_oilprice],
-    "RON 92 ": [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn, scrape_energiesmedia, scrape_bioenergytimes, scrape_theguardian],
+    # ### Produk Kilang Pertamina ###
+    # "pertamina oil price ": [scrape_oilprice],
+    # "pertamina oil volume ": [scrape_oilprice],
+    # "RON 92 ": [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn, scrape_energiesmedia, scrape_bioenergytimes, scrape_theguardian],
 
-    # ### Petrokimia Hulu ###
-    # "Petrochemical ": [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn, scrape_energiesmedia, scrape_bioenergytimes],
+    # # ### Petrokimia Hulu ###
+    "Petrochemical ": [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn, scrape_energiesmedia, scrape_bioenergytimes],
 
     # ### Bioenergi ###
     # "SAF ": [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn],
@@ -117,17 +184,17 @@ SHEET_TO_KEYWORD: dict[str, str] = {
     # "(News)Indeks Kinerja Manufaktur": "purchasing manufaktur index ",
     # "(News)Indeks Kinerja Jasa": "purchasing services index ",
 
-    # ### Hulu Migas ###
+    # # ### Hulu Migas ###
     # "(News)Harga Minyak": "oil price ",
     # "(News)Volume Minyak": "oil volume ",
 
-    ### Produk Kilang Pertamina ###
-    "(News)Harga Produk Kilang": "pertamina oil price ",
-    "(News)Volume Produk Kilang": "pertamina oil volume ",
-    "(News)Crackspread BBM": "RON 92 ",
+    # ### Produk Kilang Pertamina ###
+    # "(News)Harga Produk Kilang": "pertamina oil price ",
+    # "(News)Volume Produk Kilang": "pertamina oil volume ",
+    # "(News)Crackspread BBM": "RON 92 ",
 
-    # ### Petrokimia Hulu ###
-    # "(News)Crackspread Non-BBM": "Petrochemical ",
+    # # ### Petrokimia Hulu ###
+    "(News)Crackspread Non-BBM": "Petrochemical ",
 
     # ### Bioenergi ###
     # "(News)SAF": "SAF ",
@@ -141,17 +208,17 @@ ACTIVE_SHEETS: list[str] = [
     # "(News)Indeks Kinerja Manufaktur",
     # "(News)Indeks Kinerja Jasa",
 
-    # ### Hulu Migas ###
+    # # ### Hulu Migas ###
     # "(News)Harga Minyak",
     # "(News)Volume Minyak",
 
-    ### Produk Kilang Pertamina ###
-    "(News)Harga Produk Kilang",
-    "(News)Volume Produk Kilang",
-    "(News)Crackspread BBM",
+    # ### Produk Kilang Pertamina ###
+    # "(News)Harga Produk Kilang",
+    # "(News)Volume Produk Kilang",
+    # "(News)Crackspread BBM",
 
-    # ### Petrokimia Hulu ###
-    # "(News)Crackspread Non-BBM",
+    # # ### Petrokimia Hulu ###
+    "(News)Crackspread Non-BBM",
 
     # ### Bioenergi ###
     # "(News)SAF",
@@ -227,6 +294,43 @@ def generate_date_range(start_date: str, end_date: str) -> list[str]:
         current += timedelta(days=1)
     return dates
 
+def remove_empty_content(df: pd.DataFrame) -> pd.DataFrame:
+    """Buang artikel dengan konten kosong atau N/A."""
+    if df.empty:
+        return df
+    mask = (
+        df["content"].notna() &
+        (df["content"].str.strip() != "N/A") &
+        (df["content"].str.strip() != "")
+    )
+    removed = len(df) - mask.sum()
+    if removed > 0:
+        print(f"    Empty content removed: {removed} article(s)")
+    return df[mask].copy()
+
+def apply_global_exclude(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Buang artikel tidak relevan:
+    - Title-based: pola judul konsisten Platts
+    - Content-based: konten spesifik dari sumber lain (energiesmedia, dll)
+    """
+    if df.empty:
+        return df
+
+    title_pattern = "|".join(re.escape(p) for p in GLOBAL_EXCLUDE_TITLE_PATTERNS)
+    title_mask = df["title"].str.contains(title_pattern, case=False, na=False)
+
+    content_pattern = "|".join(re.escape(p) for p in GLOBAL_EXCLUDE_CONTENT_PATTERNS)
+    content_mask = (
+        df["title"].str.contains(content_pattern, case=False, na=False) |
+        df["content"].str.contains(content_pattern, case=False, na=False)
+    )
+
+    combined_mask = title_mask | content_mask
+    removed = combined_mask.sum()
+    if removed > 0:
+        print(f"    Global exclude: {removed} article(s) removed")
+    return df[~combined_mask].copy()
 
 # CORE SCRAPING LOGIC
 
@@ -238,6 +342,7 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
     hasil_final   = pd.DataFrame()
     semua_keyword = [keyword] + SINONIM_DICT.get(keyword, [])
     sumber        = SUMBER_DICT.get(keyword, [])
+    post_filter_rules = POST_FILTER_RULES_INTL.get(keyword, {})
 
     for kata in semua_keyword:
         print(f"\n  Keyword: '{kata}'")
@@ -260,6 +365,7 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
                 if not df_temp.empty:
                     df_temp["source"] = nama_sumber
                     df_temp = standardize_format(df_temp)
+                    df_temp = remove_empty_content(df_temp)
                     hasil_list.append(df_temp)
                     print(f"    {len(df_temp)} article(s) from {nama_sumber}.")
                 else:
@@ -271,7 +377,21 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
         if hasil_list:
             df_kata            = pd.concat(hasil_list, ignore_index=True)
             df_kata["keyword"] = kata
-            hasil_final        = pd.concat([hasil_final, df_kata], ignore_index=True)
+            
+            secondary_terms = post_filter_rules.get(kata)
+            if secondary_terms:
+                before  = len(df_kata)
+                pattern = "|".join(secondary_terms)
+                mask = (
+                    df_kata["title"].str.contains(pattern, case=False, na=False) |
+                    df_kata["content"].str.contains(pattern, case=False, na=False)
+                )
+                df_kata = df_kata[mask].copy()
+                after   = len(df_kata)
+                print(f"    Post-filter '{kata}': {before} → {after} article(s) ({before - after} removed)")
+
+            df_kata = apply_global_exclude(df_kata)  # ← TAMBAHAN
+            hasil_final = pd.concat([hasil_final, df_kata], ignore_index=True)
 
     return hasil_final if not hasil_final.empty else EMPTY_DF.copy()
 
@@ -295,8 +415,8 @@ def main() -> None:
     # tanggal_list = ["2026-04-21"]
 
     # Mode 2: Range tanggal
-    START_DATE   = "2026-04-29"
-    END_DATE     = "2026-04-30"
+    START_DATE   = "2026-04-17"
+    END_DATE     = "2026-04-23"
     tanggal_list = generate_date_range(START_DATE, END_DATE)
 
     # Mode 3: Kemarin
