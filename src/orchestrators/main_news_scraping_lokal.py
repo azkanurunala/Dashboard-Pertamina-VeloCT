@@ -60,11 +60,9 @@ SINONIM_DICT: dict[str, list[str]] = {
     # "harga minyak ": [
     #     "minyak mentah ", "harga minyak mentah ", "icp ", "wti ", "brent ", "dubai crude price ", "dated brent ",
     # ],
-    "volume minyak ": [
-        # "volume bbm ", 
-        "minyak mentah ", 
-        # "lifting minyak ", "produksi minyak ", "impor minyak mentah ",
-    ],
+    # "volume minyak ": [
+    #     "volume bbm ", "minyak mentah ", "lifting minyak ", "produksi minyak ", "impor minyak mentah ",
+    # ],
     
     # ### Produk Kilang Pertamina ###
     # "harga produk kilang pertamina ": [
@@ -72,11 +70,11 @@ SINONIM_DICT: dict[str, list[str]] = {
     #     "harga bbm pertamina ", "harga pertamax ", "harga pertalite ", "harga solar ", "harga avtur ", "rdmp ",
     #     "harga bensin ", "harga gasoline ", "harga diesel ",
     # ],
-    # "volume produk kilang pertamina ": [
-    #     "bbm ", "volume kilang pertamina ", "volume kilang ", "refinery ", "volume pertamina ",
-    #     "kilang pertamina ", "produksi bbm ", "rdmp ", "kapasitas kilang ", "kilang balikpapan ", "kilang tuban ", "impor bbm ",
-    #     "bbm pertamina ", "pertamax ", "pertalite ", "solar ", "avtur ", "produksi kilang ",
-    # ],
+    "volume produk kilang pertamina ": [
+        "bbm ", "volume kilang pertamina ", "volume kilang ", "refinery ", "volume pertamina ",
+        "kilang pertamina ", "produksi bbm ", "rdmp ", "kapasitas kilang ", "kilang balikpapan ", "kilang tuban ", "impor bbm ",
+        "bbm pertamina ", "pertamax ", "pertalite ", "solar ", "avtur ", "produksi kilang ",
+    ],
     # "RON 92 ": [
     #     "pertamax ", "RON 95 ", "RON 97 ", "Residual FO ", "Fuel Oil", "Jet Fuel ", "Avtur ",
     #     "Kerosene ", "refinery ", "refined products ", "refining ", "oil products ", "Gasoline ",
@@ -161,6 +159,42 @@ _SAMPAH_TERMS: list[str] = [
     "psel", "wte", "waste to energy", "energi listrik", "pltsa", "insinerator",
 ]
 _NUKLIR_ENERGI_TERMS: list[str] = _ENERGI_TERMS + ["pembangkit ", "energi "]
+_BBM_REQUIRED: list[str] = [
+    # Produk BBM spesifik
+    "pertamax", "pertalite", "dexlite", "biosolar",
+    "solar subsidi", "avtur", "spbu",
+    # Isu substantif
+    "harga bbm", "bbm subsidi", "bbm nonsubsidi",
+    "impor bbm", "ekspor bbm", "stok bbm",
+    # Aktor utama
+    "pertamina", "kilang", "esdm", "lifting",
+    "bph migas", "patra niaga",
+    # Dampak langsung
+    "nelayan", "ojol", "logistik",
+    # Kebijakan
+    "subsidi", "nonsubsidi", "kompensasi energi",
+]
+_RDMP_REQUIRED: list[str] = [
+    "kilang", "refinery", "kapasitas", "produksi",
+    "konstruksi", "pembangunan", "rampung", "progress",
+    "investasi", "onstream", "commissioning",
+    "throughput", "barel", "revamping",
+]
+_AVTUR_KILANG_REQUIRED: list[str] = [
+    "kilang", "produksi", "refinery", "kapasitas",
+    "lifting", "barel", "pasokan avtur",
+    "harga avtur", "impor avtur", "kargo avtur",
+]
+_PERTAMAX_KILANG_REQUIRED: list[str] = [
+    "kilang", "produksi", "refinery", "kapasitas",
+    "lifting", "barel", "impor", "harga pertamax",
+    "ron", "oktan", "spbu", "pertamina",
+]
+_SOLAR_KILANG_REQUIRED: list[str] = [
+    "kilang", "produksi", "refinery", "kapasitas",
+    "lifting", "barel", "impor", "harga solar",
+    "biosolar", "dexlite", "gasoil", "spbu", "pertamina",
+]
 
 # --- Post-filter: artikel harus mengandung salah satu term (include filter) ---
 POST_FILTER_RULES: dict[str, dict[str, list[str]]] = {
@@ -231,6 +265,30 @@ POST_FILTER_RULES: dict[str, dict[str, list[str]]] = {
         "PLTN ":   _NUKLIR_ENERGI_TERMS,
         # "nuklir ": tidak pakai include filter (hanya pakai exclude)
     },
+    
+    "biodiesel ": {
+        "sawit ": [
+            "biodiesel", "biofuel", "b40", "b50", "b30",
+            "fame", "bahan bakar nabati", "bbn",
+        ],
+        "kelapa sawit ": [
+            "biodiesel", "biofuel", "b40", "b50", "b30",
+            "fame", "bahan bakar nabati", "bbn",
+        ],
+        "minyak kelapa sawit ": [
+            "biodiesel", "biofuel", "b40", "b50",
+            "fame", "bahan bakar",
+        ],
+        "CPO ": [
+            "biodiesel", "biofuel", "b40", "b50", "b30",
+            "fame", "bahan bakar nabati", "bbn",
+            "harga cpo", "ekspor cpo",
+        ],
+        "crude palm oil ": [
+            "biodiesel", "biofuel", "b40", "b50", "b30",
+            "fame", "bahan bakar nabati", "bbn",
+        ],
+    },
 
     # --- Bioetanol (existing, tidak berubah) ---
     "bioetanol ": {
@@ -250,6 +308,43 @@ POST_FILTER_RULES: dict[str, dict[str, list[str]]] = {
             "etanol", "bioetanol", "biofuel", "e10", "e5", "e20",
             "molase", "bahan bakar",
         ],
+    },
+    "harga produk kilang pertamina ": {
+        "bbm ":                    _BBM_REQUIRED,
+        "harga kilang pertamina ": _BBM_REQUIRED,
+        "kilang pertamina ":       _BBM_REQUIRED,
+        "kilang ":                 _BBM_REQUIRED,
+        "refinery ":               _BBM_REQUIRED,
+        "harga pertamina ":        _BBM_REQUIRED,
+        "harga bbm pertamina ":    _BBM_REQUIRED,
+        "harga pertamax ":         _BBM_REQUIRED,
+        "harga pertalite ":        _BBM_REQUIRED,
+        "harga solar ":            _BBM_REQUIRED,
+        "harga avtur ":            _BBM_REQUIRED,
+        "harga bensin ":           _BBM_REQUIRED,
+        "harga gasoline ":         _BBM_REQUIRED,
+        "harga diesel ":           _BBM_REQUIRED,
+        "rdmp ":                   _RDMP_REQUIRED,
+    },
+    "volume produk kilang pertamina ": {
+        "bbm ":                  _BBM_REQUIRED,
+        "volume kilang pertamina ": _BBM_REQUIRED,
+        "volume kilang ":        _BBM_REQUIRED,
+        "refinery ":             _BBM_REQUIRED,
+        "volume pertamina ":     _BBM_REQUIRED,
+        "kilang pertamina ":     _BBM_REQUIRED,
+        "produksi bbm ":         _BBM_REQUIRED,
+        "bbm pertamina ":        _BBM_REQUIRED,
+        "impor bbm ":            _BBM_REQUIRED,
+        "kapasitas kilang ":     _BBM_REQUIRED,
+        "kilang balikpapan ":    _BBM_REQUIRED,
+        "kilang tuban ":         _BBM_REQUIRED,
+        "produksi kilang ":      _BBM_REQUIRED,
+        "rdmp ":                 _RDMP_REQUIRED,
+        "avtur ":                _AVTUR_KILANG_REQUIRED,
+        "pertamax ":             _PERTAMAX_KILANG_REQUIRED,
+        "pertalite ":            _PERTAMAX_KILANG_REQUIRED,
+        "solar ":                _SOLAR_KILANG_REQUIRED,
     },
 }
 
@@ -323,11 +418,11 @@ SUMBER_DICT: dict[str, list] = {
     
     # ### Hulu Migas ###
     # "harga minyak ": [scrape_kontan_bbm, main_bisnis_indonesia, main_bloomberg_technoz],
-    "volume minyak ": [scrape_kontan_bbm, main_bisnis_indonesia, main_bloomberg_technoz],
+    # "volume minyak ": [scrape_kontan_bbm, main_bisnis_indonesia, main_bloomberg_technoz],
     
     # ### Produk Kilang Pertamina ###
     # "harga produk kilang pertamina ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    # "volume produk kilang pertamina ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
+    "volume produk kilang pertamina ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
     # "RON 92 ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
     
     # ## Petrokimia Hulu ###
@@ -366,11 +461,11 @@ SHEET_TO_KEYWORD: dict[str, str] = {
     
     # ### Hulu Migas ###
     # "(News)Harga Minyak": "harga minyak ",
-    "(News)Volume Minyak": "volume minyak ",
+    # "(News)Volume Minyak": "volume minyak ",
     
     # ### Produk Kilang Pertamina ###
     # "(News)Harga Produk Kilang": "harga produk kilang pertamina ",
-    # "(News)Volume Produk Kilang": "volume produk kilang pertamina ",
+    "(News)Volume Produk Kilang": "volume produk kilang pertamina ",
     # "(News)Crackspread BBM": "RON 92 ",
     
     # ### Petrokimia Hulu ###
@@ -406,11 +501,11 @@ ACTIVE_SHEETS: list[str] = [
 
     ### Hulu Migas ###
     # "(News)Harga Minyak",
-    "(News)Volume Minyak",
+    # "(News)Volume Minyak",
     
     # ### Produk Kilang Pertamina ###
     # "(News)Harga Produk Kilang",
-    # "(News)Volume Produk Kilang",
+    "(News)Volume Produk Kilang",
     # "(News)Crackspread BBM",
     
     # ### Petrokimia Hulu ###
@@ -667,7 +762,7 @@ def main() -> None:
     # tanggal_list = ["2026-04-21"]
 
     # Mode 2: Range tanggal
-    START_DATE   = "2026-04-17"
+    START_DATE   = "2026-04-24"
     END_DATE     = "2026-04-30"
     tanggal_list = generate_date_range(START_DATE, END_DATE)
 
