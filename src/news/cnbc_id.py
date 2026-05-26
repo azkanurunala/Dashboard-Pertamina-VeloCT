@@ -209,8 +209,15 @@ def parse_search_results_page(driver, url: str) -> tuple[list[dict], BeautifulSo
         )
         time.sleep(PAGE_RENDER_WAIT_SECONDS)
     except Exception as exc:
-        print(f"[Parse] Timeout loading page: {exc}")
-        return [], None
+        try:
+            WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
+            print("[Parse] Warning: <section> not found, falling back to <body>.")
+        except Exception as exc:
+            print(f"[Parse] Timeout loading page: {exc}")
+            return [], None
+    time.sleep(PAGE_RENDER_WAIT_SECONDS)
 
     soup      = BeautifulSoup(driver.page_source, "html.parser")
     container = find_best_container(soup)
@@ -315,7 +322,7 @@ def scrape_cnbc_news(
     driver = setup_driver(headless=headless)
 
     try:
-        search_url = f"{CNBC_SEARCH_URL}?query={query}"
+        search_url = f"{CNBC_SEARCH_URL}?query={query.strip().replace(' ', '+')}"
 
         # --- Scrape page 1 and detect total pages ---
         print(f"\n[Main] === Page 1 ===")
@@ -465,8 +472,8 @@ if __name__ == "__main__":
     load_dotenv()  # Load .env only when run directly, not when imported
 
     df = main_cnbc(
-        keyword="minum",
-        tanggal="2026-04-27",
+        keyword="ihsg",
+        tanggal=None,
     )
     print(df["url"].head(20).tolist())
 
