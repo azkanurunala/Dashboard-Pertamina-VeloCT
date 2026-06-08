@@ -75,7 +75,8 @@ SINONIM_DICT: dict[str, list[str]] = {
     # ### Bioenergi ###
     # "SAF ": [
     #     "UCO ", "sustainable aviation fuel ", "used cooking oil ",
-    #     "CORSIA ", "SAFCo ", "biorefinery ", "bioavtur ", "pome ",
+    #     "CORSIA ", "SAFCo ", "bioavtur ", "pome ", "SAF plant ", 
+    #     "HEFA facility ", "bio-SAF production ",
     # ],
 }
 
@@ -124,6 +125,13 @@ _SAF_TERMS_STRICT: list[str] = [
     "renewable diesel", "hvo",
 ]
 
+_SAF_PRODUCTION_TERMS: list[str] = [
+    "saf", "sustainable aviation fuel", "aviation fuel",
+    "jet fuel", "airline", "aviation",
+    "production", "output", "plant", "facility",
+    "capacity", "feedstock", "hefa", "blending",
+]
+
 _CORSIA_TERMS: list[str] = [
     "saf", "sustainable aviation fuel", "aviation",
     "airline", "jet fuel", "corsia offset",
@@ -133,9 +141,11 @@ POST_FILTER_RULES_INTL: dict[str, dict[str, list[str]]] = {
     "SAF ": {
         "used cooking oil ":          _SAF_TERMS_STRICT,
         "UCO ":                       _SAF_TERMS_STRICT,
-        "biorefinery ":               _SAF_TERMS_STRICT,
         "CORSIA ":                    _CORSIA_TERMS,
-        "sustainable aviation fuel ": _SAF_TERMS_STRICT,
+        "sustainable aviation fuel ": _SAF_PRODUCTION_TERMS,
+        "SAF plant ":                 _SAF_TERMS_STRICT,
+        "HEFA facility ":             _SAF_TERMS_STRICT,
+        "bio-SAF production ":        _SAF_TERMS_STRICT,
     },
     "purchasing manufaktur index ": {
         "manufacturing pmi ":          ["pmi", "purchasing", "manufaktur", "manufacturing index"],
@@ -416,7 +426,7 @@ def main() -> None:
 
     # Mode 2: Range tanggal
     START_DATE   = "2026-04-17"
-    END_DATE     = "2026-04-23"
+    END_DATE     = "2026-04-30"
     tanggal_list = generate_date_range(START_DATE, END_DATE)
 
     # Mode 3: Kemarin
