@@ -28,6 +28,7 @@ from helpers.scraping_utils import (
 
 CNBC_BASE_URL = "https://www.cnbcindonesia.com"
 CNBC_SEARCH_URL = f"{CNBC_BASE_URL}/search"
+CNBC_TAG_URL = f"{CNBC_BASE_URL}/tag"
 
 # Delay in seconds between page requests (rate-limit courtesy)
 REQUEST_DELAY_SECONDS = 1
@@ -69,9 +70,34 @@ CNBC_ALLOWED_CATEGORIES: list[str] = [
 
 # Date Utilities (CNBC-specific)
 
+def extract_date_from_url(url: str) -> str:
+    """
+    Ekstrak tanggal publikasi dari URL artikel CNBC Indonesia.
+
+    URL CNBC selalu mengandung tanggal dalam format YYYYMMDD atau
+    YYYYMMDDHHmmss di path segment, contoh:
+      /market/20260430-17-740123/...       → 2026-04-30
+      /news/20260605140008-4-740421/...    → 2026-06-05
+    Ini adalah sumber tanggal paling reliable — tidak berubah dan tidak
+    bergantung pada kapan scraping dijalankan (tidak seperti relative date
+    "3 hari yang lalu" yang di-resolve ke waktu scraping).
+
+    Return: "DD Mon YYYY" (e.g. "30 Apr 2026"), atau "" jika tidak ditemukan.
+    """
+    # Ambil 8 digit pertama dari segment path yang diawali angka
+    m = re.search(r"/(\d{8})", url)
+    if m:
+        try:
+            return datetime.strptime(m.group(1), "%Y%m%d").strftime("%d %b %Y")
+        except ValueError:
+            pass
+    return ""
+
+
 def parse_cnbc_date(raw_date: str) -> str:
     """
-    Parse a CNBC Indonesia date string into "DD Mon YYYY" format, handling relative times and Indonesian month names with fallbacks.
+    Parse a CNBC Indonesia date string into "DD Mon YYYY" format.
+    Digunakan sebagai fallback jika ekstraksi dari URL gagal.
     """
     if not raw_date:
         return raw_date
@@ -79,6 +105,8 @@ def parse_cnbc_date(raw_date: str) -> str:
     raw_date_lower = raw_date.strip().lower()
 
     # --- Relative date (e.g. "3 hari lalu", "2 jam yang lalu") ---
+    # CATATAN: relative date hanya reliable untuk scraping hari ini.
+    # Untuk scraping historical, gunakan extract_date_from_url().
     iso = resolve_relative_date(raw_date_lower)
     if iso:
         return datetime.strptime(iso, "%Y-%m-%d").strftime("%d %b %Y")
@@ -189,8 +217,13 @@ def parse_article_card(section) -> dict | None:
             or link_tag.find("span", class_=lambda x: x and "text-xs" in " ".join(x))
             or link_tag.find("time")
         )
-        raw_date = date_tag.get_text(strip=True) if date_tag else ""
-        pub_date = parse_cnbc_date(raw_date) if raw_date else ""
+        # Utamakan tanggal dari URL — lebih reliable dari teks kartu yang
+        # menampilkan relative date ("3 jam yang lalu") saat scraping historical.
+        pub_date = extract_date_from_url(link)
+        if not pub_date:
+            # Fallback ke teks tanggal di kartu jika URL tidak mengandung tanggal
+            raw_date = date_tag.get_text(strip=True) if date_tag else ""
+            pub_date = parse_cnbc_date(raw_date) if raw_date else ""
 
         return {"title": title, "date": pub_date, "link": link}
 
@@ -202,30 +235,44 @@ def parse_search_results_page(driver, url: str) -> tuple[list[dict], BeautifulSo
     """
     Load a CNBC search results page with Selenium, extract parsed article cards, and return both the results and page soup for pagination handling.
     """
-    driver.get(url)
+    # Set page load timeout lebih longgar — halaman CNBC kadang lambat load JS-nya
+    driver.set_page_load_timeout(90)
+
     try:
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.TAG_NAME, "section"))
-        )
-        time.sleep(PAGE_RENDER_WAIT_SECONDS)
+        driver.get(url)
     except Exception as exc:
+        # TimeoutException dari Selenium: halaman belum selesai load tapi DOM mungkin sudah ada
+        print(f"[Parse] Page load timeout (lanjut baca DOM): {type(exc).__name__}")
+
+    # Tunggu salah satu dari beberapa kemungkinan container artikel
+    found_content = False
+    for css_selector in ["section", "article", "div.list-berita", "div[class*='list']", "a[href*='/market/']", "a[href*='/news/']"]:
         try:
-            WebDriverWait(driver, 5).until(
-                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            WebDriverWait(driver, 8).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, css_selector))
             )
-            print("[Parse] Warning: <section> not found, falling back to <body>.")
-        except Exception as exc:
-            print(f"[Parse] Timeout loading page: {exc}")
-            return [], None
+            print(f"[Parse] Found content via selector: '{css_selector}'")
+            found_content = True
+            break
+        except Exception:
+            continue
+
+    if not found_content:
+        print("[Parse] Warning: no known content selector found, reading DOM as-is.")
+
     time.sleep(PAGE_RENDER_WAIT_SECONDS)
 
     soup      = BeautifulSoup(driver.page_source, "html.parser")
     container = find_best_container(soup)
 
     if container:
-        sections = container.find_all("section") or container.find_all("article")
+        sections = (
+            container.find_all("section")
+            or container.find_all("article")
+            or container.find_all("div", recursive=False)
+        )
     else:
-        sections = soup.find_all("section")
+        sections = soup.find_all("section") or soup.find_all("article")
 
     results: list[dict] = []
     for idx, section in enumerate(sections, start=1):
@@ -245,7 +292,12 @@ def scrape_article_content(driver, url: str) -> str:
     Load a CNBC article via Selenium, clean non-content elements, and return the extracted body text from paragraphs and lists.
     """
     try:
-        driver.get(url)
+        driver.set_page_load_timeout(60)
+        try:
+            driver.get(url)
+        except Exception as exc:
+            print(f"[Content] Page load timeout (lanjut baca DOM): {type(exc).__name__}")
+
         try:
             WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.TAG_NAME, "p"))
@@ -320,11 +372,28 @@ def scrape_cnbc_news(
             print(f"[Main] Warning: could not parse filter_date='{filter_date}' — collecting all dates.")
 
     driver = setup_driver(headless=headless)
+    seen_urls: set[str] = set()
 
     try:
-        search_url = f"{CNBC_SEARCH_URL}?query={query.strip().replace(' ', '+')}"
+        # Gunakan /search dengan fromdate & todate jika filter_dt tersedia —
+        # ini memastikan semua artikel pada tanggal target ter-cover,
+        # tanpa bergantung pada urutan kronologis halaman.
+        # Filter date di sisi kode (_filter_by_date) tetap dijalankan sebagai
+        # validasi ganda, tapi stop_early dinonaktifkan karena hasil search
+        # sudah dibatasi oleh server.
+        query_slug = query.strip().replace(" ", "+")
+        if filter_dt:
+            date_param = filter_dt.strftime("%d%%2F%m%%2F%Y")  # DD%2FMM%2FYYYY
+            search_url = (
+                f"{CNBC_SEARCH_URL}?query={query_slug}"
+                f"&fromdate={date_param}&todate={date_param}"
+            )
+            print(f"[Main] Menggunakan search URL dengan filter tanggal: {filter_dt.strftime('%d/%m/%Y')}")
+        else:
+            search_url = f"{CNBC_SEARCH_URL}?query={query_slug}"
+            print("[Main] Menggunakan search URL tanpa filter tanggal.")
 
-        # --- Scrape page 1 and detect total pages ---
+        # --- Scrape page 1 dan deteksi total halaman ---
         print(f"\n[Main] === Page 1 ===")
         all_results, first_page_soup = parse_search_results_page(driver, search_url)
 
@@ -338,25 +407,25 @@ def scrape_cnbc_news(
             total_pages = min(total_pages, max_pages)
         print(f"[Main] Total pages to scrape: {total_pages}")
 
-        # Apply date filter to page 1 results
-        all_results, stop_early = _filter_by_date(all_results, filter_dt, page_num=1)
+        # Dedup + filter (validasi ganda; stop_early tidak berlaku karena
+        # server sudah filter tanggal via fromdate/todate)
+        all_results = _dedup_articles(all_results, seen_urls)
+        all_results, _ = _filter_by_date(all_results, filter_dt, page_num=1)
 
         # --- Paginate through remaining pages ---
-        if not stop_early and total_pages > 1:
+        if total_pages > 1:
             for page_num in range(2, total_pages + 1):
                 print(f"\n[Main] === Page {page_num} ===")
-                page_url        = f"{search_url}&page={page_num}"
+                page_url = f"{search_url}&page={page_num}"
                 page_results, _ = parse_search_results_page(driver, page_url)
 
                 if not page_results:
                     print("[Main] Empty page — stopping pagination.")
                     break
 
-                filtered, stop_early = _filter_by_date(page_results, filter_dt, page_num)
+                page_results = _dedup_articles(page_results, seen_urls)
+                filtered, _ = _filter_by_date(page_results, filter_dt, page_num)
                 all_results.extend(filtered)
-
-                if stop_early:
-                    break
 
                 time.sleep(REQUEST_DELAY_SECONDS)
 
@@ -387,19 +456,38 @@ def scrape_cnbc_news(
         print("[Main] Browser closed.")
 
 
+def _dedup_articles(articles: list[dict], seen_urls: set[str]) -> list[dict]:
+    """
+    Hapus artikel duplikat berdasarkan URL (artikel bisa muncul di beberapa kategori).
+    """
+    unique = []
+    for a in articles:
+        if a["link"] not in seen_urls:
+            seen_urls.add(a["link"])
+            unique.append(a)
+        else:
+            print(f"[Dedup] Skipped duplicate: {a['link'][-60:]}")
+    return unique
+
+
 def _filter_by_date(
     articles: list[dict],
     filter_dt: datetime | None,
     page_num: int,
 ) -> tuple[list[dict], bool]:
     """
-    Filter articles by target date, returning matches and a stop flag if older articles are encountered.
+    Filter artikel berdasarkan tanggal target.
+
+    stop_early hanya aktif jika SELURUH artikel di halaman lebih lama dari
+    target — bukan berhenti begitu menemukan satu artikel lebih lama.
+    Ini penting karena urutan artikel di CNBC tidak selalu kronologis
+    (bisa dikelompokkan per kategori/channel).
     """
     if not filter_dt:
         return articles, False
 
     matched: list[dict] = []
-    stop_early = False
+    has_recent = False  # ada artikel dengan tanggal >= target di halaman ini
 
     for article in articles:
         try:
@@ -408,15 +496,21 @@ def _filter_by_date(
             print(f"[Filter] Could not parse date '{article['date']}' — skipped.")
             continue
 
-        if article_dt < filter_dt:
-            print(f"[Filter] Page {page_num}: article dated {article['date']} is older than target — stopping.")
-            stop_early = True
-            break
-        elif article_dt.date() == filter_dt.date():
+        if article_dt.date() == filter_dt.date():
             print(f"[Filter] Page {page_num}: MATCH — {article['date']}")
             matched.append(article)
-        else:
+            has_recent = True
+        elif article_dt > filter_dt:
             print(f"[Filter] Page {page_num}: Skip — {article['date']} (newer than target)")
+            has_recent = True
+        else:
+            print(f"[Filter] Page {page_num}: Skip — {article['date']} (older than target)")
+
+    # Hentikan pagination hanya jika tidak ada satu pun artikel >= target di halaman ini,
+    # yang berarti kita sudah melewati zona waktu yang relevan sepenuhnya.
+    stop_early = not has_recent
+    if stop_early:
+        print(f"[Filter] Page {page_num}: Semua artikel lebih lama dari target — stop pagination.")
 
     print(f"[Filter] Page {page_num}: {len(matched)} article(s) matched.")
     return matched, stop_early
@@ -432,19 +526,25 @@ def main_cnbc(
 ) -> pd.DataFrame | None:
     """
     Run the CNBC scraping workflow with normalized date handling and return a structured DataFrame or None if no results are found.
+
+    tanggal: format "YYYY-MM-DD" / "DD-MM-YYYY" / None.
+             Jika None, default ke hari ini (untuk kebutuhan scraping harian).
     """
-    iso_date = None
-    if tanggal is not None:
-        iso_date = normalize_to_iso_date(tanggal)
-        if not iso_date:
-            try:
-                iso_date = datetime.strptime(tanggal, "%d-%m-%Y").strftime("%Y-%m-%d")
-            except ValueError:
-                pass
+    # Default ke hari ini jika tanggal tidak diberikan
+    if tanggal is None:
+        tanggal = datetime.today().strftime("%Y-%m-%d")
+        print(f"[Main] tanggal tidak diberikan — default ke hari ini: {tanggal}")
+
+    iso_date = normalize_to_iso_date(tanggal)
+    if not iso_date:
+        try:
+            iso_date = datetime.strptime(tanggal, "%d-%m-%Y").strftime("%Y-%m-%d")
+        except ValueError:
+            iso_date = tanggal  # biarkan scrape_cnbc_news yang handle error
 
     results = scrape_cnbc_news(
         query=keyword,
-        filter_date=iso_date or tanggal,
+        filter_date=iso_date,
         headless=headless,
         max_pages=max_pages,
     )
@@ -471,18 +571,12 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()  # Load .env only when run directly, not when imported
 
+    # tanggal=None → otomatis pakai hari ini
     df = main_cnbc(
-        keyword="ihsg",
-        tanggal=None,
+        keyword="neraca perdagangan",
+        tanggal="2026-04-19",
     )
-    print(df["url"].head(20).tolist())
 
-    # if df is not None and not df.empty:
-    #     print(f"\n[Output] Total articles : {len(df)}")
-    #     if "content" in df.columns:
-    #         print(f"\n[Output] Sample content :")
-    #         print(df.iloc[0]["content"][:300] + "...")
-
-    #     # Output filename kept in Indonesian as per project convention
-    #     df.to_excel("cnbc_id.xlsx", index=False, engine="openpyxl")
-    #     print("\n[Output] Saved to 'cnbc_id.xlsx'")
+    if df is not None and not df.empty:
+        print(f"\n[Output] Total articles : {len(df)}")
+        print(df[["title", "date"]].to_string(index=False))
