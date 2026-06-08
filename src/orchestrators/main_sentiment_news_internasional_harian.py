@@ -22,14 +22,14 @@ ONEDRIVE_SCRAP_PATH = os.getenv("ONEDRIVE_FILE_PATH", "/results/(News)Scraping_n
 ONEDRIVE_SENTIMENT_PATH = "/results/(News)Sentiment_final.xlsx"
 
 # Default start date used when no prior summary exists
-DEFAULT_START_DATE = datetime(2026, 4, 8)
+DEFAULT_START_DATE = datetime(2026, 4, 26)
 
 
 # Topic Configuration
 
 TOPICS: dict[str, dict] = {
     "Indeks Volatilitas": {
-        "target_sheets": ["(News)indeks volatilitas"],
+        "target_sheets": ["(News)Indeks Volatilitas"],
         "output_sheet": "(Summary)Idx Volatilitas",
         "role_prompt": "Ekonom",
         "spesific_prompt": (
@@ -52,12 +52,6 @@ def process_topic(
     existing_df: pd.DataFrame,
     access_token: str,
 ) -> pd.DataFrame | None:
-    """
-    Process a single topic: determine the date range, collect matching news from
-    OneDrive, generate a summary, and return the result as a single-row DataFrame.
-
-    Returns None if the scraping file is unavailable or no articles are found.
-    """
     print(f"\n{'=' * 60}")
     print(f"[Topic] Processing: {topic_name}")
     print(f"{'=' * 60}")
@@ -73,38 +67,54 @@ def process_topic(
             pass
 
     start_date = last_date + pd.Timedelta(days=1) if last_date is not None else DEFAULT_START_DATE
-    end_date = start_date
+    today = pd.to_datetime(datetime.now().date())
 
-    print(f"[Topic] Date range: {start_date.date()} — {end_date.date()}")
     print(f"[Topic] Fetching scraping data from OneDrive: {ONEDRIVE_SCRAP_PATH}")
 
+    # Download sekali di luar loop
     excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_SCRAP_PATH)
     if excel_buffer is None:
         print("[Topic] Scraping file not found on OneDrive.")
         return None
 
-    # Collect matching articles from each target sheet
-    all_news_list: list[str] = []
     excel_file = pd.ExcelFile(excel_buffer)
 
+    # Baca semua sheet target sekali
+    sheets_data: dict[str, pd.DataFrame] = {}
     for sheet in target_sheets:
         if sheet in excel_file.sheet_names:
             df_news = pd.read_excel(excel_file, sheet_name=sheet)
             if not df_news.empty and "date" in df_news.columns:
-                df_news["date"] = pd.to_datetime(df_news["date"], errors="coerce")
-                mask = (df_news["date"] >= start_date) & (df_news["date"] <= end_date)
-                filtered_news = df_news[mask]
-                for _, row in filtered_news.iterrows():
-                    if pd.notna(row.get("content")):
-                        all_news_list.append(str(row["content"]))
+                df_news["date"] = pd.to_datetime(df_news["date"], errors="coerce").dt.normalize()
+                sheets_data[sheet] = df_news
 
     excel_file.close()
 
-    if not all_news_list:
+    # Iterasi maju sampai ketemu tanggal yang ada artikelnya
+    all_news_list: list[str] = []
+    end_date = start_date
+
+    while start_date <= today:
+        end_date = start_date
+        all_news_list = []
+
+        for df_news in sheets_data.values():
+            mask = (df_news["date"] >= start_date) & (df_news["date"] <= end_date)
+            filtered_news = df_news[mask]
+            for _, row in filtered_news.iterrows():
+                if pd.notna(row.get("content")):
+                    all_news_list.append(str(row["content"]))
+
+        if all_news_list:
+            print(f"[Topic] Date range: {start_date.date()} — {end_date.date()}")
+            print(f"[Topic] {len(all_news_list)} article(s) found.")
+            break
+
+        print(f"[Topic] No articles on {start_date.date()}, trying next day...")
+        start_date += pd.Timedelta(days=1)
+    else:
         print(f"[Topic] No new articles found for '{topic_name}'.")
         return None
-
-    print(f"[Topic] {len(all_news_list)} article(s) found.")
 
     summary = summarize_all_news(
         model,
@@ -115,6 +125,8 @@ def process_topic(
         config["role_prompt"],
         config["spesific_prompt"],
     )
+
+    print(f"[Topic] Summary result: {summary[:100] if summary else 'NONE/EMPTY'}")
 
     if summary:
         return pd.DataFrame([{
