@@ -23,7 +23,7 @@ ONEDRIVE_DATA_PATH = "/results/(Terstruktur)Data Scraping_new.xlsx"
 ONEDRIVE_SENTIMENT_PATH = "/results/(News)Sentiment_final.xlsx"
 
 # Default start date used when no prior summary exists
-DEFAULT_START_DATE = datetime(2026, 4, 23)
+DEFAULT_START_DATE = datetime(2026, 4, 17)
 
 # Maximum number of articles passed to the summarization model per topic
 MAX_NEWS_PER_TOPIC = 200
@@ -36,7 +36,7 @@ SUMMARY_WINDOW_DAYS = 6
 
 TOPICS: dict[str, dict] = {
     # "Indeks Risiko Geopolitik": {
-    #     "target_sheets": ["(News)indeks risiko geopolitik"],
+    #     "target_sheets": ["(News)Indeks Risiko Geopolitik"],
     #     "output_sheet": "(Summary)Idx Risiko Geopolitik",
     #     "has_data_sentiment": False,
     #     "role_prompt" : "Ekonom",
@@ -65,9 +65,9 @@ TOPICS: dict[str, dict] = {
     #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
     # },
 
-    # "Indeks Penjualan Retail": {
-    #     "target_sheets": ["(News)indeks sales retail"],
-    #     "output_sheet": "(Summary)Idx Penjualan Retail",
+    # "Indeks Penjualan Ritel": {
+    #     "target_sheets": ["(News)Indeks Penjualan Ritel"],
+    #     "output_sheet": "(Summary)Idx Penjualan Ritel",
     #     "has_data_sentiment": False,
     #     "role_prompt" : "Ekonom",
     #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
@@ -75,9 +75,9 @@ TOPICS: dict[str, dict] = {
     #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
     # },
 
-    # "Indeks Keyakinan Konsumen": {
-    #     "target_sheets": ["(News)indeks kepercayaan knsmn"],
-    #     "output_sheet": "(Summary)Idx Keyakinan Konsumen",
+    # "Indeks Kepercayaan Konsumen": {
+    #     "target_sheets": ["(News)Indeks Kepercayaan Knsmn"],
+    #     "output_sheet": "(Summary)Idx Kepercayaan Konsumen",
     #     "has_data_sentiment": False,
     #     "role_prompt" : "Ekonom",
     #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
@@ -85,8 +85,8 @@ TOPICS: dict[str, dict] = {
     #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
     # },
 
-    # "Indeks Kinerja Manufaktur": {
-    #     "target_sheets": ["(News)indeks kinerja manufaktur"],
+    # "Indeks PMI": {
+    #     "target_sheets": ["(News)Indeks Kinerja Manufaktur", "(News)Indeks Kinerja Jasa"],
     #     "output_sheet": "(Summary)Idx PMI",
     #     "has_data_sentiment": False,
     #     "role_prompt" : "Ekonom",
@@ -96,7 +96,7 @@ TOPICS: dict[str, dict] = {
     # },
 
     # "Neraca Perdagangan": {
-    #     "target_sheets": ["(News)neraca perdagangan"],
+    #     "target_sheets": ["(News)Neraca Perdagangan"],
     #     "output_sheet": "(Summary)Neraca Perdagangan",
     #     "has_data_sentiment": False,
     #     "role_prompt" : "Ekonom",
@@ -116,33 +116,33 @@ TOPICS: dict[str, dict] = {
     #                         "waktu secara konsisten (USD/bbl, mb/d, kuartal, tahun). Dan exclude kasus-kasus hukum!"
     # },
 
-    "Harga Minyak": {
-        "target_sheets": ["(News)Harga Minyak"],
-        "output_sheet": "(Summary)Harga Minyak",
-        "has_data_sentiment": False,
-        "role_prompt" : "industri minyak dan gas",
-        "spesific_prompt": "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama "
-                           "yang mempengaruhi HARGA minyak. Fokus pada pergerakan harga, faktor "
-                           "pendorong harga (supply shock, kebijakan OPEC, sanksi, geopolitik), "
-                           "dan level harga terkini (USD/bbl). Berikan data kuantitatif bila ada. "
-                           "Gaya Bahasa: Factual dan profesional, tanpa opini atau spekulasi, "
-                           "hindari tanda baca berlebihan, gunakan satuan konsisten (USD/bbl). "
-                           "Exclude kasus-kasus hukum!"
-    },
+    # "Harga Minyak": {
+    #     "target_sheets": ["(News)Harga Minyak"],
+    #     "output_sheet": "(Summary)Harga Minyak",
+    #     "has_data_sentiment": False,
+    #     "role_prompt" : "industri minyak dan gas",
+    #     "spesific_prompt": "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama "
+    #                        "yang mempengaruhi HARGA minyak. Fokus pada pergerakan harga, faktor "
+    #                        "pendorong harga (supply shock, kebijakan OPEC, sanksi, geopolitik), "
+    #                        "dan level harga terkini (USD/bbl). Berikan data kuantitatif bila ada. "
+    #                        "Gaya Bahasa: Factual dan profesional, tanpa opini atau spekulasi, "
+    #                        "hindari tanda baca berlebihan, gunakan satuan konsisten (USD/bbl). "
+    #                        "Exclude kasus-kasus hukum!"
+    # },
 
-    "Volume Minyak": {
-        "target_sheets": ["(News)Volume Minyak"],
-        "output_sheet": "(Summary)Volume Minyak",
-        "has_data_sentiment": False,
-        "role_prompt" : "industri minyak dan gas",
-        "spesific_prompt": "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama "
-                           "yang mempengaruhi VOLUME/PRODUKSI minyak. Fokus pada lifting, produksi, "
-                           "impor/ekspor, kapasitas kilang, dan kuota produksi (mb/d). "
-                           "Berikan data kuantitatif bila ada. "
-                           "Gaya Bahasa: Factual dan profesional, tanpa opini atau spekulasi, "
-                           "hindari tanda baca berlebihan, gunakan satuan konsisten (mb/d, bbl). "
-                           "Exclude kasus-kasus hukum!"
-    },
+    # "Volume Minyak": {
+    #     "target_sheets": ["(News)Volume Minyak"],
+    #     "output_sheet": "(Summary)Volume Minyak",
+    #     "has_data_sentiment": False,
+    #     "role_prompt" : "industri minyak dan gas",
+    #     "spesific_prompt": "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama "
+    #                        "yang mempengaruhi VOLUME/PRODUKSI minyak. Fokus pada lifting, produksi, "
+    #                        "impor/ekspor, kapasitas kilang, dan kuota produksi (mb/d). "
+    #                        "Berikan data kuantitatif bila ada. "
+    #                        "Gaya Bahasa: Factual dan profesional, tanpa opini atau spekulasi, "
+    #                        "hindari tanda baca berlebihan, gunakan satuan konsisten (mb/d, bbl). "
+    #                        "Exclude kasus-kasus hukum!"
+    # },
 
     # "Harga Produk Kilang": {
     #     "target_sheets": ["(News)Harga Produk Kilang"],
@@ -249,18 +249,19 @@ TOPICS: dict[str, dict] = {
     #                        "Saat merangkum, abaikan berita tentang nuklir yang hanya terkait senjata dan tidak berkaitan dengan pembangkit listrik."
     # },
 
-    # "Crackspread_BBM": {
-    #     "target_sheets": ["(News)Crackspread_BBM"],
-    #     "output_sheet": "(Summary)Crackspread_BBM",
-    #     "has_data_sentiment": False,
-    #     "role_prompt": "analis pasar energi dan BBM di Indonesia",
-    #     "spesific_prompt": (
-    #         "Gunakan bahasa yang ringkas, faktual, dan netral tanpa kata hiperbolik seperti \"signifikan\", \"dahsyat\", atau sejenisnya. "
-    #         "Setiap poin ringkasan harus terdiri dari satu kalimat. "
-    #         "Fokus pada isu yang memengaruhi crack spread BBM seperti Pertamax, Pertalite, Solar, Avtur, harga minyak mentah, margin kilang, biaya produksi, distribusi, dan kebijakan harga BBM. "
-    #         "Kecualikan berita yang bersifat kasus hukum, kriminal, atau politik yang tidak berdampak langsung pada harga atau margin BBM."
-    #     ),
-    # },
+    "Crackspread_BBM": {
+        "target_sheets": ["(News)Crackspread BBM"],
+        "output_sheet": "(Summary)Crackspread BBM",
+        "has_data_sentiment": False,
+        "role_prompt": "analis pasar energi dan BBM di Indonesia",
+        "spesific_prompt": (
+            "Gunakan bahasa yang ringkas, faktual, dan netral tanpa kata hiperbolik seperti \"signifikan\", \"dahsyat\", atau sejenisnya. "
+            "Setiap poin ringkasan harus terdiri dari satu kalimat. "
+            "Fokus pada isu yang memengaruhi crack spread BBM seperti Pertamax, Pertalite, Solar, Avtur, harga minyak mentah, margin kilang, biaya produksi, distribusi, dan kebijakan harga BBM. "
+            "Kecualikan berita yang bersifat kasus hukum, kriminal, atau politik yang tidak berdampak langsung pada harga atau margin BBM."
+        ),
+    },
+    
     # "Crackspread_Non_BBM": {
     #     "target_sheets": ["(News)Crackspread_NonBBM"],
     #     "output_sheet": "(Summary)Crackspread_NonBBM",
