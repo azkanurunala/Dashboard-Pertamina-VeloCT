@@ -244,26 +244,56 @@ def parse_search_results_page(driver, url: str) -> tuple[list[dict], BeautifulSo
         # TimeoutException dari Selenium: halaman belum selesai load tapi DOM mungkin sudah ada
         print(f"[Parse] Page load timeout (lanjut baca DOM): {type(exc).__name__}")
 
-    # Tunggu salah satu dari beberapa kemungkinan container artikel
-    found_content = False
-    for css_selector in ["section", "article", "div.list-berita", "div[class*='list']", "a[href*='/market/']", "a[href*='/news/']"]:
+    # Tunggu JS selesai render konten artikel.
+    # Konten CNBC di-inject oleh JS setelah page load — perlu tunggu
+    # document.readyState == 'complete' dan scroll untuk trigger lazy load,
+    # lalu polling sampai <section> dengan link artikel muncul di DOM.
+    def _wait_for_articles(drv, timeout=30):
+        deadline = time.time() + timeout
+        # Tunggu JS ready state complete dulu
         try:
-            WebDriverWait(driver, 8).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, css_selector))
+            WebDriverWait(drv, 15).until(
+                lambda d: d.execute_script("return document.readyState") == "complete"
             )
-            print(f"[Parse] Found content via selector: '{css_selector}'")
-            found_content = True
-            break
         except Exception:
-            continue
+            pass
+        # Scroll sedikit ke bawah untuk trigger lazy-load JS
+        try:
+            drv.execute_script("window.scrollTo(0, 300);")
+        except Exception:
+            pass
+        time.sleep(2)
+        # Polling sampai section dengan link artikel muncul
+        while time.time() < deadline:
+            try:
+                sections = drv.find_elements(
+                    By.CSS_SELECTOR,
+                    "section a[href*='/market/2'], section a[href*='/news/2'], "
+                    "section a[href*='/research/2'], section a[href*='/opinion/2']"
+                )
+                if sections:
+                    return True
+            except Exception:
+                pass
+            time.sleep(2)
+        return False
 
+    found_content = _wait_for_articles(driver)
     if not found_content:
-        print("[Parse] Warning: no known content selector found, reading DOM as-is.")
+        print("[Parse] Warning: article sections not found after wait, reading DOM as-is.")
+    else:
+        print("[Parse] Article sections found.")
 
-    time.sleep(PAGE_RENDER_WAIT_SECONDS)
+    time.sleep(1)
 
-    soup      = BeautifulSoup(driver.page_source, "html.parser")
-    container = find_best_container(soup)
+    soup = BeautifulSoup(driver.page_source, "html.parser")
+
+    # Utamakan container CNBC search yang diketahui: div[data-target="search"]
+    # Ini adalah div yang di-render oleh JS dan berisi semua <section> artikel.
+    container = (
+        soup.find("div", attrs={"data-target": "search"})
+        or find_best_container(soup)
+    )
 
     if container:
         sections = (
@@ -573,8 +603,8 @@ if __name__ == "__main__":
 
     # tanggal=None → otomatis pakai hari ini
     df = main_cnbc(
-        keyword="neraca perdagangan",
-        tanggal="2026-04-19",
+        keyword="ihsg",
+        tanggal=None,
     )
 
     if df is not None and not df.empty:
