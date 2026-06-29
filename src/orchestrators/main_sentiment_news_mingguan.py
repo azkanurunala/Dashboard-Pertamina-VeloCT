@@ -8,19 +8,11 @@ from dotenv import load_dotenv
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from helpers.onedrive_helper import (
-    download_excel_from_onedrive,
-    get_access_token,
-    write_multiple_sheets_to_onedrive,
-)
+from helpers.storage_backend import storage
 from helpers.summary_helper import setup_gemini, summarize_all_news
 
 
 # Constants
-
-ONEDRIVE_SCRAP_PATH = os.getenv("ONEDRIVE_FILE_PATH", "/results/(News)Scraping_final.xlsx")
-ONEDRIVE_DATA_PATH = "/results/(Terstruktur)Data Scraping_new.xlsx"
-ONEDRIVE_SENTIMENT_PATH = "/results/(News)Sentiment_final.xlsx"
 
 # Default start date used when no prior summary exists
 DEFAULT_START_DATE = datetime(2026, 4, 17)
@@ -300,26 +292,26 @@ def _get_prev_period(existing_df: pd.DataFrame) -> tuple["pd.Timestamp | None", 
 def _compute_cpo_biodiesel(
     start_date: "pd.Timestamp",
     end_date: "pd.Timestamp",
-    access_token: str,
 ) -> tuple[float | None, float | None]:
     """
     Compute average CPO (daily) and Biodiesel HIP (monthly) values for a date range.
 
-    Returns (None, None) if the data file is unavailable.
+    Returns (None, None) if the data is unavailable.
     """
-    excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_DATA_PATH)
-    if excel_buffer is None:
-        return None, None
-
     # CPO (daily)
-    df_cpo = pd.read_excel(excel_buffer, sheet_name="(Data)CPO", usecols=["Dates", "PX_LAST"])
+    df_cpo = storage.read_structured_sheet("(Data)CPO")
+    if df_cpo.empty:
+        return None, None
+    df_cpo = df_cpo[["Dates", "PX_LAST"]].copy()
     df_cpo["Dates"] = pd.to_datetime(df_cpo["Dates"])
     mask_cpo = (df_cpo["Dates"] >= start_date) & (df_cpo["Dates"] <= end_date)
     cpo_mean = df_cpo.loc[mask_cpo, "PX_LAST"].mean()
 
     # Biodiesel (monthly)
-    excel_buffer.seek(0)
-    df_bio = pd.read_excel(excel_buffer, sheet_name="(Data)Biodesel", usecols=["Date", "HIP Biodiesel IDR/L"])
+    df_bio = storage.read_structured_sheet("(Data)Biodesel")
+    if df_bio.empty:
+        return cpo_mean, None
+    df_bio = df_bio[["Date", "HIP Biodiesel IDR/L"]].copy()
     df_bio["Date"] = pd.to_datetime(df_bio["Date"])
     mask_bio = (
         (df_bio["Date"].dt.year  == end_date.year) &
@@ -335,18 +327,16 @@ def _get_comparison(
     end_date: "pd.Timestamp",
     start_date_prev: "pd.Timestamp | None",
     end_date_prev: "pd.Timestamp | None",
-    access_token: str,
 ) -> dict:
     """
     Compute CPO and Biodiesel averages for the current and previous periods,
     returning values and percentage changes.
     """
-    excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_DATA_PATH)
-    if excel_buffer is None:
-        return {"cpo": None, "bio": None, "cpo_change": None, "bio_change": None, "same_month": False}
-
     # CPO (daily)
-    df_cpo = pd.read_excel(excel_buffer, sheet_name="(Data)CPO", usecols=["Dates", "PX_LAST"])
+    df_cpo = storage.read_structured_sheet("(Data)CPO")
+    if df_cpo.empty:
+        return {"cpo": None, "bio": None, "cpo_change": None, "bio_change": None, "same_month": False}
+    df_cpo = df_cpo[["Dates", "PX_LAST"]].copy()
     df_cpo["Dates"] = pd.to_datetime(df_cpo["Dates"]).dt.normalize()
 
     cur_mask = (df_cpo["Dates"] >= start_date) & (df_cpo["Dates"] <= end_date)
@@ -364,22 +354,26 @@ def _get_comparison(
         cpo_change = round(((cpo_current - cpo_previous) / cpo_previous) * 100, 2)
 
     # Biodiesel (monthly)
-    excel_buffer.seek(0)
-    df_bio = pd.read_excel(excel_buffer, sheet_name="(Data)Biodesel", usecols=["Date", "HIP Biodiesel IDR/L"])
-    df_bio["Date"] = pd.to_datetime(df_bio["Date"])
-
-    cur_year = end_date.year
-    cur_month = end_date.month
-    bio_current_rows = df_bio[(df_bio["Date"].dt.year == cur_year) & (df_bio["Date"].dt.month == cur_month)]
-    bio_current = bio_current_rows["HIP Biodiesel IDR/L"].mean() if not bio_current_rows.empty else None
-
-    if end_date_prev is not None:
-        prev_year = end_date_prev.year
-        prev_month = end_date_prev.month
-        bio_prev_rows = df_bio[(df_bio["Date"].dt.year == prev_year) & (df_bio["Date"].dt.month == prev_month)]
-        bio_previous = bio_prev_rows["HIP Biodiesel IDR/L"].mean() if not bio_prev_rows.empty else None
-    else:
+    df_bio = storage.read_structured_sheet("(Data)Biodesel")
+    if df_bio.empty:
+        bio_current = None
         bio_previous = None
+    else:
+        df_bio = df_bio[["Date", "HIP Biodiesel IDR/L"]].copy()
+        df_bio["Date"] = pd.to_datetime(df_bio["Date"])
+
+        cur_year = end_date.year
+        cur_month = end_date.month
+        bio_current_rows = df_bio[(df_bio["Date"].dt.year == cur_year) & (df_bio["Date"].dt.month == cur_month)]
+        bio_current = bio_current_rows["HIP Biodiesel IDR/L"].mean() if not bio_current_rows.empty else None
+
+        if end_date_prev is not None:
+            prev_year = end_date_prev.year
+            prev_month = end_date_prev.month
+            bio_prev_rows = df_bio[(df_bio["Date"].dt.year == prev_year) & (df_bio["Date"].dt.month == prev_month)]
+            bio_previous = bio_prev_rows["HIP Biodiesel IDR/L"].mean() if not bio_prev_rows.empty else None
+        else:
+            bio_previous = None
 
     if bio_current is None or bio_previous in (None, 0):
         bio_change = None
@@ -409,24 +403,19 @@ def _get_comparison_bioetanol(
     end_date: "pd.Timestamp",
     start_date_prev: "pd.Timestamp | None",
     end_date_prev: "pd.Timestamp | None",
-    access_token: str,
 ) -> dict:
     """
     Compute Bioetanol and Tetes Tebu averages for the current and previous months,
     returning values and percentage changes.
     """
-    excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_DATA_PATH)
-    if excel_buffer is None:
+    df_bio = storage.read_structured_sheet("(Data)Bioetanol")
+    if df_bio.empty:
         return {
             "bioetanol": None, "tetes_tebu": None,
             "bioetanol_change": None, "tetes_change": None, "same_month": False,
         }
 
-    df_bio = pd.read_excel(
-        excel_buffer,
-        sheet_name="(Data)Bioetanol",
-        usecols=["Date", "HIP Bioetanol IDR/L", "Harga Tetes Tebu"],
-    )
+    df_bio = df_bio[["Date", "HIP Bioetanol IDR/L", "Harga Tetes Tebu"]].copy()
     df_bio["Date"] = pd.to_datetime(df_bio["Date"])
 
     cur_year = end_date.year
@@ -477,21 +466,16 @@ def _get_comparison_saf(
     end_date: "pd.Timestamp",
     start_date_prev: "pd.Timestamp | None",
     end_date_prev: "pd.Timestamp | None",
-    access_token: str,
 ) -> dict:
     """
     Compute SAF and UCO averages for the current and previous periods,
     returning values and percentage changes.
     """
-    excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_DATA_PATH)
-    if excel_buffer is None:
+    df = storage.read_structured_sheet("(Data)SAF")
+    if df.empty:
         return {"saf": None, "uco": None, "saf_change": None, "uco_change": None}
 
-    df = pd.read_excel(
-        excel_buffer,
-        sheet_name="(Data)SAF",
-        usecols=["assessDate", "value_SAF", "value_UCO"],
-    )
+    df = df[["assessDate", "value_SAF", "value_UCO"]].copy()
     df["assessDate"] = pd.to_datetime(df["assessDate"]).dt.normalize()
 
     cur_mask = (df["assessDate"] >= start_date) & (df["assessDate"] <= end_date)
@@ -529,14 +513,13 @@ def process_topic(
     topic_name: str,
     config: dict,
     existing_df: pd.DataFrame,
-    access_token: str,
 ) -> pd.DataFrame | None:
     """
     Process a single topic: determine the weekly date range, collect matching
-    news from OneDrive, optionally compute data sentiment, generate a summary,
+    news from storage, optionally compute data sentiment, generate a summary,
     and return the result as a single-row DataFrame.
 
-    Returns None if the scraping file is unavailable or no articles are found.
+    Returns None if no articles are found.
     """
     print(f"\n{'=' * 60}")
     print(f"[Topic] Processing: {topic_name}")
@@ -558,31 +541,22 @@ def process_topic(
     end_date = min(start_date + pd.Timedelta(days=SUMMARY_WINDOW_DAYS), today)
 
     print(f"[Topic] Date range: {start_date.date()} — {end_date.date()}")
-    print(f"[Topic] Fetching scraping data from OneDrive: {ONEDRIVE_SCRAP_PATH}")
-
-    excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_SCRAP_PATH)
-    if excel_buffer is None:
-        print("[Topic] Scraping file not found on OneDrive.")
-        return None
+    print(f"[Topic] Fetching scraping data...")
 
     # Collect matching articles from each target sheet
     all_news_list: list[str] = []
-    excel_file = pd.ExcelFile(excel_buffer)
 
     for sheet in target_sheets:
-        if sheet in excel_file.sheet_names:
-            print(f"[Topic] Reading sheet: {sheet}")
-            df_news = pd.read_excel(excel_file, sheet_name=sheet)
-            if not df_news.empty and "date" in df_news.columns:
-                df_news["date"] = pd.to_datetime(df_news["date"], errors="coerce").dt.normalize()
-                mask = (df_news["date"] >= start_date) & (df_news["date"] <= end_date)
-                filtered_news = df_news[mask].sort_values("date", ascending=False)
-                for _, row in filtered_news.iterrows():
-                    if pd.notna(row.get("content")):
-                        all_news_list.append(str(row["content"]))
-                print(f"  [Topic] {len(filtered_news)} article(s) from '{sheet}'.")
-
-    excel_file.close()
+        print(f"[Topic] Reading sheet: {sheet}")
+        df_news = storage.read_news_sheet(sheet)
+        if not df_news.empty and "date" in df_news.columns:
+            df_news["date"] = pd.to_datetime(df_news["date"], errors="coerce").dt.normalize()
+            mask = (df_news["date"] >= start_date) & (df_news["date"] <= end_date)
+            filtered_news = df_news[mask].sort_values("date", ascending=False)
+            for _, row in filtered_news.iterrows():
+                if pd.notna(row.get("content")):
+                    all_news_list.append(str(row["content"]))
+            print(f"  [Topic] {len(filtered_news)} article(s) from '{sheet}'.")
 
     if not all_news_list:
         print(f"[Topic] No new articles found for '{topic_name}'.")
@@ -612,7 +586,7 @@ def process_topic(
 
         if topic_name == "Biodiesel":
             if start_prev and end_prev:
-                comparison = _get_comparison(start_date, end_date, start_prev, end_prev, access_token)
+                comparison = _get_comparison(start_date, end_date, start_prev, end_prev)
 
                 if comparison["same_month"]:
                     print("[Topic] Same month — copying Summary Data from previous period.")
@@ -637,7 +611,7 @@ def process_topic(
 
         elif topic_name == "Bioetanol":
             if start_prev and end_prev:
-                comparison = _get_comparison_bioetanol(start_date, end_date, start_prev, end_prev, access_token)
+                comparison = _get_comparison_bioetanol(start_date, end_date, start_prev, end_prev)
 
                 if comparison["same_month"]:
                     print("[Topic] Same month — copying Summary Data from previous period.")
@@ -662,7 +636,7 @@ def process_topic(
 
         elif topic_name == "SAF":
             if start_prev and end_prev:
-                comparison = _get_comparison_saf(start_date, end_date, start_prev, end_prev, access_token)
+                comparison = _get_comparison_saf(start_date, end_date, start_prev, end_prev)
 
                 def _fmt_pct(value: float | None) -> str:
                     return f"{abs(value):.2f}%" if value is not None else "N/A"
@@ -706,50 +680,16 @@ def main() -> None:
     topic, and save the updated results back to OneDrive.
     """
     print("\n" + "=" * 60)
-    print("NEWS SENTIMENT SUMMARIZATION (WEEKLY) TO ONEDRIVE")
+    print("NEWS SENTIMENT SUMMARIZATION (WEEKLY)")
     print("=" * 60)
-
-    print("\nAuthenticating to Microsoft Graph API...")
-    try:
-        access_token = get_access_token()
-        print("[Main] Authentication successful.")
-    except Exception as exc:
-        print(f"[Main] Authentication failed: {exc}")
-        return
 
     print("\n[Main] Setting up Gemini model...")
     model = setup_gemini()
 
-    print(f"\n[Main] Loading existing sentiment data from OneDrive...")
-    print(f"[Main] File: {ONEDRIVE_SENTIMENT_PATH}")
+    print(f"\n[Main] Loading existing sentiment data...")
 
-    excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_SENTIMENT_PATH)
-    all_sheets: dict[str, pd.DataFrame] = {}
-
-    if excel_buffer is None:
-        print("[Main] File not found — a new file will be created.")
-        for config in TOPICS.values():
-            all_sheets[config["output_sheet"]] = pd.DataFrame()
-    else:
-        print("[Main] File found — reading all sheets...")
-        excel_buffer.seek(0)
-        excel_file = pd.ExcelFile(excel_buffer)
-
-        for config in TOPICS.values():
-            sheet_name = config["output_sheet"]
-            try:
-                if sheet_name in excel_file.sheet_names:
-                    df = pd.read_excel(excel_file, sheet_name=sheet_name)
-                    all_sheets[sheet_name] = df
-                    print(f"  '{sheet_name}': {len(df)} row(s)")
-                else:
-                    print(f"  '{sheet_name}': not found — will be created.")
-                    all_sheets[sheet_name] = pd.DataFrame()
-            except Exception as exc:
-                print(f"  '{sheet_name}': error ({exc}) — will be created.")
-                all_sheets[sheet_name] = pd.DataFrame()
-
-        excel_file.close()
+    sheet_names = [config["output_sheet"] for config in TOPICS.values()]
+    all_sheets  = storage.read_all_sentiment_sheets(sheet_names)
 
     # --- Summarization ---
     print("\n" + "=" * 60)
@@ -766,7 +706,7 @@ def main() -> None:
             print(f"[Main] Output sheet: {output_sheet}")
             print(f"{'-' * 60}")
 
-            new_data = process_topic(model, topic_name, config, existing_df, access_token)
+            new_data = process_topic(model, topic_name, config, existing_df)
 
             if new_data is not None:
                 if not existing_df.empty:
@@ -789,17 +729,16 @@ def main() -> None:
             print(f"[Main] Error processing '{topic_name}': {exc}")
             continue
 
-    # --- Save to OneDrive ---
+    # --- Save ---
     print("\n" + "=" * 60)
-    print("SAVING TO ONEDRIVE")
+    print("SAVING")
     print("=" * 60)
 
     try:
-        write_multiple_sheets_to_onedrive(access_token, ONEDRIVE_SENTIMENT_PATH, all_sheets)
+        storage.write_sentiment_file(all_sheets)
 
         print("\n" + "=" * 60)
         print("DONE!")
-        print(f"[Main] File  : {ONEDRIVE_SENTIMENT_PATH}")
         print(f"[Main] Sheets: {len(all_sheets)}")
         print("=" * 60 + "\n")
 

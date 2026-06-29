@@ -2,20 +2,14 @@ import os
 import sys
 import traceback
 from datetime import datetime
-from io import BytesIO
 
 import pandas as pd
 import requests
 from dotenv import load_dotenv
-from openpyxl import load_workbook
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from helpers.onedrive_helper import (
-    download_excel_from_onedrive,
-    get_access_token,
-    upload_excel_to_onedrive,
-)
+from helpers.storage_backend import storage
 
 load_dotenv()
 
@@ -57,57 +51,22 @@ HEADERS = {
 
 # Duplicate Check
 
-def check_year_exists_in_onedrive(access_token, tahun: str) -> dict[str, bool]:
+def _year_exists_in_storage(tahun: str) -> dict[str, bool]:
     """
-    Check whether data for the given year already exists in each WTE sheet.
+    Check whether data for the given year already exists in each WTE sheet in storage.
 
     Returns a dict {jenis: bool} for 'sumber', 'komposisi', 'timbulan'.
     """
-    default = {jenis: False for jenis in SHEET_MAPPING}
-
-    try:
-        excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
-        if excel_buffer is None:
-            print("[Check] File belum ada di OneDrive.")
-            return default
-
-        excel_buffer.seek(0)
-        wb      = load_workbook(excel_buffer)
-        results = {}
-
-        for jenis, sheet_name in SHEET_MAPPING.items():
-            if sheet_name not in wb.sheetnames:
-                print(f"[Check] [{jenis}] Sheet tidak ditemukan.")
-                results[jenis] = False
-                continue
-
-            ws        = wb[sheet_name]
-            tahun_col = None
-            for col in range(1, ws.max_column + 1):
-                if ws.cell(1, col).value == "tahun":
-                    tahun_col = col
-                    break
-
-            if tahun_col is None:
-                print(f"[Check] [{jenis}] Kolom 'tahun' tidak ditemukan.")
-                results[jenis] = False
-                continue
-
-            found = any(
-                str(ws.cell(row, tahun_col).value) == str(tahun)
-                for row in range(2, ws.max_row + 1)
-                if ws.cell(row, tahun_col).value is not None
-            )
-            results[jenis] = found
+    result = {}
+    for jenis, sheet_name in SHEET_MAPPING.items():
+        try:
+            df = storage.read_structured_sheet(sheet_name)
+            found = not df.empty and str(tahun) in df["tahun"].astype(str).values
+            result[jenis] = found
             print(f"[Check] [{jenis}] Data tahun {tahun}: {'Sudah ada' if found else 'Belum ada'}.")
-
-        wb.close()
-        return results
-
-    except Exception as exc:
-        print(f"[Check] Error saat cek tahun: {exc}")
-        traceback.print_exc()
-        return default
+        except Exception:
+            result[jenis] = False
+    return result
 
 
 # Data Fetching
@@ -176,125 +135,52 @@ def _merge_data_by_year(df_existing: pd.DataFrame, df_new: pd.DataFrame) -> pd.D
     return df_combined
 
 
-# Save to OneDrive — tidak ada perubahan
+# Save to Storage
 
-def save_to_onedrive(access_token, data_dict: dict[str, pd.DataFrame], tahun: str) -> None:
+def save_to_storage(data_dict: dict[str, pd.DataFrame], tahun: str) -> None:
     """
-    Merge new WTE data with existing OneDrive sheets, deduplicate, and upload.
-
-    Preserves all other sheets in the workbook.
+    Merge new WTE data with existing storage sheets, deduplicate, and write.
     """
     if not data_dict or all(df.empty for df in data_dict.values()):
         print("[Save] Tidak ada data untuk disimpan.")
         return
 
     print(f"\n{'='*60}")
-    print(f"[Save] Menyimpan data tahun {tahun} ke OneDrive...")
+    print(f"[Save] Menyimpan data tahun {tahun} ke storage...")
     print(f"{'='*60}")
 
-    excel_buffer  = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
-    output_buffer = BytesIO()
-
     try:
-        if excel_buffer is None:
-            print("[Save] File belum ada — membuat baru...")
-            with pd.ExcelWriter(output_buffer, engine="openpyxl", mode="w") as writer:
-                for jenis, df in data_dict.items():
-                    df.to_excel(writer, sheet_name=SHEET_MAPPING[jenis], index=False)
-        else:
-            print("[Save] File ditemukan di OneDrive — merging data...")
-            excel_buffer.seek(0)
-            wb = load_workbook(excel_buffer)
+        for jenis, df_new in data_dict.items():
+            sheet_name = SHEET_MAPPING[jenis]
+            print(f"\n[Save] Sheet: {sheet_name}")
 
-            # Fix hidden sheets
-            visible_sheets = [s for s in wb.worksheets if s.sheet_state == "visible"]
-            if len(visible_sheets) == 0:
-                wb.worksheets[0].sheet_state = "visible"
-                wb.active = 0
+            existing = storage.read_structured_sheet(sheet_name)
+            if not existing.empty:
+                print(f"[Save]   Data existing         : {len(existing)} rows.")
+                print(f"[Save]   Data baru (tahun {tahun}): {len(df_new)} rows.")
+                df_merged = _merge_data_by_year(existing, df_new)
+            else:
+                df_merged = df_new
+                print(f"[Save]   Sheet kosong — akan membuat baru.")
 
-            for jenis, df_new in data_dict.items():
-                sheet_name = SHEET_MAPPING[jenis]
-                print(f"\n[Save] Sheet: {sheet_name}")
-
-                if sheet_name in wb.sheetnames:
-                    ws = wb[sheet_name]
-
-                    # Find first non-empty column
-                    first_col = 1
-                    while first_col <= ws.max_column and ws.cell(1, first_col).value is None:
-                        first_col += 1
-
-                    headers = [ws.cell(1, col).value for col in range(first_col, ws.max_column + 1)]
-                    rows    = [
-                        [ws.cell(row, col).value for col in range(first_col, ws.max_column + 1)]
-                        for row in range(2, ws.max_row + 1)
-                    ]
-                    df_existing = pd.DataFrame(rows, columns=headers)
-                    print(f"[Save]   Data existing         : {len(df_existing)} rows.")
-                    print(f"[Save]   Data baru (tahun {tahun}): {len(df_new)} rows.")
-
-                    df_merged = _merge_data_by_year(df_existing, df_new)
-                    del wb[sheet_name]
-                    ws = wb.create_sheet(sheet_name)
-
-                    for col_idx, col_name in enumerate(df_merged.columns, 1):
-                        ws.cell(row=1, column=col_idx, value=col_name)
-                    for row_idx, row_data in enumerate(df_merged.values, 2):
-                        for col_idx, value in enumerate(row_data, 1):
-                            ws.cell(row=row_idx, column=col_idx, value=value)
-                    print(f"[Save]   Merged: {len(df_merged)} rows.")
-
-                else:
-                    print(f"[Save]   Sheet belum ada — membuat baru...")
-                    ws = wb.create_sheet(sheet_name)
-                    for col_idx, col_name in enumerate(df_new.columns, 1):
-                        ws.cell(row=1, column=col_idx, value=col_name)
-                    for row_idx, row_data in enumerate(df_new.values, 2):
-                        for col_idx, value in enumerate(row_data, 1):
-                            ws.cell(row=row_idx, column=col_idx, value=value)
-                    print(f"[Save]   Created: {len(df_new)} rows.")
-
-            wb.save(output_buffer)
-            wb.close()
-
-        output_buffer.seek(0)
-
-        # Verifikasi
-        verify_wb = load_workbook(output_buffer)
-        print(f"\n[Save] Verifikasi sheet: {verify_wb.sheetnames}")
-        verify_wb.close()
-        output_buffer.seek(0)
-
-        # Upload
-        print(f"\n[Save] Uploading ke OneDrive: {ONEDRIVE_FILE_PATH}")
-        upload_excel_to_onedrive(access_token, ONEDRIVE_FILE_PATH, output_buffer)
+            storage.write_structured_sheet(sheet_name, df_merged)
+            print(f"[Save]   Saved: {len(df_merged)} rows.")
 
         print(f"\n{'='*60}")
-        print("[Save] DATA BERHASIL DISIMPAN KE ONEDRIVE")
+        print("[Save] DATA BERHASIL DISIMPAN")
         print(f"{'='*60}")
-        print(f"[Save] File: {ONEDRIVE_FILE_PATH}")
 
     except Exception as exc:
         print(f"[Save] Error saat menyimpan: {exc}")
         traceback.print_exc()
 
 
-# Public Entry Point — tidak ada perubahan
+# Public Entry Point
 
 def main_sipsn_scraper() -> None:
     print(f"\n{'='*60}")
     print("SCRAPER SIPSN WTE")
-    print("STORAGE MODE: OneDrive")
     print(f"{'='*60}")
-    print(f"\n[Main] File: {ONEDRIVE_FILE_PATH}")
-
-    print("\n[Main] Authenticating to Microsoft Graph API...")
-    try:
-        access_token = get_access_token()
-        print("[Main] Authentication successful.")
-    except Exception as exc:
-        print(f"[Main] Authentication failed: {exc}")
-        return
 
     tahun_sekarang = datetime.now().year
     tahun_awal     = 2015
@@ -307,7 +193,7 @@ def main_sipsn_scraper() -> None:
         print(f"[Main] Memproses tahun {tahun_str}...")
         print(f"{'='*60}")
 
-        data_status = check_year_exists_in_onedrive(access_token, tahun_str)
+        data_status = _year_exists_in_storage(tahun_str)
 
         if all(data_status.values()):
             print(f"[Main] Semua data tahun {tahun_str} sudah ada — skip.")
@@ -322,7 +208,7 @@ def main_sipsn_scraper() -> None:
             print(f"[Main] Tidak ada data untuk tahun {tahun_str} — kemungkinan belum tersedia, skip.")
             continue
 
-        save_to_onedrive(access_token, data_dict, tahun_str)
+        save_to_storage(data_dict, tahun_str)
 
     print(f"\n{'='*60}")
     print("[Main] SELESAI!")

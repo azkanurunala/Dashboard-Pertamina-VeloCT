@@ -11,12 +11,7 @@ load_dotenv()
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from helpers.onedrive_helper import (
-    download_excel_from_onedrive,
-    get_access_token,
-    read_excel_sheet_from_onedrive,
-    write_multiple_sheets_to_onedrive,
-)
+from helpers.storage_backend import storage
 from news.bioenergytimes import scrape_bioenergytimes
 from news.cnbc import main_google_news_cnbc
 from news.cnn import main_google_news_cnn
@@ -25,11 +20,6 @@ from news.oilprice import scrape_oilprice
 from news.spglobal_news import scrape_spglobal as scrape_news_sap
 from news.scmp import main_scmp
 from news.the_guardian import scrape_the_guardian as scrape_theguardian
-
-
-# CONFIG
-
-ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_FILE_PATH", "/results/(News)Scraping_final.xlsx")
 
 
 # KEYWORD SYNONYMS
@@ -415,7 +405,7 @@ def main() -> None:
     write the updated file back to OneDrive.
     """
     print("\n" + "=" * 60)
-    print("NEWS SCRAPING TO ONEDRIVE")
+    print("NEWS SCRAPING")
     print("=" * 60)
 
     # === KONFIGURASI TANGGAL ===
@@ -424,10 +414,13 @@ def main() -> None:
     # Mode 1: Satu tanggal spesifik
     # tanggal_list = ["2026-04-21"]
 
-    # Mode 2: Range tanggal
-    START_DATE   = "2026-04-17"
-    END_DATE     = "2026-04-30"
-    tanggal_list = generate_date_range(START_DATE, END_DATE)
+    if os.getenv("CI"):
+        tanggal_list = [(datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")]
+    else:
+        # Mode 2: Range tanggal
+        START_DATE   = "2026-04-17"
+        END_DATE     = "2026-04-30"
+        tanggal_list = generate_date_range(START_DATE, END_DATE)
 
     # Mode 3: Kemarin
     # tanggal_list = [(datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")]
@@ -440,42 +433,9 @@ def main() -> None:
     for t in tanggal_list:
         print(f"  - {t}")
 
-    print("\nAuthenticating to Microsoft Graph API...")
-    try:
-        access_token = get_access_token()
-        print("Authentication successful.")
-    except Exception as exc:
-        print(f"Authentication failed: {exc}")
-        return
-
-    # --- Load existing sheets dari OneDrive SEKALI di awal ---
-    print(f"\nLoading existing data from OneDrive...")
-    print(f"File: {ONEDRIVE_FILE_PATH}")
-
-    excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
-    all_sheets: dict[str, pd.DataFrame] = {}
-
-    if excel_buffer is None:
-        print("[Main] File not found — a new file will be created.")
-        for sheet_name in ACTIVE_SHEETS:
-            all_sheets[sheet_name] = pd.DataFrame()
-    else:
-        print("[Main] File found — reading all sheets...")
-        excel_buffer.seek(0)
-        excel_file = pd.ExcelFile(excel_buffer)
-        for sheet_name in ACTIVE_SHEETS:
-            try:
-                if sheet_name in excel_file.sheet_names:
-                    df = pd.read_excel(excel_file, sheet_name=sheet_name)
-                    all_sheets[sheet_name] = df
-                    print(f"  '{sheet_name}': {len(df)} row(s)")
-                else:
-                    print(f"  '{sheet_name}': not found — will be created.")
-                    all_sheets[sheet_name] = pd.DataFrame()
-            except Exception as exc:
-                print(f"  '{sheet_name}': error ({exc}) — will be created.")
-                all_sheets[sheet_name] = pd.DataFrame()
-        excel_file.close()
+    # --- Load existing sheets SEKALI di awal ---
+    print(f"\nLoading existing data...")
+    all_sheets = storage.read_all_news_sheets(ACTIVE_SHEETS)
 
     # --- Loop per tanggal ---
     total_dates = len(tanggal_list)
@@ -521,9 +481,8 @@ def main() -> None:
         print(f"{'=' * 60}")
 
         try:
-            access_token = get_access_token()  # Refresh token setiap save
-            write_multiple_sheets_to_onedrive(access_token, ONEDRIVE_FILE_PATH, all_sheets)
-            print(f"Berhasil disimpan ke OneDrive.")
+            storage.write_news_file(all_sheets)
+            print(f"Berhasil disimpan.")
         except Exception as exc:
             print(f"Error saat menyimpan setelah tanggal {tanggal_filter}: {exc}")
             print("Melanjutkan ke tanggal berikutnya...")
@@ -537,7 +496,6 @@ def main() -> None:
     # --- Summary akhir ---
     print("\n" + "=" * 60)
     print("SELESAI SEMUA TANGGAL!")
-    print(f"File            : {ONEDRIVE_FILE_PATH}")
     print(f"Sheets          : {len(ACTIVE_SHEETS)}")
     print(f"Tanggal diproses: {tanggal_list[0]} s/d {tanggal_list[-1]}")
     print(f"Total baris     : {sum(len(df) for df in all_sheets.values())}")
