@@ -1,0 +1,54 @@
+name: Daily Morning (News Lokal + CPO + Sentiment Lokal)
+
+on:
+  schedule:
+    - cron: "0 1 * * 1-5"   # Mon–Fri 08:00 WIB (UTC+7 = 01:00 UTC)
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    env:
+      STORAGE_BACKEND: neon
+      NEON_DB_URL: ${{ secrets.NEON_DB_URL }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_MODEL_NAME: ${{ secrets.OPENAI_MODEL_NAME }}
+      AI_TYPE: ${{ secrets.AI_TYPE }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+      SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+      SPREADSHEET_ID_STRUCTURE: ${{ secrets.SPREADSHEET_ID_STRUCTURE }}
+      MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+      MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+      MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+      MS_USER_EMAIL: ${{ secrets.MS_USER_EMAIL }}
+      ONEDRIVE_FILE_PATH: ${{ secrets.ONEDRIVE_FILE_PATH }}
+      ONEDRIVE_SENTIMENT_PATH: ${{ secrets.ONEDRIVE_SENTIMENT_PATH }}
+      ONEDRIVE_DATA_PATH: ${{ secrets.ONEDRIVE_DATA_PATH }}
+      CI: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt psycopg2-binary
+
+      - name: Run daily morning pipeline
+        run: python src/scheduler/scheduling_day_morning.py

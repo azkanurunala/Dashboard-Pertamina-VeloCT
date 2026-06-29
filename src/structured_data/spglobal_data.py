@@ -2,21 +2,15 @@ import os
 import sys
 import time
 from datetime import datetime, timedelta
-from io import BytesIO
 
 import pandas as pd
 import requests
 import tqdm
 from dotenv import load_dotenv
-from openpyxl import load_workbook
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from helpers.onedrive_helper import (
-    download_excel_from_onedrive,
-    get_access_token,
-    upload_excel_to_onedrive,
-)
+from helpers.storage_backend import storage
 
 load_dotenv()
 
@@ -910,35 +904,17 @@ def merge_with_existing_data_petrochemical(df_old, df_new):
     return df_merged
 
 
-# OneDrive Read / Write
+# Storage Read / Write
 
-def read_sap_sheet_from_onedrive(access_token, file_path, sheet_name):
+def _write_sheet_to_storage(sheet_name, df_new, merge_key="assessDate"):
     """
-    Download and return a sheet from OneDrive as a DataFrame.
-
-    Returns an empty DataFrame if file or sheet is not found.
-    """
-    excel_buffer = download_excel_from_onedrive(access_token, file_path)
-    if excel_buffer is None:
-        print(f"[Read] File tidak ditemukan — akan membuat baru.")
-        return pd.DataFrame()
-    try:
-        df = pd.read_excel(excel_buffer, sheet_name=sheet_name)
-        print(f"[Read] Berhasil baca sheet '{sheet_name}', rows={len(df)}.")
-        return df
-    except Exception:
-        print(f"[Read] Sheet '{sheet_name}' tidak ditemukan — akan membuat baru.")
-        return pd.DataFrame()
-
-def write_sap_sheet_to_onedrive(access_token, file_path, sheet_name, df_new, merge_key="assessDate"):
-    """
-    Merge df_new with the existing OneDrive sheet and upload the result.
+    Merge df_new with the existing storage sheet and write the result.
 
     merge_key determines which merge strategy is used.
     """
-    print(f"\n[Write] Menyiapkan file Excel untuk sheet '{sheet_name}'...")
+    print(f"\n[Write] Menyiapkan sheet '{sheet_name}'...")
 
-    df_old = read_sap_sheet_from_onedrive(access_token, file_path, sheet_name)
+    df_old = storage.read_structured_sheet(sheet_name)
 
     if merge_key == "year":
         df_final = merge_with_existing_data_forecast(df_old, df_new)
@@ -949,49 +925,8 @@ def write_sap_sheet_to_onedrive(access_token, file_path, sheet_name, df_new, mer
     else:
         df_final = merge_with_existing_data(df_old, df_new)
 
-    excel_buffer  = download_excel_from_onedrive(access_token, file_path)
-    output_buffer = BytesIO()
-
-    if excel_buffer is None:
-        print("[Write] File baru — hanya ada 1 sheet.")
-        with pd.ExcelWriter(output_buffer, engine="openpyxl", mode="w") as writer:
-            df_final.to_excel(writer, sheet_name=sheet_name, index=False)
-    else:
-        print("[Write] File existing — mode update...")
-        try:
-            wb = load_workbook(excel_buffer)
-
-            # Fix hidden sheets
-            visible_sheets = [s for s in wb.worksheets if s.sheet_state == "visible"]
-            if len(visible_sheets) == 0:
-                print("[Write] Fixing hidden sheets...")
-                wb.worksheets[0].sheet_state = "visible"
-                wb.active = 0
-                for sheet in wb.worksheets:
-                    if sheet.sheet_state != "visible":
-                        sheet.sheet_state = "visible"
-
-            temp_buffer = BytesIO()
-            wb.save(temp_buffer)
-            wb.close()
-            temp_buffer.seek(0)
-
-            with pd.ExcelWriter(
-                temp_buffer, engine="openpyxl", mode="a", if_sheet_exists="replace"
-            ) as writer:
-                df_final.to_excel(writer, sheet_name=sheet_name, index=False)
-
-            output_buffer = temp_buffer
-
-        except Exception as exc:
-            print(f"[Write] Error saat update: {exc} — fallback ke create new.")
-            with pd.ExcelWriter(output_buffer, engine="openpyxl", mode="w") as writer:
-                df_final.to_excel(writer, sheet_name=sheet_name, index=False)
-
-    output_buffer.seek(0)
-    print(f"[Write] Uploading ke OneDrive: {file_path}")
-    upload_excel_to_onedrive(access_token, file_path, output_buffer)
-    print("[Write] Upload selesai!")
+    storage.write_structured_sheet(sheet_name, df_final)
+    print(f"[Write] Sheet '{sheet_name}' berhasil disimpan ({len(df_final)} rows).")
 
 
 # Public Entry Points
@@ -1002,33 +937,22 @@ def main_saf_daily():
     print("SCRAPER SAF — CURRENT (DAILY)")
     print(f"{'='*60}")
 
-    try:
-        onedrive_token = get_access_token()
-        print("[Main] OneDrive authentication successful.")
-    except Exception as exc:
-        print(f"[Main] OneDrive authentication failed: {exc}")
-        # exit(1)
-        return
-
     sp_token = login_spglobal()
     if not sp_token:
         print("[Main] Gagal login ke S&P Global API.")
-        # exit(1)
         return
 
     df_current = get_current_data(sp_token, SAF_SYMBOLS)
     if df_current is None:
         print("\n[Main] Gagal mengambil data current.")
-        # exit(1)
         return
 
     df_pivoted = pivot_data_to_columns_saf(df_current)
-    write_sap_sheet_to_onedrive(onedrive_token, ONEDRIVE_FILE_PATH, SHEET_NAME_SAF, df_pivoted)
+    _write_sheet_to_storage(SHEET_NAME_SAF, df_pivoted)
 
     print(f"\n{'='*60}")
-    print("[Main] DATA BERHASIL DISIMPAN KE ONEDRIVE")
+    print("[Main] DATA BERHASIL DISIMPAN")
     print(f"{'='*60}")
-    print(f"[Main] File  : {ONEDRIVE_FILE_PATH}")
     print(f"[Main] Sheet : {SHEET_NAME_SAF}")
     print(f"[Main] Format: assessDate | value_UCO | value_SAF | modDate_UCO | modDate_SAF")
     print(f"[Main] Rows  : {len(df_pivoted)}")
@@ -1043,34 +967,23 @@ def main_saf_weekly():
     end_date   = datetime.today().strftime("%Y-%m-%d")
     start_date = (datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")
 
-    try:
-        onedrive_token = get_access_token()
-        print("[Main] OneDrive authentication successful.")
-    except Exception as exc:
-        print(f"[Main] OneDrive authentication failed: {exc}")
-        # exit(1)
-        return
-
     sp_token = login_spglobal()
     if not sp_token:
         print("[Main] Gagal login ke S&P Global API.")
-        # exit(1)
         return
 
     print(f"\n[Main] Period: {start_date} to {end_date}")
     df_historical = get_historical_data(sp_token, SAF_SYMBOLS, start_date, end_date)
     if df_historical is None:
         print("\n[Main] Gagal mengambil data historical.")
-        # exit(1)
         return
 
     df_pivoted = pivot_data_to_columns_saf(df_historical)
-    write_sap_sheet_to_onedrive(onedrive_token, ONEDRIVE_FILE_PATH, SHEET_NAME_SAF, df_pivoted)
+    _write_sheet_to_storage(SHEET_NAME_SAF, df_pivoted)
 
     print(f"\n{'='*60}")
-    print("[Main] DATA BERHASIL DISIMPAN KE ONEDRIVE")
+    print("[Main] DATA BERHASIL DISIMPAN")
     print(f"{'='*60}")
-    print(f"[Main] File  : {ONEDRIVE_FILE_PATH}")
     print(f"[Main] Sheet : {SHEET_NAME_SAF}")
     print(f"[Main] Rows  : {len(df_pivoted)}")
     print(f"\n{'='*60}\n[Main] SELESAI\n{'='*60}")
@@ -1087,18 +1000,9 @@ def main_petrochemical_short_term():
     else:
         current_year, current_month = today.year, today.month - 1
 
-    try:
-        onedrive_token = get_access_token()
-        print("[Main] OneDrive authentication successful.")
-    except Exception as exc:
-        print(f"[Main] OneDrive authentication failed: {exc}")
-        # exit(1)
-        return
-
     sp_token = login_spglobal()
     if not sp_token:
         print("[Main] Gagal login ke S&P Global API.")
-        # exit(1)
         return
 
     all_data = []
@@ -1172,10 +1076,7 @@ def main_petrochemical_short_term():
             df_pivoted[col] = None
     df_pivoted = df_pivoted[column_order]
 
-    write_sap_sheet_to_onedrive(
-        onedrive_token, ONEDRIVE_FILE_PATH, SHEET_NAME_PETROCHEMICAL,
-        df_pivoted, merge_key=["Year", "Month"]
-    )
+    _write_sheet_to_storage(SHEET_NAME_PETROCHEMICAL, df_pivoted, merge_key=["Year", "Month"])
     print(f"\n{'='*60}\n[Main] SELESAI\n{'='*60}")
 
 def main_price_forecast_short_term_bbm():
@@ -1190,18 +1091,9 @@ def main_price_forecast_short_term_bbm():
     else:
         current_year, current_month = today.year, today.month - 1
 
-    try:
-        onedrive_token = get_access_token()
-        print("[Main] OneDrive authentication successful.")
-    except Exception as exc:
-        print(f"[Main] OneDrive authentication failed: {exc}")
-        # exit(1)
-        return
-
     sp_token = login_spglobal()
     if not sp_token:
         print("[Main] Gagal login ke S&P Global API.")
-        # exit(1)
         return
 
     print(f"\n[Main] Period  : {current_year}-{current_month:02d}")
@@ -1217,15 +1109,11 @@ def main_price_forecast_short_term_bbm():
         return
 
     df_pivoted = pivot_data_to_columns_price_forecast_bbm_short_term(df_forecast)
-    write_sap_sheet_to_onedrive(
-        onedrive_token, ONEDRIVE_FILE_PATH, SHEET_NAME_FORECAST_BBM_SHORT,
-        df_pivoted, merge_key=["year", "month"]
-    )
+    _write_sheet_to_storage(SHEET_NAME_FORECAST_BBM_SHORT, df_pivoted, merge_key=["year", "month"])
 
     print(f"\n{'='*60}")
-    print("[Main] DATA BERHASIL DISIMPAN KE ONEDRIVE")
+    print("[Main] DATA BERHASIL DISIMPAN")
     print(f"{'='*60}")
-    print(f"[Main] File  : {ONEDRIVE_FILE_PATH}")
     print(f"[Main] Sheet : {SHEET_NAME_FORECAST_BBM_SHORT}")
     print(f"[Main] Rows  : {len(df_pivoted)}")
     print(f"\n{'='*60}\n[Main] SELESAI\n{'='*60}")
@@ -1238,18 +1126,9 @@ def main_price_forecast_long_term_bbm():
 
     current_year = datetime.today().year
 
-    try:
-        onedrive_token = get_access_token()
-        print("[Main] OneDrive authentication successful.")
-    except Exception as exc:
-        print(f"[Main] OneDrive authentication failed: {exc}")
-        # exit(1)
-        return
-
     sp_token = login_spglobal()
     if not sp_token:
         print("[Main] Gagal login ke S&P Global API.")
-        # exit(1)
         return
 
     print(f"\n[Main] Period  : {current_year}")
@@ -1265,15 +1144,11 @@ def main_price_forecast_long_term_bbm():
         return
 
     df_pivoted = pivot_data_to_columns_price_forecast_bbm(df_forecast)
-    write_sap_sheet_to_onedrive(
-        onedrive_token, ONEDRIVE_FILE_PATH, SHEET_NAME_FORECAST_BBM_LONG,
-        df_pivoted, merge_key="year"
-    )
+    _write_sheet_to_storage(SHEET_NAME_FORECAST_BBM_LONG, df_pivoted, merge_key="year")
 
     print(f"\n{'='*60}")
-    print("[Main] DATA BERHASIL DISIMPAN KE ONEDRIVE")
+    print("[Main] DATA BERHASIL DISIMPAN")
     print(f"{'='*60}")
-    print(f"[Main] File  : {ONEDRIVE_FILE_PATH}")
     print(f"[Main] Sheet : {SHEET_NAME_FORECAST_BBM_LONG}")
     print(f"[Main] Rows  : {len(df_pivoted)}")
     print(f"\n{'='*60}\n[Main] SELESAI\n{'='*60}")

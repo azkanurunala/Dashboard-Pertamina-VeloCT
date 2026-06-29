@@ -3,22 +3,16 @@ import re
 import sys
 import time
 from datetime import datetime
-from io import BytesIO
 
 import pandas as pd
 import pdfplumber
 import requests
 from dotenv import load_dotenv
-from openpyxl import load_workbook
 from tqdm import tqdm
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from helpers.onedrive_helper import (
-    download_excel_from_onedrive,
-    get_access_token,
-    upload_excel_to_onedrive,
-)
+from helpers.storage_backend import storage
 
 load_dotenv()
 
@@ -75,9 +69,9 @@ def parse_date(date_str):
 
 # Missing Months Check
 
-def get_missing_months_from_excel(access_token, sheet_name=SHEET_NAME):
+def get_missing_months_from_excel(sheet_name=SHEET_NAME):
     """
-    Compare the latest Bulan HIP in OneDrive against the current month.
+    Compare the latest Bulan HIP in storage against the current month.
 
     Returns:
         0    — data is up-to-date
@@ -85,12 +79,7 @@ def get_missing_months_from_excel(access_token, sheet_name=SHEET_NAME):
         None — file/sheet not found or unreadable (treat as fresh start)
     """
     try:
-        excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
-        if excel_buffer is None:
-            print("[Check] File Excel tidak ditemukan di OneDrive, asumsikan scraping awal.")
-            return None
-
-        df = pd.read_excel(excel_buffer, sheet_name=sheet_name, engine="openpyxl")
+        df = storage.read_structured_sheet(sheet_name)
         if df.empty or "Bulan HIP" not in df.columns:
             print("[Check] Sheet kosong atau kolom 'Bulan HIP' tidak ada, asumsikan scraping awal.")
             return None
@@ -132,9 +121,6 @@ def get_missing_months_from_excel(access_token, sheet_name=SHEET_NAME):
         print(f"[Check] Selisih            : {diff} bulan")
         return diff
 
-    except FileNotFoundError:
-        print("[Check] File Excel tidak ditemukan, asumsikan scraping awal.")
-        return None
     except Exception as exc:
         print(f"[Check] Error membaca file: {exc} — asumsikan scraping awal.")
         return None
@@ -170,14 +156,14 @@ def _extract_pdf_url_from_html(html_content):
     )
     return match.group(1) if match else None
 
-def scrape_biodiesel_articles_api(access_token, sheet_name=SHEET_NAME):
+def scrape_biodiesel_articles_api(sheet_name=SHEET_NAME):
     """
     Fetch biodiesel HIP articles from ESDM API based on missing months.
 
     Returns:
         (articles, missing_months) — articles is a deduplicated list of dicts.
     """
-    missing_months = get_missing_months_from_excel(access_token, sheet_name)
+    missing_months = get_missing_months_from_excel(sheet_name)
 
     if missing_months == 0:
         print("[Scrape] Tidak ada artikel baru yang perlu diambil.")
@@ -474,13 +460,12 @@ def parse_all_pdfs(all_articles):
     return excel_data
 
 
-# Save to OneDrive
+# Save to Storage
 
-def save_to_excel(access_token, data, sheet_name=SHEET_NAME):
+def save_to_excel(data, sheet_name=SHEET_NAME):
     """
-    Merge new HIP data with existing OneDrive sheet, deduplicate, sort, and upload.
+    Merge new HIP data with existing storage sheet, deduplicate, sort, and write.
 
-    Preserves all other sheets in the workbook.
     Returns the combined DataFrame on success, None on failure.
     """
     if not data:
@@ -488,7 +473,7 @@ def save_to_excel(access_token, data, sheet_name=SHEET_NAME):
         return None
 
     print(f"\n{'='*60}")
-    print("[Save] Menyimpan data ke OneDrive")
+    print("[Save] Menyimpan data ke storage")
     print(f"{'='*60}")
 
     new_df = pd.DataFrame(data)
@@ -496,23 +481,18 @@ def save_to_excel(access_token, data, sheet_name=SHEET_NAME):
     print(f"[Save] Data baru: {len(new_df)} baris.")
 
     # Load existing data
-    excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
-
-    if excel_buffer is None:
-        print("[Save] File tidak ada di OneDrive, akan membuat baru.")
-        combined_df = new_df
-    else:
-        try:
-            existing_df = pd.read_excel(excel_buffer, sheet_name=sheet_name, engine="openpyxl")
+    try:
+        existing_df = storage.read_structured_sheet(sheet_name)
+        if existing_df.empty:
+            print("[Save] Sheet kosong, akan membuat baru.")
+            combined_df = new_df
+        else:
             existing_df["Date"] = pd.to_datetime(existing_df["Date"], errors="coerce")
             print(f"[Save] Data lama: {len(existing_df)} baris.")
             combined_df = pd.concat([existing_df, new_df], ignore_index=True)
-        except ValueError:
-            print(f"[Save] Sheet '{sheet_name}' tidak ditemukan, membuat sheet baru.")
-            combined_df = new_df
-        except Exception as exc:
-            print(f"[Save] Error membaca sheet existing: {exc}")
-            combined_df = new_df
+    except Exception as exc:
+        print(f"[Save] Error membaca sheet existing: {exc}")
+        combined_df = new_df
 
     # Deduplikasi dan sorting
     combined_df = combined_df.drop_duplicates(subset=["Bulan HIP"], keep="last")
@@ -520,60 +500,12 @@ def save_to_excel(access_token, data, sheet_name=SHEET_NAME):
     combined_df["Date"] = combined_df["Date"].dt.strftime("%Y-%m-%d")
     print(f"[Save] Data setelah deduplikasi: {len(combined_df)} baris.")
 
-    output_buffer = BytesIO()
-
     try:
-        if excel_buffer is None:
-            print("[Save] Membuat file Excel baru...")
-            with pd.ExcelWriter(output_buffer, engine="openpyxl", mode="w") as writer:
-                combined_df.to_excel(writer, sheet_name=sheet_name, index=False)
-        else:
-            print("[Save] File existing ditemukan, preserve semua sheet...")
-            excel_buffer.seek(0)
-            wb = load_workbook(excel_buffer)
-            print(f"[Save] Sheet saat ini: {wb.sheetnames}")
-
-            # Fix hidden sheets
-            visible_sheets = [s for s in wb.worksheets if s.sheet_state == "visible"]
-            if len(visible_sheets) == 0:
-                print("[Save] Fixing hidden sheets...")
-                wb.worksheets[0].sheet_state = "visible"
-                wb.active = 0
-            for sheet in wb.worksheets:
-                sheet.sheet_state = "visible"
-
-            # Hapus dan buat ulang sheet target
-            if sheet_name in wb.sheetnames:
-                print(f"[Save] Menghapus sheet '{sheet_name}' yang lama...")
-                del wb[sheet_name]
-            ws = wb.create_sheet(sheet_name)
-
-            for col_idx, col_name in enumerate(combined_df.columns, 1):
-                ws.cell(row=1, column=col_idx, value=col_name)
-            for row_idx, row_data in enumerate(combined_df.values, 2):
-                for col_idx, value in enumerate(row_data, 1):
-                    ws.cell(row=row_idx, column=col_idx, value=value)
-
-            print(f"[Save] Sheet yang akan disimpan: {wb.sheetnames}")
-            wb.save(output_buffer)
-            wb.close()
-
-        output_buffer.seek(0)
-
-        # Verifikasi
-        verify_wb = load_workbook(output_buffer)
-        print(f"[Save] Verifikasi sheet: {verify_wb.sheetnames}")
-        verify_wb.close()
-        output_buffer.seek(0)
-
-        # Upload
-        print(f"[Save] Uploading ke OneDrive: {ONEDRIVE_FILE_PATH}")
-        upload_excel_to_onedrive(access_token, ONEDRIVE_FILE_PATH, output_buffer)
+        storage.write_structured_sheet(sheet_name, combined_df)
 
         print(f"\n{'='*60}")
-        print("[Save] DATA BERHASIL DISIMPAN KE ONEDRIVE")
+        print("[Save] DATA BERHASIL DISIMPAN")
         print(f"{'='*60}")
-        print(f"[Save] File      : {ONEDRIVE_FILE_PATH}")
         print(f"[Save] Sheet     : {sheet_name}")
         print(f"[Save] Total rows: {len(combined_df)}")
         print(f"[Save] Data baru : {len(new_df)} baris")
@@ -592,24 +524,14 @@ def save_to_excel(access_token, data, sheet_name=SHEET_NAME):
 def main_biodiesel_esdm():
     """
     Run the full Biodiesel HIP scraping workflow:
-    authenticate, fetch articles, download PDFs (with HTML fallback), save to OneDrive.
+    fetch articles, download PDFs (with HTML fallback), save to storage.
     """
     print(f"\n{'='*60}")
     print("SCRAPER HIP BBN BIODIESEL (API VERSION)")
-    print("STORAGE MODE: OneDrive")
     print(f"{'='*60}")
-    print(f"\n[Main] File : {ONEDRIVE_FILE_PATH}")
-    print(f"[Main] Sheet: {SHEET_NAME}")
+    print(f"\n[Main] Sheet: {SHEET_NAME}")
 
-    print("\n[Main] Authenticating to Microsoft Graph API...")
-    try:
-        access_token = get_access_token()
-        print("[Main] Authentication successful.")
-    except Exception as exc:
-        print(f"[Main] Authentication failed: {exc}")
-        return
-
-    data, missing_months = scrape_biodiesel_articles_api(access_token, SHEET_NAME)
+    data, missing_months = scrape_biodiesel_articles_api(SHEET_NAME)
     if not data:
         print("\n[Main] Tidak ada data untuk diproses.")
         return
@@ -626,13 +548,13 @@ def main_biodiesel_esdm():
         print("\n[Main] Tidak ada data HIP yang berhasil di-extract.")
         return
 
-    df = save_to_excel(access_token, excel_data, SHEET_NAME)
+    df = save_to_excel(excel_data, SHEET_NAME)
 
     print(f"\n{'='*60}")
     if df is not None:
         print("[Main] SELESAI!")
     else:
-        print("[Main] Gagal menyimpan data ke OneDrive.")
+        print("[Main] Gagal menyimpan data.")
     print(f"{'='*60}\n")
 
 
