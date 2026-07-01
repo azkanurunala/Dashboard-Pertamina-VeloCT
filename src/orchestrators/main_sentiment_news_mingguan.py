@@ -69,7 +69,7 @@ TOPICS: dict[str, dict] = {
 
     # "Indeks Kepercayaan Konsumen": {
     #     "target_sheets": ["(News)Indeks Kepercayaan Knsmn"],
-    #     "output_sheet": "(Summary)Idx Kepercayaan Konsumen",
+    #     "output_sheet": "(Summary)Idx Kepercayaan Konsum",
     #     "has_data_sentiment": False,
     #     "role_prompt" : "Ekonom",
     #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
@@ -255,8 +255,8 @@ TOPICS: dict[str, dict] = {
     },
     
     # "Crackspread_Non_BBM": {
-    #     "target_sheets": ["(News)Crackspread_NonBBM"],
-    #     "output_sheet": "(Summary)Crackspread_NonBBM",
+    #     "target_sheets": ["(News)Crackspread Non-BBM"],
+    #     "output_sheet": "(Summary)Crackspread Non-BBM",
     #     "has_data_sentiment": False,
     #     "role_prompt": "analis pasar energi dan produk kilang non-BBM di Indonesia",
     #     "spesific_prompt": (

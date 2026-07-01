@@ -56,11 +56,12 @@ CREATE TABLE IF NOT EXISTS data_bioetanol (
 
 -- (Data)Harga Minyak  — source: migas_esdm.py (OCR)
 CREATE TABLE IF NOT EXISTS data_harga_minyak (
-    id        SERIAL PRIMARY KEY,
-    "Tahun"   TEXT NOT NULL,
-    "Bulan"   TEXT NOT NULL,
-    "Harga"   DOUBLE PRECISION,
-    "Tanggal" DATE,
+    id           SERIAL PRIMARY KEY,
+    "Tahun"      TEXT NOT NULL,
+    "Bulan"      TEXT NOT NULL,
+    "Harga"      DOUBLE PRECISION,
+    "Harga_Brent" DOUBLE PRECISION,
+    "Tanggal"    TEXT,
     UNIQUE ("Tahun", "Bulan")
 );
 
