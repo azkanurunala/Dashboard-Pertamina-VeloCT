@@ -49,7 +49,11 @@ def read_table(table_name: str, topic: str | None = None) -> pd.DataFrame:
         params.append(topic)
     sql += " ORDER BY id"
     with _get_conn() as conn:
-        return pd.read_sql(sql, conn, params=params or None)
+        with conn.cursor() as cur:
+            cur.execute(sql, params or None)
+            cols = [desc[0] for desc in cur.description]
+            rows = cur.fetchall()
+    return pd.DataFrame(rows, columns=cols)
 
 
 def upsert_df(table_name: str, df: pd.DataFrame, conflict_cols: list[str]) -> int:
