@@ -191,11 +191,20 @@ def scrape_cnn_international(keyword: str, tanggal: str | None = None) -> list[d
         articles = [a for a in articles if a.get("tanggal") == tanggal]
         print(f"[Sitemap] {len(articles)} article(s) after date filter ({tanggal}).")
 
-    # Fetch content
-    print(f"[Sitemap] Fetching content for {len(articles)} article(s)...")
+    # Pre-filter by keyword in title/URL before fetching content
+    keyword_pattern = re.compile(
+        r"\b" + re.escape(keyword.strip().lower()) + r"\b"
+    )
+    title_matched = [
+        a for a in articles
+        if keyword_pattern.search(a["title"].lower())
+        or keyword_pattern.search(a["link"].lower())
+    ]
+    print(f"[Sitemap] {len(title_matched)} article(s) match keyword in title/URL — fetching content...")
+
     with_content: list[dict] = []
-    for i, article in enumerate(articles, start=1):
-        print(f"[Sitemap] ({i}/{len(articles)}) {article['title'][:60]}...")
+    for i, article in enumerate(title_matched, start=1):
+        print(f"[Sitemap] ({i}/{len(title_matched)}) {article['title'][:60]}...")
         content = _fetch_article_content(article["link"])
         time.sleep(CONTENT_FETCH_DELAY)
         with_content.append({
@@ -205,10 +214,7 @@ def scrape_cnn_international(keyword: str, tanggal: str | None = None) -> list[d
             "content": content,
         })
 
-    # Keyword filter (whole-word against title and content)
-    keyword_pattern = re.compile(
-        r"\b" + re.escape(keyword.strip().lower()) + r"\b"
-    )
+    # Final keyword filter includes content
     matched = [
         a for a in with_content
         if keyword_pattern.search(a["title"].lower())
