@@ -2,21 +2,15 @@ import os
 import re
 import sys
 from datetime import datetime
-from io import BytesIO
 
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-from openpyxl import load_workbook
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from helpers.onedrive_helper import (
-    download_excel_from_onedrive,
-    get_access_token,
-    upload_excel_to_onedrive,
-)
+from helpers.storage_backend import storage
 
 load_dotenv()
 
@@ -115,19 +109,14 @@ def get_eia_release_dates():
 
 # Last Entry Check
 
-def read_last_entry_from_excel(access_token):
+def read_last_entry_from_excel():
     """
     Read the EIA sheet and return (last_year, last_month_num) of the latest entry.
 
     Returns (None, None) if the sheet is empty, missing, or unreadable.
     """
     try:
-        excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
-        if excel_buffer is None:
-            print("[Check] File tidak ditemukan di OneDrive — semua data akan diunduh.")
-            return None, None
-
-        df = pd.read_excel(excel_buffer, sheet_name=SHEET_NAME, engine="openpyxl")
+        df = storage.read_structured_sheet(SHEET_NAME)
         if df.empty or "Bulan" not in df.columns or "Tahun" not in df.columns:
             print("[Check] Sheet kosong atau format salah — semua data akan diunduh.")
             return None, None
@@ -151,9 +140,9 @@ def read_last_entry_from_excel(access_token):
         print(f"[Check] Error membaca Excel: {exc}")
         return None, None
 
-def should_run_scraping(access_token):
+def should_run_scraping():
     """
-    Compare the Next Release Date stored in Excel against today's date.
+    Compare the Next Release Date stored in storage against today's date.
 
     Returns (should_run, release_info).
     """
@@ -168,12 +157,7 @@ def should_run_scraping(access_token):
     print(f"[Check] Next Release Date website: {release_info['next_release_date_str']}")
 
     try:
-        excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
-        if excel_buffer is None:
-            print("[Check] File tidak ada — jalankan scraping.")
-            return True, release_info
-
-        df = pd.read_excel(excel_buffer, sheet_name=SHEET_NAME, engine="openpyxl")
+        df = storage.read_structured_sheet(SHEET_NAME)
         if df.empty or "Next Release Date" not in df.columns:
             print("[Check] Next Release Date tidak ditemukan — jalankan scraping.")
             return True, release_info
@@ -205,16 +189,16 @@ def should_run_scraping(access_token):
 
 # Needed Data Calculation
 
-def get_needed_data(access_token):
+def get_needed_data():
     """
-    Calculate which months need to be fetched based on the last entry in Excel.
+    Calculate which months need to be fetched based on the last entry in storage.
 
     Returns:
         None  — no existing data, fetch all from 2015
         []    — data already up to date
         list  — list of (year, month) tuples to fetch
     """
-    last_year, last_month = read_last_entry_from_excel(access_token)
+    last_year, last_month = read_last_entry_from_excel()
 
     today = datetime.today()
     cur_month = today.month - 1
@@ -356,30 +340,26 @@ def transform_to_dataframe(all_data, release_info=None):
     return pd.DataFrame(rows)
 
 
-# Save to OneDrive
+# Save to Storage
 
-def save_to_onedrive(access_token, df):
+def save_to_onedrive(df):
     """
-    Merge new EIA data with existing OneDrive sheet, deduplicate, sort, and upload.
-
-    Preserves all other sheets in the workbook.
+    Merge new EIA data with existing storage sheet, deduplicate, sort, and write.
     """
     if df.empty:
         print("[Save] DataFrame kosong, tidak ada yang disimpan.")
         return
 
     print(f"\n{'='*60}")
-    print("[Save] Menyimpan data ke OneDrive")
+    print("[Save] Menyimpan data ke storage")
     print(f"{'='*60}")
 
-    excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
-
-    if excel_buffer is None:
-        print("[Save] File tidak ada di OneDrive, akan membuat baru.")
-        combined_df = df
-    else:
-        try:
-            existing_df = pd.read_excel(excel_buffer, sheet_name=SHEET_NAME, engine="openpyxl")
+    try:
+        existing_df = storage.read_structured_sheet(SHEET_NAME)
+        if existing_df.empty:
+            print("[Save] Sheet kosong, akan membuat baru.")
+            combined_df = df
+        else:
             combined_df = pd.concat([existing_df, df], ignore_index=True)
             combined_df.drop_duplicates(subset=["Bulan", "Tahun"], keep="last", inplace=True)
             combined_df["Bulan_Order"] = combined_df["Bulan"].map(
@@ -388,67 +368,19 @@ def save_to_onedrive(access_token, df):
             combined_df.sort_values(["Tahun", "Bulan_Order"], inplace=True)
             combined_df.drop(columns=["Bulan_Order"], inplace=True)
             print(f"[Save] Data lama: {len(existing_df)} baris.")
-        except ValueError:
-            print(f"[Save] Sheet '{SHEET_NAME}' tidak ditemukan — membuat sheet baru.")
-            combined_df = df
-        except Exception as exc:
-            print(f"[Save] Error membaca sheet existing: {exc}")
-            combined_df = df
+    except Exception as exc:
+        print(f"[Save] Error membaca sheet existing: {exc}")
+        combined_df = df
 
     print(f"[Save] Data baru              : {len(df)} baris.")
     print(f"[Save] Data setelah deduplikasi: {len(combined_df)} baris.")
 
-    output_buffer = BytesIO()
-
     try:
-        if excel_buffer is None:
-            print("[Save] Membuat file Excel baru...")
-            with pd.ExcelWriter(output_buffer, engine="openpyxl", mode="w") as writer:
-                combined_df.to_excel(writer, sheet_name=SHEET_NAME, index=False)
-        else:
-            print("[Save] File existing ditemukan — preserve semua sheet...")
-            excel_buffer.seek(0)
-            wb = load_workbook(excel_buffer)
-            print(f"[Save] Sheet saat ini: {wb.sheetnames}")
-
-            # Fix hidden sheets
-            if not any(s.sheet_state == "visible" for s in wb.worksheets):
-                wb.worksheets[0].sheet_state = "visible"
-                wb.active = 0
-            for sheet in wb.worksheets:
-                sheet.sheet_state = "visible"
-
-            if SHEET_NAME in wb.sheetnames:
-                print(f"[Save] Menghapus sheet '{SHEET_NAME}' yang lama...")
-                del wb[SHEET_NAME]
-            ws = wb.create_sheet(SHEET_NAME)
-
-            for col_idx, col_name in enumerate(combined_df.columns, 1):
-                ws.cell(row=1, column=col_idx, value=col_name)
-            for row_idx, row_data in enumerate(combined_df.values, 2):
-                for col_idx, value in enumerate(row_data, 1):
-                    ws.cell(row=row_idx, column=col_idx, value=value)
-
-            print(f"[Save] Sheet yang akan disimpan: {wb.sheetnames}")
-            wb.save(output_buffer)
-            wb.close()
-
-        output_buffer.seek(0)
-
-        # Verifikasi
-        verify_wb = load_workbook(output_buffer)
-        print(f"[Save] Verifikasi sheet: {verify_wb.sheetnames}")
-        verify_wb.close()
-        output_buffer.seek(0)
-
-        # Upload
-        print(f"[Save] Uploading ke OneDrive: {ONEDRIVE_FILE_PATH}")
-        upload_excel_to_onedrive(access_token, ONEDRIVE_FILE_PATH, output_buffer)
+        storage.write_structured_sheet(SHEET_NAME, combined_df)
 
         print(f"\n{'='*60}")
-        print("[Save] DATA BERHASIL DISIMPAN KE ONEDRIVE")
+        print("[Save] DATA BERHASIL DISIMPAN")
         print(f"{'='*60}")
-        print(f"[Save] File      : {ONEDRIVE_FILE_PATH}")
         print(f"[Save] Sheet     : {SHEET_NAME}")
         print(f"[Save] Total rows: {len(combined_df)}")
         print(f"[Save] Data baru : {len(df)} baris")
@@ -464,24 +396,14 @@ def save_to_onedrive(access_token, df):
 def main_eia():
     """
     Run the full EIA STEO scraping workflow:
-    authenticate, check release date, fetch missing months, transform, save to OneDrive.
+    check release date, fetch missing months, transform, save to storage.
     """
     print(f"\n{'='*60}")
     print("EIA STEO DATA SCRAPER")
-    print("STORAGE MODE: OneDrive")
     print(f"{'='*60}")
-    print(f"\n[Main] File : {ONEDRIVE_FILE_PATH}")
-    print(f"[Main] Sheet: {SHEET_NAME}")
+    print(f"\n[Main] Sheet: {SHEET_NAME}")
 
-    print("\n[Main] Authenticating to Microsoft Graph API...")
-    try:
-        access_token = get_access_token()
-        print("[Main] Authentication successful.")
-    except Exception as exc:
-        print(f"[Main] Authentication failed: {exc}")
-        return
-
-    should_run, release_info = should_run_scraping(access_token)
+    should_run, release_info = should_run_scraping()
     if not should_run:
         print(f"\n{'='*60}")
         print("[Main] SKIPPED — data belum perlu diupdate.")
@@ -489,7 +411,7 @@ def main_eia():
         return
 
     print("\n[Main] Mengecek bulan yang perlu diambil...")
-    needed_data = get_needed_data(access_token)
+    needed_data = get_needed_data()
 
     if needed_data is not None and len(needed_data) == 0:
         print("[Main] Semua data sudah up-to-date.")
@@ -521,7 +443,7 @@ def main_eia():
     print("\n[Main] Preview:")
     print(df.to_string(index=False))
 
-    save_to_onedrive(access_token, df)
+    save_to_onedrive(df)
 
     print(f"\n{'='*60}")
     print("[Main] SELESAI!")

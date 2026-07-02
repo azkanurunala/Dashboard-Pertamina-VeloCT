@@ -8,18 +8,11 @@ from dotenv import load_dotenv
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from helpers.onedrive_helper import (
-    download_excel_from_onedrive,
-    get_access_token,
-    write_multiple_sheets_to_onedrive,
-)
+from helpers.storage_backend import storage
 from helpers.summary_helper import setup_gemini, summarize_all_news
 
 
 # Constants
-
-ONEDRIVE_SCRAP_PATH = os.getenv("ONEDRIVE_FILE_PATH", "/results/(News)Scraping_new.xlsx")
-ONEDRIVE_SENTIMENT_PATH = "/results/(News)Sentiment_final.xlsx"
 
 # Default start date used when no prior summary exists
 DEFAULT_START_DATE = datetime(2026, 4, 26)
@@ -50,7 +43,6 @@ def process_topic(
     topic_name: str,
     config: dict,
     existing_df: pd.DataFrame,
-    access_token: str,
 ) -> pd.DataFrame | None:
     print(f"\n{'=' * 60}")
     print(f"[Topic] Processing: {topic_name}")
@@ -69,26 +61,15 @@ def process_topic(
     start_date = last_date + pd.Timedelta(days=1) if last_date is not None else DEFAULT_START_DATE
     today = pd.to_datetime(datetime.now().date())
 
-    print(f"[Topic] Fetching scraping data from OneDrive: {ONEDRIVE_SCRAP_PATH}")
+    print(f"[Topic] Fetching scraping data...")
 
-    # Download sekali di luar loop
-    excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_SCRAP_PATH)
-    if excel_buffer is None:
-        print("[Topic] Scraping file not found on OneDrive.")
-        return None
-
-    excel_file = pd.ExcelFile(excel_buffer)
-
-    # Baca semua sheet target sekali
+    # Baca semua sheet target
     sheets_data: dict[str, pd.DataFrame] = {}
     for sheet in target_sheets:
-        if sheet in excel_file.sheet_names:
-            df_news = pd.read_excel(excel_file, sheet_name=sheet)
-            if not df_news.empty and "date" in df_news.columns:
-                df_news["date"] = pd.to_datetime(df_news["date"], errors="coerce").dt.normalize()
-                sheets_data[sheet] = df_news
-
-    excel_file.close()
+        df_news = storage.read_news_sheet(sheet)
+        if not df_news.empty and "date" in df_news.columns:
+            df_news["date"] = pd.to_datetime(df_news["date"], errors="coerce").dt.normalize()
+            sheets_data[sheet] = df_news
 
     # Iterasi maju sampai ketemu tanggal yang ada artikelnya
     all_news_list: list[str] = []
@@ -146,50 +127,16 @@ def main() -> None:
     sentiment data from OneDrive, process each topic, and save results back.
     """
     print("\n" + "=" * 60)
-    print("NEWS SENTIMENT SUMMARIZATION TO ONEDRIVE")
+    print("NEWS SENTIMENT SUMMARIZATION")
     print("=" * 60)
-
-    print("\nAuthenticating to Microsoft Graph API...")
-    try:
-        access_token = get_access_token()
-        print("[Main] Authentication successful.")
-    except Exception as exc:
-        print(f"[Main] Authentication failed: {exc}")
-        return
 
     print("\n[Main] Setting up Gemini model...")
     model = setup_gemini()
 
-    print(f"\n[Main] Loading existing sentiment data from OneDrive...")
-    print(f"[Main] File: {ONEDRIVE_SENTIMENT_PATH}")
+    print(f"\n[Main] Loading existing sentiment data...")
 
-    excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_SENTIMENT_PATH)
-    all_sheets: dict[str, pd.DataFrame] = {}
-
-    if excel_buffer is None:
-        print("[Main] File not found — a new file will be created.")
-        for config in TOPICS.values():
-            all_sheets[config["output_sheet"]] = pd.DataFrame()
-    else:
-        print("[Main] File found — reading all sheets...")
-        excel_buffer.seek(0)
-        excel_file = pd.ExcelFile(excel_buffer)
-
-        for config in TOPICS.values():
-            sheet_name = config["output_sheet"]
-            try:
-                if sheet_name in excel_file.sheet_names:
-                    df = pd.read_excel(excel_file, sheet_name=sheet_name)
-                    all_sheets[sheet_name] = df
-                    print(f"  '{sheet_name}': {len(df)} row(s)")
-                else:
-                    print(f"  '{sheet_name}': not found — will be created.")
-                    all_sheets[sheet_name] = pd.DataFrame()
-            except Exception as exc:
-                print(f"  '{sheet_name}': error ({exc}) — will be created.")
-                all_sheets[sheet_name] = pd.DataFrame()
-
-        excel_file.close()
+    sheet_names = [config["output_sheet"] for config in TOPICS.values()]
+    all_sheets  = storage.read_all_sentiment_sheets(sheet_names)
 
     # --- Summarization ---
     print("\n" + "=" * 60)
@@ -206,7 +153,7 @@ def main() -> None:
             print(f"[Main] Output sheet: {output_sheet}")
             print(f"{'-' * 60}")
 
-            new_data = process_topic(model, topic_name, config, existing_df, access_token)
+            new_data = process_topic(model, topic_name, config, existing_df)
 
             if new_data is not None:
                 if not existing_df.empty:
@@ -229,17 +176,16 @@ def main() -> None:
             print(f"[Main] Error processing '{topic_name}': {exc}")
             continue
 
-    # --- Save to OneDrive ---
+    # --- Save ---
     print("\n" + "=" * 60)
-    print("SAVING TO ONEDRIVE")
+    print("SAVING")
     print("=" * 60)
 
     try:
-        write_multiple_sheets_to_onedrive(access_token, ONEDRIVE_SENTIMENT_PATH, all_sheets)
+        storage.write_sentiment_file(all_sheets)
 
         print("\n" + "=" * 60)
         print("DONE!")
-        print(f"[Main] File: {ONEDRIVE_SENTIMENT_PATH}")
         print(f"[Main] Sheets: {len(all_sheets)}")
         print("=" * 60 + "\n")
 

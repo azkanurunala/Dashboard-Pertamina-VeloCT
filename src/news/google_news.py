@@ -409,7 +409,7 @@ def scrape_google_news_with_content(
     print("STEP 2: Fetching article content")
     print("=" * 70)
     print(f"Total articles : {len(articles)}")
-    print(f"Mode           : Sitemap → Selenium fallback")
+    print(f"Mode           : Sitemap -> Selenium fallback")
     print(f"Selenium       : {'Enabled' if use_selenium_fallback else 'Disabled'}")
 
     for idx, article in enumerate(articles):
@@ -479,7 +479,7 @@ if __name__ == "__main__":
 
     print(f"\nKeyword : '{keyword}'")
     print(f"Filter : {platform}")
-    print(f"Strategy : Sitemap → Selenium fallback")
+    print(f"Strategy : Sitemap -> Selenium fallback")
 
     articles = scrape_google_news_with_content(
         keyword=keyword,

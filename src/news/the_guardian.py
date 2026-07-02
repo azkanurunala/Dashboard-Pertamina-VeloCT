@@ -243,7 +243,7 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
 
-    # Map group label → list of keywords to search
+    # Map group label -> list of keywords to search
     # Each unique article is collected once, tagged with its group + keyword.
     # KEYWORDS: dict[str, list[str]] = {
     #     "volatility index ": [
