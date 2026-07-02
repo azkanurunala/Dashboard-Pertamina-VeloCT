@@ -23,7 +23,7 @@ _NEWS_FILE_PATH      = os.getenv("ONEDRIVE_FILE_PATH",      "/results/(News)Scra
 _SENTIMENT_FILE_PATH = os.getenv("ONEDRIVE_SENTIMENT_PATH", "/results/(News)Sentiment.xlsx")
 _DATA_FILE_PATH      = os.getenv("ONEDRIVE_DATA_PATH",      "/results/(Terstruktur)Data Scrapping.xlsx")
 
-# Excel sheet → PostgreSQL table name
+# Excel sheet -> PostgreSQL table name
 SHEET_TO_TABLE: dict[str, str] = {
     "(Data)Biodesel":              "data_biodiesel",
     "(Data)Bioetanol":             "data_bioetanol",
@@ -41,6 +41,8 @@ SHEET_TO_TABLE: dict[str, str] = {
     "(Data)Crackspread_BBM":       "data_crackspread_bbm",
     "(Data)Crackspread_NON_BBM":   "data_crackspread_non_bbm",
     "(Data)Crackspread_BBM_YEAR":  "data_crackspread_bbm_year",
+    "(Data)Crackspeed_BBM":        "data_crackspeed_bbm",
+    "(Data)Crackspeed_NonBBM":     "data_crackspeed_non_bbm",
 }
 
 # Conflict columns used for ON CONFLICT upsert
@@ -61,6 +63,8 @@ SHEET_CONFLICT_COLS: dict[str, list[str]] = {
     "(Data)Crackspread_BBM":       ["year", "month"],
     "(Data)Crackspread_NON_BBM":   ["Year", "Month"],
     "(Data)Crackspread_BBM_YEAR":  ["year"],
+    "(Data)Crackspeed_BBM":        ["assessDate"],
+    "(Data)Crackspeed_NonBBM":     ["assessDate"],
 }
 
 # IAEA sheets that need wide↔long transform (rows=years, cols=countries in Excel)
@@ -71,7 +75,7 @@ _IAEA_VALUE_COL: dict[str, str] = {
 
 
 def _melt_iaea(df: pd.DataFrame, sheet_name: str) -> pd.DataFrame:
-    """Wide (Year col + country cols) → long (year, country, value)."""
+    """Wide (Year col + country cols) -> long (year, country, value)."""
     value_col   = _IAEA_VALUE_COL[sheet_name]
     country_cols = [c for c in df.columns if c != "Year"]
     melted = df.melt(id_vars=["Year"], value_vars=country_cols,
@@ -82,7 +86,7 @@ def _melt_iaea(df: pd.DataFrame, sheet_name: str) -> pd.DataFrame:
 
 
 def _pivot_iaea(df: pd.DataFrame, sheet_name: str) -> pd.DataFrame:
-    """Long (year, country, value) → wide (Year col + country cols)."""
+    """Long (year, country, value) -> wide (Year col + country cols)."""
     value_col = _IAEA_VALUE_COL[sheet_name]
     df = df.drop(columns=["id"], errors="ignore")
     pivoted = df.pivot_table(

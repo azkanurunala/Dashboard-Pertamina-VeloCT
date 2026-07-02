@@ -6,7 +6,7 @@ import pandas as pd
 
 # Constants
 
-# Month name → zero-padded month number.
+# Month name -> zero-padded month number.
 # Covers both Indonesian and English full/abbreviated names (all lowercase).
 # All lookups call .lower() on the parsed token before checking this map.
 MONTH_NAME_MAP: dict[str, str] = {
@@ -863,7 +863,7 @@ def fetch_rss_entries(feed_url: str, limit: int = 50) -> list[dict]:
     response.raise_for_status()
 
     feed = feedparser.parse(response.content)
-    print(f"[RSS] {feed_url} → {len(feed.entries)} entries")
+    print(f"[RSS] {feed_url} -> {len(feed.entries)} entries")
 
     entries: list[dict] = []
     for entry in feed.entries[:limit]:

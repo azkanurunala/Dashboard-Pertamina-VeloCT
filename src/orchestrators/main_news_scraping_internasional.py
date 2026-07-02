@@ -174,7 +174,7 @@ SUMBER_DICT: dict[str, list] = {
 }
 
 
-# SHEET → KEYWORD MAPPING & ACTIVE SHEETS
+# SHEET -> KEYWORD MAPPING & ACTIVE SHEETS
 
 SHEET_TO_KEYWORD: dict[str, str] = {
     # ### Makroekonomi ###
@@ -388,7 +388,7 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
                 )
                 df_kata = df_kata[mask].copy()
                 after   = len(df_kata)
-                print(f"    Post-filter '{kata}': {before} → {after} article(s) ({before - after} removed)")
+                print(f"    Post-filter '{kata}': {before} -> {after} article(s) ({before - after} removed)")
 
             df_kata = apply_global_exclude(df_kata)  # ← TAMBAHAN
             hasil_final = pd.concat([hasil_final, df_kata], ignore_index=True)

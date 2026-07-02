@@ -19,13 +19,15 @@ load_dotenv()
 
 ONEDRIVE_FILE_PATH = os.getenv("ONEDRIVE_DATA_PATH", "/results/(Terstruktur)Data_Scraping_final.xlsx")
 
-SP_USERNAME = os.getenv("S&P_USERNAME")
-SP_PASSWORD = os.getenv("S&P_PASSWORD")
+SP_USERNAME = os.getenv("SPGLOBAL_USERNAME")
+SP_PASSWORD = os.getenv("SPGLOBAL_PASSWORD")
 
 SHEET_NAME_SAF               = "(Data)SAF"
 SHEET_NAME_FORECAST_BBM_LONG  = "(Data)Crackspread_BBM_YEAR"
 SHEET_NAME_FORECAST_BBM_SHORT = "(Data)Crackspread_BBM"
 SHEET_NAME_PETROCHEMICAL      = "(Data)Crackspread_NON_BBM"
+SHEET_NAME_CRACKSPEED_BBM     = "(Data)Crackspeed_BBM"
+SHEET_NAME_CRACKSPEED_NON_BBM = "(Data)Crackspeed_NonBBM"
 
 SP_AUTH_URL          = "https://api.ci.spglobal.com/auth/api"
 SP_HISTORY_URL       = "https://api.ci.spglobal.com/market-data/v3/value/history/symbol"
@@ -92,7 +94,7 @@ def login_spglobal(username=None, password=None):
     password = password or SP_PASSWORD
 
     if not username or not password:
-        print("[Auth] Error: S&P_USERNAME atau S&P_PASSWORD tidak ditemukan di environment.")
+        print("[Auth] Error: SPGLOBAL_USERNAME atau SPGLOBAL_PASSWORD tidak ditemukan di environment.")
         return None
 
     try:
@@ -702,6 +704,56 @@ def pivot_data_to_columns_bbm(df):
             df_final[col] = None
     return df_final[column_order].sort_values("assessDate")
 
+def pivot_data_to_columns_non_bbm(df):
+    """Pivot non-BBM (LPG/petrochemical) historical symbol data into wide format with crackspreads."""
+    symbol_map = {
+        "PTAAF10": "Butane",
+        "PTAAM10": "Propane",
+        "PHABV00": "Paraxylene",
+        "PHAKR00": "Propylene",
+        "PHASM05": "Benzene",
+        "PCAAS00": "Brent",
+    }
+    df["suffix"] = df["symbol"].map(symbol_map)
+
+    df_value = df.pivot_table(
+        index="assessDate", columns="suffix", values="value", aggfunc="first"
+    ).reset_index()
+    df_value.columns = ["assessDate"] + [f"value_{c}" for c in df_value.columns if c != "assessDate"]
+
+    df_moddate = df.pivot_table(
+        index="assessDate", columns="suffix", values="modDate", aggfunc="first"
+    ).reset_index()
+    df_moddate.columns = ["assessDate"] + [f"modDate_{c}" for c in df_moddate.columns if c != "assessDate"]
+
+    df_final = df_value.merge(df_moddate, on="assessDate", how="outer")
+
+    if "value_Butane" in df_final.columns and "value_Propane" in df_final.columns:
+        df_final["value_LPG"] = df_final["value_Butane"] * 0.5 + df_final["value_Propane"] * 0.5
+    else:
+        df_final["value_LPG"] = None
+
+    for product in ["LPG", "Paraxylene", "Propylene", "Benzene"]:
+        value_col = f"value_{product}"
+        final_col = f"value_{product}_final"
+        if value_col in df_final.columns and "value_Brent" in df_final.columns:
+            df_final[final_col] = df_final[value_col] - df_final["value_Brent"]
+        else:
+            df_final[final_col] = None
+
+    column_order = [
+        "assessDate",
+        "value_Butane", "value_Propane", "value_LPG",
+        "value_Paraxylene", "value_Propylene", "value_Benzene", "value_Brent",
+        "value_LPG_final", "value_Paraxylene_final", "value_Propylene_final", "value_Benzene_final",
+        "modDate_Butane", "modDate_Propane",
+        "modDate_Paraxylene", "modDate_Propylene", "modDate_Benzene",
+    ]
+    for col in column_order:
+        if col not in df_final.columns:
+            df_final[col] = None
+    return df_final[column_order].sort_values("assessDate")
+
 def pivot_data_to_columns_price_forecast_bbm_short_term(df):
     """
     Pivot short-term BBM price forecast into wide format with crackspreads.
@@ -805,6 +857,10 @@ def merge_with_existing_data(df_old, df_new):
         return df_new
     if df_new.empty:
         return df_old
+
+    # Neon returns datetime.date objects; API returns strings — normalize both to str
+    df_old["assessDate"] = df_old["assessDate"].astype(str)
+    df_new["assessDate"] = df_new["assessDate"].astype(str)
 
     for col in set(df_old.columns) | set(df_new.columns):
         if col not in df_old.columns:
@@ -1154,6 +1210,74 @@ def main_price_forecast_long_term_bbm():
     print(f"\n{'='*60}\n[Main] SELESAI\n{'='*60}")
 
 
+def main_crackspeed_bbm_weekly():
+    """Scrape and save 7-day historical BBM crackspeed prices from S&P Global."""
+    print(f"\n{'='*60}")
+    print("SCRAPER CRACKSPEED BBM — HISTORICAL (WEEKLY)")
+    print(f"{'='*60}")
+
+    end_date   = datetime.today().strftime("%Y-%m-%d")
+    start_date = (datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")
+
+    sp_token = login_spglobal()
+    if not sp_token:
+        print("[Main] Gagal login ke S&P Global API.")
+        return
+
+    bbm_symbols = ["PGAEY00", "PGAEZ00", "PGAMS00", "AMFSA00", "PJABF00", "AAPPF00", "AACUE00", "PCAAS00"]
+    print(f"\n[Main] Period : {start_date} to {end_date}")
+    print(f"[Main] Symbols: {', '.join(bbm_symbols)}")
+
+    df_historical = get_historical_data(sp_token, bbm_symbols, start_date, end_date)
+    if df_historical is None:
+        print("\n[Main] Gagal mengambil data historical.")
+        return
+
+    df_pivoted = pivot_data_to_columns_bbm(df_historical)
+    _write_sheet_to_storage(SHEET_NAME_CRACKSPEED_BBM, df_pivoted)
+
+    print(f"\n{'='*60}")
+    print("[Main] DATA BERHASIL DISIMPAN")
+    print(f"{'='*60}")
+    print(f"[Main] Sheet : {SHEET_NAME_CRACKSPEED_BBM}")
+    print(f"[Main] Rows  : {len(df_pivoted)}")
+    print(f"\n{'='*60}\n[Main] SELESAI\n{'='*60}")
+
+
+def main_crackspeed_non_bbm_weekly():
+    """Scrape and save 7-day historical non-BBM crackspeed prices from S&P Global."""
+    print(f"\n{'='*60}")
+    print("SCRAPER CRACKSPEED NON BBM — HISTORICAL (WEEKLY)")
+    print(f"{'='*60}")
+
+    end_date   = datetime.today().strftime("%Y-%m-%d")
+    start_date = (datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")
+
+    sp_token = login_spglobal()
+    if not sp_token:
+        print("[Main] Gagal login ke S&P Global API.")
+        return
+
+    non_bbm_symbols = ["PTAAF10", "PTAAM10", "PHABV00", "PHAKR00", "PHASM05", "PCAAS00"]
+    print(f"\n[Main] Period : {start_date} to {end_date}")
+    print(f"[Main] Symbols: {', '.join(non_bbm_symbols)}")
+
+    df_historical = get_historical_data(sp_token, non_bbm_symbols, start_date, end_date)
+    if df_historical is None:
+        print("\n[Main] Gagal mengambil data historical.")
+        return
+
+    df_pivoted = pivot_data_to_columns_non_bbm(df_historical)
+    _write_sheet_to_storage(SHEET_NAME_CRACKSPEED_NON_BBM, df_pivoted)
+
+    print(f"\n{'='*60}")
+    print("[Main] DATA BERHASIL DISIMPAN")
+    print(f"{'='*60}")
+    print(f"[Main] Sheet : {SHEET_NAME_CRACKSPEED_NON_BBM}")
+    print(f"[Main] Rows  : {len(df_pivoted)}")
+    print(f"\n{'='*60}\n[Main] SELESAI\n{'='*60}")
+
+
 # # Script Entry Point
 
 if __name__ == "__main__":
@@ -1164,6 +1288,8 @@ if __name__ == "__main__":
     functions = [
         ("SAF Daily",                     main_saf_daily),
         ("SAF Weekly",                    main_saf_weekly),
+        ("Crackspeed BBM Weekly",         main_crackspeed_bbm_weekly),
+        ("Crackspeed Non-BBM Weekly",     main_crackspeed_non_bbm_weekly),
         ("Petrochemical Short Term",      main_petrochemical_short_term),
         ("Price Forecast BBM Short Term", main_price_forecast_short_term_bbm),
         ("Price Forecast BBM Long Term",  main_price_forecast_long_term_bbm),
