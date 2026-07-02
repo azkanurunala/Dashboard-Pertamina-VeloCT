@@ -44,7 +44,9 @@ jobs:
           restore-keys: pip-monthly-
 
       - name: Install dependencies
-        run: pip install -r requirements.txt -r requirements-ocr.txt psycopg2-binary
+        run: |
+          pip install -r requirements.txt psycopg2-binary
+          pip install -r requirements-ocr.txt --extra-index-url https://download.pytorch.org/whl/cpu
 
       - name: Run monthly pipeline
         run: python src/scheduler/scheduling_month.py
