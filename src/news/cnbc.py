@@ -53,7 +53,7 @@ def _parse_sitemap_entry(url_tag: ET.Element) -> dict | None:
 
     # CNBC-specific fallback: derive title from URL slug if absent
     # e.g. "https://cnbc.com/.../geopolitical-risks-2025.html"
-    #      → "Geopolitical Risks 2025"
+    #      -> "Geopolitical Risks 2025"
     if not title or title == "(No Title)":
         title = url.rstrip("/").split("/")[-1].replace("-", " ").title()
 

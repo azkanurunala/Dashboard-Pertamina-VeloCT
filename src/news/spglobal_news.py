@@ -27,11 +27,11 @@ def _login(username: str | None = None, password: str | None = None) -> str | No
     """
     Authenticate with the S&P API using provided or environment credentials and return a Bearer token, or None on failure.
     """
-    username = username or os.getenv("S&P_USERNAME")
-    password = password or os.getenv("S&P_PASSWORD")
+    username = username or os.getenv("SPGLOBAL_USERNAME")
+    password = password or os.getenv("SPGLOBAL_PASSWORD")
 
     if not username or not password:
-        print("[Auth] Error: S&P_USERNAME or S&P_PASSWORD not found in environment.")
+        print("[Auth] Error: SPGLOBAL_USERNAME or SPGLOBAL_PASSWORD not found in environment.")
         return None
 
     print(f"[Auth] Logging in as '{username}'...")
@@ -60,7 +60,7 @@ def _login(username: str | None = None, password: str | None = None) -> str | No
         return None
 
 
-# HTML → Plain Text
+# HTML -> Plain Text
 
 def _html_to_text(html_content: str) -> str:
     """

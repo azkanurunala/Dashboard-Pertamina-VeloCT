@@ -2,21 +2,15 @@ import os
 import re
 import sys
 from datetime import datetime
-from io import BytesIO
 
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-from openpyxl import load_workbook
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from helpers.onedrive_helper import (
-    download_excel_from_onedrive,
-    get_access_token,
-    upload_excel_to_onedrive,
-)
+from helpers.storage_backend import storage
 
 load_dotenv()
 
@@ -54,7 +48,7 @@ MONTHS_ID_FULL = {
 def parse_date_from_title(title):
     """
     Parse full Indonesian date from article title.
-    e.g. 'Posisi Harga Komoditas 5 Januari 2025' → '2025-01-05'
+    e.g. 'Posisi Harga Komoditas 5 Januari 2025' -> '2025-01-05'
     """
     pattern = (
         r"(\d{1,2})\s+"
@@ -75,7 +69,7 @@ def parse_date_from_title(title):
 def parse_date_in_parentheses(date_str, full_text, article_title=None):
     """
     Parse abbreviated Indonesian date from parenthesized price notation.
-    e.g. '(5 Jan)' within a price line → '2025-01-05'
+    e.g. '(5 Jan)' within a price line -> '2025-01-05'
     """
     match = re.search(r"(\d{1,2})\s*(\w+)", date_str)
     if not match:
@@ -113,106 +107,37 @@ def parse_date_in_parentheses(date_str, full_text, article_title=None):
         return None
 
 
-# OneDrive Read / Write
+# Storage Read / Write
 
-def read_cpo_sheet_from_onedrive(access_token):
+def read_cpo_sheet_from_storage():
     """
-    Download and return the CPO sheet from OneDrive as a DataFrame.
+    Return the CPO sheet from storage as a DataFrame.
 
-    Returns an empty DataFrame with correct columns if file or sheet is missing.
+    Returns an empty DataFrame with correct columns if sheet is missing.
     """
-    excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
-
-    if excel_buffer is None:
-        print("[Read] File tidak ditemukan, akan membuat baru.")
-        return pd.DataFrame(columns=["Upload_Dates", "Dates", "PX_LAST"])
-
     try:
-        df = pd.read_excel(excel_buffer, sheet_name=SHEET_NAME)
+        df = storage.read_structured_sheet(SHEET_NAME)
         print(f"[Read] Berhasil baca sheet '{SHEET_NAME}', rows={len(df)}.")
         return df
     except Exception as exc:
         print(f"[Read] Sheet '{SHEET_NAME}' tidak ditemukan: {exc} — akan membuat baru.")
         return pd.DataFrame(columns=["Upload_Dates", "Dates", "PX_LAST"])
 
-def write_cpo_sheet_to_onedrive(access_token, df):
-    """
-    Upload the CPO DataFrame to OneDrive, preserving all other sheets.
-    """
-    print(f"\n[Write] Menyiapkan file Excel...")
-    excel_buffer  = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
-    output_buffer = BytesIO()
-
-    try:
-        if excel_buffer is None:
-            print("[Write] File baru — hanya ada 1 sheet.")
-            with pd.ExcelWriter(output_buffer, engine="openpyxl", mode="w") as writer:
-                df.to_excel(writer, sheet_name=SHEET_NAME, index=False)
-        else:
-            print("[Write] File existing — preserve semua sheet...")
-            excel_buffer.seek(0)
-            wb = load_workbook(excel_buffer)
-            print(f"[Write] Sheet saat ini: {wb.sheetnames}")
-
-            # Fix hidden sheets
-            visible_sheets = [s for s in wb.worksheets if s.sheet_state == "visible"]
-            if len(visible_sheets) == 0:
-                print("[Write] Fixing hidden sheets...")
-                wb.worksheets[0].sheet_state = "visible"
-                wb.active = 0
-            for sheet in wb.worksheets:
-                sheet.sheet_state = "visible"
-
-            # Hapus dan buat ulang sheet target
-            if SHEET_NAME in wb.sheetnames:
-                print(f"[Write] Menghapus sheet '{SHEET_NAME}' yang lama...")
-                del wb[SHEET_NAME]
-            ws = wb.create_sheet(SHEET_NAME)
-
-            for col_idx, col_name in enumerate(df.columns, 1):
-                ws.cell(row=1, column=col_idx, value=col_name)
-            for row_idx, row_data in enumerate(df.values, 2):
-                for col_idx, value in enumerate(row_data, 1):
-                    ws.cell(row=row_idx, column=col_idx, value=value)
-
-            print(f"[Write] Sheet yang akan disimpan: {wb.sheetnames}")
-            wb.save(output_buffer)
-            wb.close()
-
-        output_buffer.seek(0)
-
-        # Verifikasi
-        verify_wb = load_workbook(output_buffer)
-        print(f"[Write] Verifikasi sheet: {verify_wb.sheetnames}")
-        verify_wb.close()
-        output_buffer.seek(0)
-
-        print(f"[Write] Uploading ke OneDrive: {ONEDRIVE_FILE_PATH}")
-        upload_excel_to_onedrive(access_token, ONEDRIVE_FILE_PATH, output_buffer)
-        print("[Write] Upload selesai!")
-
-    except Exception as exc:
-        print(f"[Write] Error saat menyimpan: {exc}")
-        import traceback
-        traceback.print_exc()
-        raise
-
 
 # Last Upload Date Check
 
-def get_last_upload_date(access_token):
+def get_last_upload_date():
     """
     Read the CPO sheet and return the latest Upload_Dates as a YYYY-MM-DD string.
 
     Returns None if the sheet is empty or unreadable.
     """
     print(f"\n{'='*60}")
-    print("[Check] Membaca data existing dari OneDrive")
+    print("[Check] Membaca data existing dari storage")
     print(f"{'='*60}")
-    print(f"[Check] File : {ONEDRIVE_FILE_PATH}")
     print(f"[Check] Sheet: {SHEET_NAME}")
 
-    df = read_cpo_sheet_from_onedrive(access_token)
+    df = read_cpo_sheet_from_storage()
 
     if df.empty:
         print("[Check] Sheet kosong atau tidak ada data.")
@@ -389,7 +314,7 @@ def scrape_harga_multi(url, article_title=None):
                             "date_str":    date_str,
                             "parsed_date": parsed_date,
                         })
-                        print(f"[Price] Harga: {harga} | ({date_str}) → {parsed_date}")
+                        print(f"[Price] Harga: {harga} | ({date_str}) -> {parsed_date}")
                     except Exception:
                         continue
                 return harga_list
@@ -412,17 +337,17 @@ def scrape_harga_multi(url, article_title=None):
     return harga_list
 
 
-# Save to OneDrive
+# Save to Storage
 
-def update_onedrive_with_new_data(access_token, new_data_list):
+def update_storage_with_new_data(new_data_list):
     """
-    Merge new CPO price data with existing OneDrive sheet, deduplicate, sort, and upload.
+    Merge new CPO price data with existing storage sheet, deduplicate, sort, and write.
     """
     print(f"\n{'='*60}")
-    print("[Save] Menyimpan data ke OneDrive")
+    print("[Save] Menyimpan data ke storage")
     print(f"{'='*60}")
 
-    df_old = read_cpo_sheet_from_onedrive(access_token)
+    df_old = read_cpo_sheet_from_storage()
 
     if not df_old.empty:
         print(f"[Save] Data lama: {len(df_old)} baris.")
@@ -444,12 +369,11 @@ def update_onedrive_with_new_data(access_token, new_data_list):
 
     print(f"[Save] Data setelah deduplikasi: {len(df_final)} baris.")
 
-    write_cpo_sheet_to_onedrive(access_token, df_final)
+    storage.write_structured_sheet(SHEET_NAME, df_final)
 
     print(f"\n{'='*60}")
-    print("[Save] DATA BERHASIL DISIMPAN KE ONEDRIVE")
+    print("[Save] DATA BERHASIL DISIMPAN")
     print(f"{'='*60}")
-    print(f"[Save] File      : {ONEDRIVE_FILE_PATH}")
     print(f"[Save] Sheet     : {SHEET_NAME}")
     print(f"[Save] Total rows: {len(df_final)}")
     print(f"[Save] Data baru : {len(new_data_list)} baris")
@@ -460,24 +384,14 @@ def update_onedrive_with_new_data(access_token, new_data_list):
 def main_scraper_cpo():
     """
     Run the full CPO price scraping workflow:
-    authenticate, check last date, scrape new articles, extract prices, save to OneDrive.
+    check last date, scrape new articles, extract prices, save to storage.
     """
     print(f"\n{'='*60}")
     print("GAPKI CPO PRICE SCRAPER")
-    print("STORAGE MODE: OneDrive")
     print(f"{'='*60}")
-    print(f"\n[Main] File : {ONEDRIVE_FILE_PATH}")
-    print(f"[Main] Sheet: {SHEET_NAME}")
+    print(f"\n[Main] Sheet: {SHEET_NAME}")
 
-    print("\n[Main] Authenticating to Microsoft Graph API...")
-    try:
-        access_token = get_access_token()
-        print("[Main] Authentication successful.")
-    except Exception as exc:
-        print(f"[Main] Authentication failed: {exc}")
-        return
-
-    last_date = get_last_upload_date(access_token)
+    last_date = get_last_upload_date()
     if not last_date:
         print("\n[Main] Sheet kosong — scrape semua artikel yang tersedia.")
         last_date = "2000-01-01"
@@ -518,7 +432,7 @@ def main_scraper_cpo():
             })
 
     if all_data:
-        update_onedrive_with_new_data(access_token, all_data)
+        update_storage_with_new_data(all_data)
         print(f"\n{'='*60}")
         print("[Main] SELESAI!")
         print(f"{'='*60}\n")

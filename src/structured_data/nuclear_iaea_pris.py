@@ -4,25 +4,19 @@ import sys
 import time
 import traceback
 from datetime import date, datetime
-from io import BytesIO
 from urllib.parse import parse_qs, urlparse
 
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-from openpyxl import load_workbook
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from helpers.onedrive_helper import (
-    download_excel_from_onedrive,
-    get_access_token,
-    upload_excel_to_onedrive,
-)
+from helpers.storage_backend import storage
 from helpers.scraping_helper import setup_driver
 
 load_dotenv()
@@ -264,29 +258,16 @@ def fetch_country_statistics_data() -> pd.DataFrame | None:
             driver.quit()
 
 
-# Save to OneDrive
+# Save to Storage
 
-def _write_sheet(wb, sheet_name: str, df: pd.DataFrame) -> None:
-    """Delete and recreate a sheet in the workbook with DataFrame content."""
-    if sheet_name in wb.sheetnames:
-        del wb[sheet_name]
-    ws = wb.create_sheet(sheet_name)
-    for col_idx, col_name in enumerate(df.columns, 1):
-        ws.cell(row=1, column=col_idx, value=col_name)
-    for row_idx, row_data in enumerate(df.values, 2):
-        for col_idx, value in enumerate(row_data, 1):
-            ws.cell(row=row_idx, column=col_idx, value=value)
-
-def save_to_onedrive(
-    access_token,
+def save_results(
     df_capacity: pd.DataFrame | None,
     df_production: pd.DataFrame | None,
     df_country: pd.DataFrame | None,
 ) -> None:
     """
-    Merge and upload all three IAEA DataFrames to OneDrive.
+    Merge and write all three IAEA DataFrames to storage.
 
-    Preserves all other sheets in the workbook.
     Each sheet is deduplicated and sorted before saving.
     """
     if all(df is None or df.empty for df in [df_capacity, df_production, df_country]):
@@ -294,110 +275,66 @@ def save_to_onedrive(
         return
 
     print(f"\n{'='*60}")
-    print("[Save] Menyimpan data ke OneDrive")
+    print("[Save] Menyimpan data ke storage")
     print(f"{'='*60}")
 
-    excel_buffer  = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
-    output_buffer = BytesIO()
-
     try:
-        if excel_buffer is None:
-            print("[Save] File tidak ada di OneDrive — membuat baru...")
-            wb = load_workbook(BytesIO())
-            if "Sheet" in wb.sheetnames:
-                del wb["Sheet"]
-        else:
-            print("[Save] File ditemukan di OneDrive — updating...")
-            excel_buffer.seek(0)
-            wb = load_workbook(excel_buffer)
-
-            # Fix hidden sheets
-            if not any(s.sheet_state == "visible" for s in wb.worksheets):
-                wb.worksheets[0].sheet_state = "visible"
-                wb.active = 0
-
         # --- Nuclear Capacity ---
         if df_capacity is not None and not df_capacity.empty:
             print(f"\n[Save] Sheet: {SHEET_NAME_CAPACITY}")
-            df_combined = df_capacity
-            if excel_buffer is not None:
-                try:
-                    excel_buffer.seek(0)
-                    existing = pd.read_excel(excel_buffer, sheet_name=SHEET_NAME_CAPACITY, engine="openpyxl")
-                    df_combined = pd.concat([existing, df_capacity], ignore_index=True)
-                    df_combined.drop_duplicates(subset=["Year"], keep="last", inplace=True)
-                    df_combined.sort_values("Year", inplace=True)
-                    print(f"[Save] Merged: {len(df_combined)} rows.")
-                except Exception:
-                    print("[Save] Sheet baru akan dibuat.")
-            _write_sheet(wb, SHEET_NAME_CAPACITY, df_combined)
+            existing = storage.read_structured_sheet(SHEET_NAME_CAPACITY)
+            if not existing.empty:
+                df_combined = pd.concat([existing, df_capacity], ignore_index=True)
+                df_combined.drop_duplicates(subset=["Year"], keep="last", inplace=True)
+                df_combined.sort_values("Year", inplace=True)
+                print(f"[Save] Merged: {len(df_combined)} rows.")
+            else:
+                df_combined = df_capacity
+            storage.write_structured_sheet(SHEET_NAME_CAPACITY, df_combined)
             print(f"[Save] {SHEET_NAME_CAPACITY}: {len(df_combined)} rows.")
 
         # --- Electrical Production ---
         if df_production is not None and not df_production.empty:
             print(f"\n[Save] Sheet: {SHEET_NAME_PRODUCTION}")
-            df_combined = df_production
-            if excel_buffer is not None:
-                try:
-                    excel_buffer.seek(0)
-                    existing = pd.read_excel(excel_buffer, sheet_name=SHEET_NAME_PRODUCTION, engine="openpyxl")
-                    df_combined = pd.concat([existing, df_production], ignore_index=True)
-                    df_combined.drop_duplicates(subset=["Year"], keep="last", inplace=True)
-                    df_combined.sort_values("Year", inplace=True)
-                    print(f"[Save] Merged: {len(df_combined)} rows.")
-                except Exception:
-                    print("[Save] Sheet baru akan dibuat.")
-            _write_sheet(wb, SHEET_NAME_PRODUCTION, df_combined)
+            existing = storage.read_structured_sheet(SHEET_NAME_PRODUCTION)
+            if not existing.empty:
+                df_combined = pd.concat([existing, df_production], ignore_index=True)
+                df_combined.drop_duplicates(subset=["Year"], keep="last", inplace=True)
+                df_combined.sort_values("Year", inplace=True)
+                print(f"[Save] Merged: {len(df_combined)} rows.")
+            else:
+                df_combined = df_production
+            storage.write_structured_sheet(SHEET_NAME_PRODUCTION, df_combined)
             print(f"[Save] {SHEET_NAME_PRODUCTION}: {len(df_combined)} rows.")
 
         # --- Country Statistics ---
         if df_country is not None and not df_country.empty:
             print(f"\n[Save] Sheet: {SHEET_NAME_COUNTRY_STATS}")
-            df_combined = df_country
-            if excel_buffer is not None:
-                try:
-                    excel_buffer.seek(0)
-                    existing = pd.read_excel(excel_buffer, sheet_name=SHEET_NAME_COUNTRY_STATS, engine="openpyxl")
-                    pris_last = df_country["LastUpdate"].iloc[0]
-
-                    if "LastUpdate" in existing.columns:
-                        last_saved = pd.to_datetime(existing["LastUpdate"], errors="coerce").max()
-                        last_saved = last_saved.date() if pd.notna(last_saved) else None
-                        if last_saved == pris_last:
-                            print(f"[Save] LastUpdate sama ({pris_last}) — skip append.")
-                            df_combined = existing
-                        else:
-                            df_combined = pd.concat([existing, df_country], ignore_index=True)
+            existing = storage.read_structured_sheet(SHEET_NAME_COUNTRY_STATS)
+            if not existing.empty:
+                pris_last = df_country["LastUpdate"].iloc[0]
+                if "LastUpdate" in existing.columns:
+                    last_saved = pd.to_datetime(existing["LastUpdate"], errors="coerce").max()
+                    last_saved = last_saved.date() if pd.notna(last_saved) else None
+                    if last_saved == pris_last:
+                        print(f"[Save] LastUpdate sama ({pris_last}) — skip append.")
+                        df_combined = existing
                     else:
                         df_combined = pd.concat([existing, df_country], ignore_index=True)
-
-                except Exception:
-                    print("[Save] Sheet baru akan dibuat.")
+                else:
+                    df_combined = pd.concat([existing, df_country], ignore_index=True)
+            else:
+                df_combined = df_country
 
             key = "CountryCode" if "CountryCode" in df_combined.columns else "Country"
             df_combined.drop_duplicates(subset=["LastUpdate", key], keep="last", inplace=True)
             df_combined.sort_values(["LastUpdate", "Country"], ascending=True, inplace=True)
-            _write_sheet(wb, SHEET_NAME_COUNTRY_STATS, df_combined)
+            storage.write_structured_sheet(SHEET_NAME_COUNTRY_STATS, df_combined)
             print(f"[Save] {SHEET_NAME_COUNTRY_STATS}: {len(df_combined)} rows.")
 
-        wb.save(output_buffer)
-        wb.close()
-        output_buffer.seek(0)
-
-        # Verifikasi
-        verify_wb = load_workbook(output_buffer)
-        print(f"\n[Save] Verifikasi sheet: {verify_wb.sheetnames}")
-        verify_wb.close()
-        output_buffer.seek(0)
-
-        # Upload
-        print(f"[Save] Uploading ke OneDrive: {ONEDRIVE_FILE_PATH}")
-        upload_excel_to_onedrive(access_token, ONEDRIVE_FILE_PATH, output_buffer)
-
         print(f"\n{'='*60}")
-        print("[Save] DATA BERHASIL DISIMPAN KE ONEDRIVE")
+        print("[Save] DATA BERHASIL DISIMPAN")
         print(f"{'='*60}")
-        print(f"[Save] File: {ONEDRIVE_FILE_PATH}")
 
     except Exception as exc:
         print(f"[Save] Error: {exc}")
@@ -409,21 +346,11 @@ def save_to_onedrive(
 def main_iaea_scraper() -> None:
     """
     Run the full IAEA PRIS scraping workflow:
-    authenticate, scrape capacity/production/country data, save to OneDrive.
+    scrape capacity/production/country data, save to storage.
     """
     print(f"\n{'='*60}")
     print("SCRAPER IAEA PRIS")
-    print("STORAGE MODE: OneDrive")
     print(f"{'='*60}")
-    print(f"\n[Main] File: {ONEDRIVE_FILE_PATH}")
-
-    print("\n[Main] Authenticating to Microsoft Graph API...")
-    try:
-        access_token = get_access_token()
-        print("[Main] Authentication successful.")
-    except Exception as exc:
-        print(f"[Main] Authentication failed: {exc}")
-        return
 
     print("\n[Main] Fetching Nuclear Capacity...")
     df_capacity = fetch_nuclear_capacity_data()
@@ -438,7 +365,7 @@ def main_iaea_scraper() -> None:
         print("\n[Main] Tidak ada data yang berhasil diambil.")
         return
 
-    save_to_onedrive(access_token, df_capacity, df_production, df_country)
+    save_results(df_capacity, df_production, df_country)
 
     print(f"\n{'='*60}")
     print("[Main] SELESAI!")

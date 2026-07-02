@@ -6,7 +6,6 @@ import time
 import traceback
 from collections import Counter
 from datetime import datetime
-from io import BytesIO
 
 import easyocr
 import fitz
@@ -15,16 +14,11 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-from openpyxl import load_workbook
 from PIL import Image
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from helpers.onedrive_helper import (
-    download_excel_from_onedrive,
-    get_access_token,
-    upload_excel_to_onedrive,
-)
+from helpers.storage_backend import storage
 
 load_dotenv()
 
@@ -93,7 +87,7 @@ _PAT_BRENT_SLC = re.compile(r"(?:S\s*L\s*C|SLC)\s+([\d.,]+)", re.IGNORECASE)
 # Additional complication: EasyOCR commonly misreads "Jakarta" as "Jakaria"/"Jakrta"/etc.
 # Fix: use \w+ instead of literal "Jakarta" in the Ditetapkan anchor patterns.
 #
-# Patterns are ordered best→worst. The quality-tracking logic in _extract_from_scanned_pdf
+# Patterns are ordered best->worst. The quality-tracking logic in _extract_from_scanned_pdf
 # allows a better pattern on a later page to OVERWRITE a worse one set earlier.
 _DATE_PATTERNS_OCR = [
     # pat[0]: Full anchor — "Ditetapkan di <city> pada tanggal DD Month YYYY"
@@ -134,7 +128,7 @@ _ocr_reader = None
 # Date Utilities
 
 def _normalize_month(raw: str) -> str:
-    """Remove OCR-inserted spaces and fix '1'→'l' in month names."""
+    """Remove OCR-inserted spaces and fix '1'->'l' in month names."""
     return re.sub(r"\s+", "", raw).replace("1", "l").capitalize()
 
 
@@ -153,8 +147,8 @@ def _tanggal_in_range(tanggal: str, bulan_icp: str, max_ahead: int = 2) -> bool:
     Rejects: same month (diff=0), too far ahead (diff>max_ahead), or negative.
 
     max_ahead=2 covers all known cases:
-      - Normal: diff=1 (ICP Jan → signed Feb, etc.)
-      - November → Januari: diff=2 (cross-year, still valid)
+      - Normal: diff=1 (ICP Jan -> signed Feb, etc.)
+      - November -> Januari: diff=2 (cross-year, still valid)
     Anything further (e.g. "30 Juli" for ICP Oktober = diff 9) is an OCR false capture.
 
     Returns True if bulan_icp is None/unknown (can't check, don't reject).
@@ -172,16 +166,10 @@ def _tanggal_in_range(tanggal: str, bulan_icp: str, max_ahead: int = 2) -> bool:
 
 # Last Entry Check
 
-def read_last_entry_from_excel(access_token):
+def read_last_entry_from_excel():
     """Return (last_year, last_month_num) of the newest row in the sheet."""
     try:
-        excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
-        if excel_buffer is None:
-            print(f"[Check] File tidak ditemukan di OneDrive: {ONEDRIVE_FILE_PATH}")
-            return None, None
-
-        excel_buffer.seek(0)
-        df = pd.read_excel(excel_buffer, sheet_name=SHEET_NAME, engine="openpyxl")
+        df = storage.read_structured_sheet(SHEET_NAME)
 
         if df.empty or "Bulan" not in df.columns or "Tahun" not in df.columns:
             print("[Check] Sheet kosong atau format salah — semua PDF akan diunduh.")
@@ -339,7 +327,7 @@ def download_pdfs(pdf_links, folder=PDF_FOLDER):
                     f.write(content)
                 print(f"  ✓ {filename}")
             except Exception as exc:
-                print(f"  ✗ {filename} → Gagal: {exc}")
+                print(f"  ✗ {filename} -> Gagal: {exc}")
                 failed.append(filename)
 
     if failed:
@@ -363,7 +351,7 @@ def _parse_price(raw: str) -> float | None:
     raw = raw.strip()
     if not raw:
         return None
-    # Format Eropa: titik ribuan + koma desimal → "1.234,56"
+    # Format Eropa: titik ribuan + koma desimal -> "1.234,56"
     if re.match(r"^\d{1,3}(\.\d{3})+,\d{1,2}$", raw):
         return float(raw.replace(".", "").replace(",", "."))
     # Koma sebagai desimal: "71,11"
@@ -439,8 +427,8 @@ def _extract_from_digital_pdf(pdf: fitz.Document, filepath: str):
     Extract ICP data from a *digital* (e-signed / text-layer) PDF.
 
     Targets three patterns in priority order:
-      A) KEEMPAT diktum  →  "US$ 79.34/barrel"   (most reliable, 2023+)
-      B) rata-rata sentence  →  "US$ XX.XX/barrel"
+      A) KEEMPAT diktum  ->  "US$ 79.34/barrel"   (most reliable, 2023+)
+      B) rata-rata sentence  ->  "US$ XX.XX/barrel"
       C) BULAN <month> header in Lampiran title
 
     For Dated Brent, reads the DATED BRENT column value from Lampiran table.
@@ -730,7 +718,7 @@ def extract_icp_from_pdf(filepath: str, start_page: int = 1, end_page: int = 8):
                 for i in range(max(0, total_pages - 3), total_pages)
             )
             if lampiran_pages_are_scan:
-                # Lampiran pages are scanned → need OCR for Brent
+                # Lampiran pages are scanned -> need OCR for Brent
                 result = _extract_hybrid(pdf, filepath)
             else:
                 result = _extract_from_digital_pdf(pdf, filepath)
@@ -762,7 +750,7 @@ def extract_icp_from_pdf(filepath: str, start_page: int = 1, end_page: int = 8):
         harga_str = f"US${find_price}"  if find_price else "—"
         brent_str = f"US${find_brent}"  if find_brent else "—"
         tgl_str   = find_date           if find_date  else "—"
-        print(f"  ✓ {filename} → Harga={harga_str} | Brent={brent_str} | Tanggal={tgl_str}")
+        print(f"  ✓ {filename} -> Harga={harga_str} | Brent={brent_str} | Tanggal={tgl_str}")
 
         return find_month, find_price, find_date, find_brent
 
@@ -816,7 +804,7 @@ def extract_icp_from_all_pdfs(folder: str = PDF_FOLDER,
             # Ini safety net untuk kasus dari digital/hybrid path.
             tanggal_valid = tanggal
             if tanggal and bulan and not _tanggal_in_range(tanggal, bulan):
-                print(f"  ⚠ Tanggal '{tanggal}' di luar rentang valid untuk ICP {bulan} → dikosongkan")
+                print(f"  ⚠ Tanggal '{tanggal}' di luar rentang valid untuk ICP {bulan} -> dikosongkan")
                 tanggal_valid = None
 
             results.append({
@@ -831,103 +819,51 @@ def extract_icp_from_all_pdfs(folder: str = PDF_FOLDER,
             except Exception as exc:
                 print(f"[Parse] Gagal hapus {file}: {exc}")
         else:
-            print(f"  ✗ {file} → Tidak ditemukan harga ICP (file dipertahankan)")
+            print(f"  ✗ {file} -> Tidak ditemukan harga ICP (file dipertahankan)")
 
     return pd.DataFrame(results)
 
 
-# Save to OneDrive
+# Save to Storage
 
-def save_to_onedrive(access_token, df: pd.DataFrame):
-    """Merge new ICP data with existing sheet, deduplicate, sort, and upload."""
+def save_to_onedrive(df: pd.DataFrame):
+    """Merge new ICP data with existing sheet, deduplicate, sort, and write."""
     if df.empty:
         print("[Save] Tidak ada data baru untuk disimpan.")
         return
 
-    print("\n[Save] Menyimpan ke OneDrive...")
+    print("\n[Save] Menyimpan ke storage...")
 
-    # 1. Refresh token
+    # Load existing
     try:
-        access_token = get_access_token()
+        existing_df = storage.read_structured_sheet(SHEET_NAME)
+
+        if existing_df.empty:
+            df_combined = df
+        else:
+            df_combined = pd.concat([existing_df, df], ignore_index=True)
+            # Deduplikasi
+            df_combined.drop_duplicates(subset=["Tahun", "Bulan"], keep="last", inplace=True)
+            # Paksa urutan kolom mengikuti existing
+            df_combined = df_combined[existing_df.columns]
+            print(f"  Data lama : {len(existing_df)} baris")
+
+        # Sorting
+        df_combined["Bulan_Lower"] = df_combined["Bulan"].astype(str).str.lower()
+        df_combined["Bulan_Angka"] = df_combined["Bulan_Lower"].map(MONTHS_ID_TO_NUM)
+        df_combined = df_combined.sort_values(["Tahun", "Bulan_Angka"])
+        df_combined = df_combined.drop(columns=["Bulan_Lower", "Bulan_Angka"])
+
     except Exception as exc:
-        print(f"  ⚠ Gagal refresh token: {exc}")
-
-    # 2. Download existing
-    excel_buffer = download_excel_from_onedrive(access_token, ONEDRIVE_FILE_PATH)
-
-    # 3. Cek existing kosong atau tidak
-    if excel_buffer is None:
+        print(f"  ⚠ Error baca sheet existing: {exc}")
         df_combined = df
-    else:
-        try:
-            excel_buffer.seek(0)
-            existing_df = pd.read_excel(excel_buffer, sheet_name=SHEET_NAME, engine="openpyxl")
-
-            if existing_df.empty:
-                df_combined = df
-            else:
-                df_combined = pd.concat([existing_df, df], ignore_index=True)
-                # Deduplikasi
-                df_combined.drop_duplicates(subset=["Tahun", "Bulan"], keep="last", inplace=True)
-                # Paksa urutan kolom mengikuti existing
-                df_combined = df_combined[existing_df.columns]
-                print(f"  Data lama : {len(existing_df)} baris")
-
-            # Sorting
-            df_combined["Bulan_Lower"] = df_combined["Bulan"].astype(str).str.lower()
-            df_combined["Bulan_Angka"] = df_combined["Bulan_Lower"].map(MONTHS_ID_TO_NUM)
-            df_combined = df_combined.sort_values(["Tahun", "Bulan_Angka"])
-            df_combined = df_combined.drop(columns=["Bulan_Lower", "Bulan_Angka"])
-
-        except ValueError:
-            df_combined = df
-        except Exception as exc:
-            print(f"  ⚠ Error baca sheet existing: {exc}")
-            df_combined = df
 
     print(f"  Data baru  : {len(df)} baris")
     print(f"  Total      : {len(df_combined)} baris")
 
-    output_buffer = BytesIO()
-
-    # 4. Preserve semua sheet lain di workbook
     try:
-        if excel_buffer is None:
-            with pd.ExcelWriter(output_buffer, engine="openpyxl", mode="w") as writer:
-                df_combined.to_excel(writer, sheet_name=SHEET_NAME, index=False)
-        else:
-            excel_buffer.seek(0)
-            wb = load_workbook(excel_buffer)
-
-            visible_sheets = [s for s in wb.worksheets if s.sheet_state == "visible"]
-            if len(visible_sheets) == 0:
-                wb.worksheets[0].sheet_state = "visible"
-                wb.active = 0
-            for sheet in wb.worksheets:
-                sheet.sheet_state = "visible"
-
-            if SHEET_NAME in wb.sheetnames:
-                del wb[SHEET_NAME]
-            ws = wb.create_sheet(SHEET_NAME)
-
-            for col_idx, col_name in enumerate(df_combined.columns, 1):
-                ws.cell(row=1, column=col_idx, value=col_name)
-            for row_idx, row_data in enumerate(df_combined.values, 2):
-                for col_idx, value in enumerate(row_data, 1):
-                    ws.cell(row=row_idx, column=col_idx, value=value)
-
-            wb.save(output_buffer)
-            wb.close()
-
-        # 5. Verifikasi sebelum upload
-        output_buffer.seek(0)
-        verify_wb = load_workbook(output_buffer)
-        verify_wb.close()
-        output_buffer.seek(0)
-
-        # 6. Upload
-        upload_excel_to_onedrive(access_token, ONEDRIVE_FILE_PATH, output_buffer)
-        print(f"  ✓ Upload berhasil → {ONEDRIVE_FILE_PATH}")
+        storage.write_structured_sheet(SHEET_NAME, df_combined)
+        print(f"  ✓ Simpan berhasil -> sheet {SHEET_NAME}")
 
     except Exception as exc:
         print(f"  ✗ Error saat menyimpan: {exc}")
@@ -939,20 +875,14 @@ def save_to_onedrive(access_token, df: pd.DataFrame):
 def main_price_esdm(tahun_filter: int | None = None):
     """
     Full ICP price-scraping workflow:
-    authenticate → check last entry → fetch HTML → extract PDF links →
-    download PDFs → extract data → save to OneDrive.
+    check last entry -> fetch HTML -> extract PDF links ->
+    download PDFs -> extract data -> save to storage.
     """
     print(f"\n{'='*60}")
     print("SCRAPER ICP MIGAS ESDM")
     print(f"{'='*60}")
 
-    try:
-        access_token = get_access_token()
-    except Exception as exc:
-        print(f"[Auth] Autentikasi gagal: {exc}")
-        return
-
-    last_year, last_month = read_last_entry_from_excel(access_token)
+    last_year, last_month = read_last_entry_from_excel()
 
     html = fetch_html_from_website(MIGAS_URL)
     if not html:
@@ -980,7 +910,7 @@ def main_price_esdm(tahun_filter: int | None = None):
     print("\n[Main] Hasil:")
     print(df.to_string(index=False))
 
-    save_to_onedrive(access_token, df)
+    save_to_onedrive(df)
 
     print(f"\n{'='*60}")
     print("SELESAI")
