@@ -317,3 +317,38 @@ CREATE TABLE IF NOT EXISTS data_crackspeed_non_bbm (
     "modDate_Benzene"          TEXT,
     UNIQUE ("assessDate")
 );
+
+-- ── STATIC LOOKUP TABLES ──────────────────────────────────────────────────────
+-- Populated once from Excel. No scraper. Update only if source data changes.
+
+-- (Data)RUPTL — RUPTL power plant reference data
+CREATE TABLE IF NOT EXISTS data_ruptl (
+    id                                SERIAL PRIMARY KEY,
+    "ID"                              INTEGER,
+    "Provinsi"                        TEXT,
+    "No"                              INTEGER,
+    "Nama Sistem Tenaga Listrik"      TEXT,
+    "Jenis Pembangkit"                TEXT,
+    "Lokasi / Nama Pembangkit"        TEXT,
+    "Kapasitas (MW)"                  DOUBLE PRECISION,
+    "Target COD Skenario RE Base"     INTEGER,
+    "Target COD Skenario ARED"        INTEGER,
+    "Status"                          TEXT,
+    "Pengembang"                      TEXT,
+    "Keterangan"                      TEXT,
+    UNIQUE ("ID")
+);
+
+-- (Data)HargaEBT — renewable energy pricing reference data
+CREATE TABLE IF NOT EXISTS data_harga_ebt (
+    id               SERIAL PRIMARY KEY,
+    "No"             TEXT,
+    "Lokasi"         TEXT,
+    "Jenis EBT"      TEXT,
+    "Faktor Lokasi"  DOUBLE PRECISION,
+    "Kelompok HPT"   TEXT,
+    "Stage"          INTEGER,
+    "cent $/kWh"     DOUBLE PRECISION,
+    "LCOE cent$/kWh" DOUBLE PRECISION,
+    "Battery"        DOUBLE PRECISION
+);
