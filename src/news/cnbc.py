@@ -42,8 +42,6 @@ def _parse_sitemap_entry(url_tag: ET.Element) -> dict | None:
     Parse a CNBC sitemap entry into article metadata, using URL slug as a title fallback when needed.
     """
     info = extract_news_sitemap_entry(url_tag)
-    print(info)
-    
     if not info:
         return None
 
@@ -142,13 +140,21 @@ def _scrape_cnbc_sitemap(
 
     print(f"[Sitemap] {len(candidates)} article(s) after date filter.")
 
-    # Fetch content and apply keyword filter
     keyword_pattern = re.compile(
         r"\b" + re.escape(keyword.strip().lower()) + r"\b"
     )
+
+    # Pre-filter by title/URL to avoid fetching content for irrelevant articles
+    title_candidates = [
+        a for a in candidates
+        if keyword_pattern.search(a["title"].lower())
+        or keyword_pattern.search(a["url"].lower())
+    ]
+    print(f"[Sitemap] {len(title_candidates)} article(s) match keyword in title/URL — fetching content...")
+
     results: list[dict] = []
 
-    for article in candidates:
+    for article in title_candidates:
         content = "N/A"
         if fetch_content:
             content = _fetch_article_content(article["url"])
