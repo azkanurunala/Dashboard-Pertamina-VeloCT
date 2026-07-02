@@ -1,0 +1,17 @@
+datasets==4.4.1
+easyocr==1.7.2
+hf-xet==1.2.0
+ImageIO==2.37.2
+networkx==3.4.2
+nibabel==5.3.2
+ninja==1.13.0
+nipype==1.10.0
+opencv-python-headless==4.12.0.88
+pyxnat==1.6.4
+scikit-image==0.25.2
+scipy==1.15.3
+shapely==2.1.2
+sympy==1.14.0
+tifffile==2025.5.10
+torch==2.9.0
+torchvision==0.24.0
