@@ -1,0 +1,1330 @@
+// =============================================================================
+// MIGRATED POWER QUERIES — Neon PostgreSQL
+// Source: ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech / neondb
+//
+// How to use:
+//   In Power BI Desktop → Transform Data → select a query → Advanced Editor
+//   Replace the entire M code with the corresponding query below.
+//
+// Queries marked [UNCHANGED] keep SharePoint as source — do NOT replace.
+// Queries marked [NEON] have been migrated to PostgreSQL.
+//
+// PREREQUISITES before refreshing:
+//   1. Run scripts/create_tables.sql against Neon
+//   2. Run scripts/create_views.sql against Neon
+//   3. Populate data_ruptl and data_harga_ebt from Excel (one-time)
+//   4. Establish PostgreSQL connection in Power BI (Get Data → PostgreSQL)
+//      Server:   ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech
+//      Database: neondb
+//      Mode:     Import (NOT DirectQuery)
+// =============================================================================
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [UNCHANGED] (Data)BI-Rate — source: SharePoint (Data)Makro.xlsx
+
+(Data)BI-Rate
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    BI_Rate_Table = Source{[Name="(Data)BI-Rate",Kind="Sheet"]}[Data],
+    #"Removed Columns" = Table.RemoveColumns(BI_Rate_Table,{"Column3", "Column4"}),
+    #"Removed Top Rows" = Table.Skip(#"Removed Columns",26),
+    #"Promoted Headers" = Table.PromoteHeaders(#"Removed Top Rows", [PromoteAllScalars=true]),
+    #"Renamed Columns1" = Table.RenameColumns(#"Promoted Headers",{{"No. of Obs", "Policy Rate: Month End: Indonesia: BI-Rate"}, {"128", "BI-Rate"}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns1",{{"Policy Rate: Month End: Indonesia: BI-Rate", type date}, {"BI-Rate", type number}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [UNCHANGED] (Data)Kurs — source: SharePoint (Data)Makro.xlsx
+
+(Data)Kurs
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    Indeks_Dollar_Amerika_Table = Source{[Name="(Data)Kurs",Kind="Sheet"]}[Data],
+    #"Removed Columns" = Table.RemoveColumns(Indeks_Dollar_Amerika_Table,{"Column4", "Column5"}),
+    #"Removed Top Rows" = Table.Skip(#"Removed Columns",26),
+    #"Promoted Headers" = Table.PromoteHeaders(#"Removed Top Rows", [PromoteAllScalars=true]),
+    #"Renamed Columns1" = Table.RenameColumns(#"Promoted Headers",{{"No. of Obs", "Times"}, {"6732", "Indeks Dollar"}, {"6358", "Nilai Tukar Rupiah"}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Renamed Columns1",{{"Times", type date}, {"Indeks Dollar", type number}, {"Nilai Tukar Rupiah", type number}})
+in
+    #"Changed Type1"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [UNCHANGED] (Data)Indeks Konsumen BI — source: SharePoint (Data)Makro.xlsx
+
+(Data)Indeks Konsumen BI
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    Indeks_Kepercayaan_Konsumen__IKK_Table = Source{[Name="(Data)Indeks Konsumen BI",Kind="Sheet"]}[Data],
+    #"Removed Top Rows" = Table.Skip(Indeks_Kepercayaan_Konsumen__IKK_Table,26),
+    #"Promoted Headers" = Table.PromoteHeaders(#"Removed Top Rows", [PromoteAllScalars=true]),
+    #"Renamed Columns1" = Table.RenameColumns(#"Promoted Headers",{{"No. of Obs", "Times"}, {"192", "Indeks Ekspektasi Konsumen"}, {"192_1", "Indeks Ekonomi Saat Ini"}, {"192_2", "Indeks Kepercayaan Konsumen"}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Renamed Columns1",{{"Times", type date}, {"Indeks Ekspektasi Konsumen", type number}, {"Indeks Ekonomi Saat Ini", type number}, {"Indeks Kepercayaan Konsumen", type number}})
+in
+    #"Changed Type1"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [UNCHANGED] (Data)PMI — source: SharePoint (Data)Makro.xlsx
+
+(Data)PMI
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    Indeks_Manufaktur_Table = Source{[Name="(Data)PMI",Kind="Sheet"]}[Data],
+    #"Removed Top Rows" = Table.Skip(Indeks_Manufaktur_Table,26),
+    #"Promoted Headers" = Table.PromoteHeaders(#"Removed Top Rows", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"No. of Obs", type date}, {"36", type number}}),
+    #"Renamed Columns" = Table.RenameColumns(#"Changed Type",{{"No. of Obs", "Times"}, {"36", "Indeks Manufaktur"}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Renamed Columns",{{"Times", type date}, {"Indeks Manufaktur", type number}})
+in
+    #"Changed Type1"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [UNCHANGED] (Data)Ritel — source: SharePoint (Data)Makro.xlsx
+
+(Data)Ritel
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    Indeks_Penjualan_Retail__IPR_Table = Source{[Name="(Data)Sales Ritel",Kind="Sheet"]}[Data],
+    #"Removed Top Rows" = Table.Skip(Indeks_Penjualan_Retail__IPR_Table,26),
+    #"Promoted Headers" = Table.PromoteHeaders(#"Removed Top Rows", [PromoteAllScalars=true]),
+    #"Renamed Columns" = Table.RenameColumns(#"Promoted Headers",{{"No. of Obs", "Times"}, {"192", "Indeks Sales Ritel"}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns",{{"Times", type date}, {"Indeks Sales Ritel", type number}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [UNCHANGED] (Data)Indonia — source: SharePoint (Data)Makro.xlsx
+
+(Data)Indonia
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    JIBOR_Table = Source{[Name="(Data)Indonia",Kind="Sheet"]}[Data],
+    #"Removed Top Rows" = Table.Skip(JIBOR_Table,26),
+    #"Promoted Headers" = Table.PromoteHeaders(#"Removed Top Rows", [PromoteAllScalars=true]),
+    #"Renamed Columns1" = Table.RenameColumns(#"Promoted Headers",{{"No. of Obs", "Times"}, {"2195", "Indonia"}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns1",{{"Times", type date}, {"Indonia", type number}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [UNCHANGED] (Data)Indeks Volatilitas — source: SharePoint (Data)Makro.xlsx
+
+(Data)Indeks Volatilitas
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    Table26_Table = Source{[Name="(Data)Volatilitas",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(Table26_Table, [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Date", type date}, {"Last Price", type number}}),
+    #"Renamed Columns" = Table.RenameColumns(#"Changed Type",{{"Last Price", "Indeks Volatilitas (VIX)"}})
+in
+    #"Renamed Columns"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [UNCHANGED] (Data)Geopolitik — source: SharePoint (Data)Makro.xlsx
+
+(Data)Geopolitik
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    Table27_Table = Source{[Name="(Data)Geopolitik",Kind="Sheet"]}[Data],
+    #"Removed Top Rows" = Table.Skip(Table27_Table,26),
+    #"Promoted Headers" = Table.PromoteHeaders(#"Removed Top Rows", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"No. of Obs", type date}, {"313", type number}}),
+    #"Renamed Columns" = Table.RenameColumns(#"Changed Type",{{"No. of Obs", "Tanggal"}, {"313", "Indeks Risiko Geopolitik"}})
+in
+    #"Renamed Columns"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [UNCHANGED] (Data)Inflasi — source: SharePoint (Data)Makro.xlsx
+
+(Data)Inflasi
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"My Series_Sheet" = Source{[Item="(Data)Inflasi",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"My Series_Sheet", [PromoteAllScalars=true]),
+    #"Removed Columns" = Table.RemoveColumns(#"Promoted Headers",{"Column6", "Column7", "Column8", "Column9"}),
+    #"Removed Top Rows" = Table.Skip(#"Removed Columns",26),
+    #"Renamed Columns" = Table.RenameColumns(#"Removed Top Rows",{{"Select this link and click Refresh/Edit Download to update data and add or remove series", "Tanggal"}, {"Consumer Price Index: YoY: Volatile", "Volatile Price (YoY)"}, {"Consumer Price Index: YoY: Administered", "Administered Price (YoY)"}, {"Consumer Price Index: YoY: Core", "Inflasi Core (YoY)"}, {"Consumer Price Index: YoY", "Inflasi Umum (YoY)"}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns",{{"Volatile Price (YoY)", type number}, {"Administered Price (YoY)", type number}, {"Inflasi Core (YoY)", type number}, {"Inflasi Umum (YoY)", type number}, {"Tanggal", type date}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [UNCHANGED] (Data)Neraca Perdagangan — source: SharePoint (Data)Makro.xlsx
+
+(Data)Neraca Perdagangan
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"My Series_Sheet" = Source{[Item="(Data)Neraca Perdagangan",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"My Series_Sheet", [PromoteAllScalars=true]),
+    #"Removed Top Rows" = Table.Skip(#"Promoted Headers",26),
+    #"Renamed Columns" = Table.RenameColumns(#"Removed Top Rows",{{"Select this link and click Refresh/Edit Download to update data and add or remove series", "Tanggal"}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns",{{"Tanggal", type date}}),
+    #"Rounded Down" = Table.TransformColumns(#"Changed Type",{{"Total Exports: USD mn: Monthly: Indonesia", Number.RoundDown, Int64.Type}, {"Total Imports: USD mn: Monthly: Indonesia", Number.RoundDown, Int64.Type}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Rounded Down",{{"Trade Balance", type number}})
+in
+    #"Changed Type1"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [UNCHANGED] (Data)PDB — source: SharePoint (Data)Makro.xlsx
+
+(Data)PDB
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"My Series_Sheet" = Source{[Name="(Data)GDP yoy",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"My Series_Sheet", [PromoteAllScalars=true]),
+    #"Removed Columns1" = Table.RemoveColumns(#"Promoted Headers",{"Column3", "Column4"}),
+    #"Removed Alternate Rows" = Table.AlternateRows(#"Removed Columns1",0,26,63),
+    #"Renamed Columns" = Table.RenameColumns(#"Removed Alternate Rows",{{"Select this link and click Refresh/Edit Download to update data and add or remove series", "Tanggal"}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns",{{"Tanggal", type date}, {"Gross Domestic Product: SNA 2008: 2010p: YoY %", type number}}),
+    #"Rounded Off" = Table.TransformColumns(#"Changed Type",{{"Gross Domestic Product: SNA 2008: 2010p: YoY %", each Number.Round(_, 2), type number}})
+in
+    #"Rounded Off"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [UNCHANGED] (Data)IHSG — source: SharePoint (Data)Makro.xlsx
+
+(Data)IHSG
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"My Series_Sheet" = Source{[Name="(Data)IHSG",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"My Series_Sheet", [PromoteAllScalars=true]),
+    #"Removed Top Rows" = Table.Skip(#"Promoted Headers",26),
+    #"Renamed Columns" = Table.RenameColumns(#"Removed Top Rows",{{"IDX: Index: Composite", "IHSG"}, {"Select this link and click Refresh/Edit Download to update data and add or remove series", "Tanggal"}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns",{{"Tanggal", type date}, {"IHSG", type number}}),
+    #"Rounded Off" = Table.TransformColumns(#"Changed Type",{{"IHSG", each Number.Round(_, 2), type number}}),
+    #"Removed Columns" = Table.RemoveColumns(#"Rounded Off",{"Column3", "Column4", "Column5", "Column6"})
+in
+    #"Removed Columns"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [UNCHANGED] Kategori eia — static literal table
+
+Kategori eia
+
+let
+    Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i45WCs8vyklRCMkvScxRCCjKTylNLsnMz1OK1YlW8g9wdQYz/PLzdOEc56LSlFQF/8wciJqSjNQiBZ/MwtLMlGKwCLKBzvl5xaW5BQgTXZ1dECaCObEA", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [#"Kategori eia" = _t]),
+    #"Replaced Value" = Table.ReplaceValue(Source,"World Total Production","World Oil",Replacer.ReplaceText,{"Kategori eia"}),
+    #"Removed Alternate Rows" = Table.AlternateRows(#"Replaced Value",5,1,5),
+    #"Changed Type" = Table.TransformColumnTypes(#"Removed Alternate Rows",{{"Kategori eia", type text}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [UNCHANGED] (Data)Input_Fosil_Prediction — source: SharePoint (Data)Input_Manual.xlsx
+
+(Data)Input_Fosil_Prediction
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Input_Manual.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Data)Input_Fosil_Prediction_Sheet" = Source{[Item="(Data)Input_Fosil_Prediction",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Data)Input_Fosil_Prediction_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tahun", Int64.Type}, {"Brent", type number}, {"FO05 (Price)", type number}, {"GO2500 (Price)", type number}, {"GO50 (Price)", type number}, {"JetKero (Price)", type number}, {"RON92 (Price)", type number}, {"RON95 (Price)", type number}, {"RON97 (Price)", type number}, {"FO05 (Crack Spread)", type number}, {"GO2500 (Crack Spread)", type number}, {"GO50 (Crack Spread)", type number}, {"JetKero (Crack Spread)", type number}, {"RON92 (Crack Spread)", type number}, {"RON95 (Crack Spread)", type number}, {"RON97 (Crack Spread)", type number}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [UNCHANGED] Kategori Harga Kilang — static literal table
+
+Kategori Harga Kilang
+
+let
+    Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i45WCs7MS08syC9KVQhKLc5MKU3MUXDzVzDQMVVVitVBljbQMTJVVQhWcE8szs/MQZM0NVAoKMjFJeuVWuKdWpSPJlqal6NgaQTWkZOZl4pN1hSvrDmSbCwA", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [#"Kategori Harga Kilang" = _t]),
+    #"Changed Type" = Table.TransformColumnTypes(Source,{{"Kategori Harga Kilang", type text}})
+in
+    #"Changed Type"
+
+// =============================================================================
+// NEON-MIGRATED QUERIES BELOW
+// =============================================================================
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)Volume Produk Kilang
+
+(News)Volume Produk Kilang
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Volume Produk Kilang"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type any}, {"date", type any}, {"url", type any}, {"content", type any}, {"source", type any}, {"keyword", type any}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source]),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Added Custom",{{"date", type date}})
+in
+    #"Changed Type1"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)Volume Minyak
+
+(News)Volume Minyak
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Volume Minyak"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)Biodiesel
+
+(News)Biodiesel
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Biodiesel"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)Harga Minyak
+
+(News)Harga Minyak
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Harga Minyak"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)Harga Produk Kilang
+
+(News)Harga Produk Kilang
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Harga Produk Kilang"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)BI Rate
+
+(News)BI Rate
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)BI Rate"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)IHSG
+
+(News)IHSG
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)IHSG"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)indeks kepercayaan knsmn
+
+(News)indeks kepercayaan knsmn
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)indeks kepercayaan knsmn"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)indeks kinerja manufaktur
+
+(News)indeks kinerja manufaktur
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)indeks kinerja manufaktur"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)indeks risiko geopolitik
+
+(News)indeks risiko geopolitik
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)indeks risiko geopolitik"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type any}, {"date", type date}, {"url", type any}, {"content", type any}, {"source", type any}, {"keyword", type any}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)indeks sales retail
+
+(News)indeks sales retail
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)indeks sales retail"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)indeks volatilitas
+
+(News)indeks volatilitas
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)indeks volatilitas"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type any}, {"date", type date}, {"url", type any}, {"content", type any}, {"source", type any}, {"keyword", type any}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)Inflasi
+
+(News)Inflasi
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Inflasi"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)Indonia
+
+(News)Indonia
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Indonia"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)Kurs
+
+(News)Kurs
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Kurs"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)neraca perdagangan
+
+(News)neraca perdagangan
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)neraca perdagangan"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)PDB
+
+(News)PDB
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)PDB"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)Bioetanol
+
+(News)Bioetanol
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Bioetanol"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)RUPTL
+
+(News)RUPTL
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)RUPTL"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)SAF
+
+(News)SAF
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)SAF"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)Harga EBT
+// NOTE: topic is "(News)EBT" — the Excel item name was "(News)EBT", not "(News)Harga EBT"
+
+(News)Harga EBT
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)EBT"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)Crackspread_NonBBM
+
+(News)Crackspread_NonBBM
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Crackspread_NonBBM"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)Crackspread_BBM
+
+(News)Crackspread_BBM
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Crackspread_BBM"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)WTE
+
+(News)WTE
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)WTE"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)Nuklir
+
+(News)Nuklir
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Nuklir"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Biodiesel
+
+(Summary)Biodiesel
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Biodiesel"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Bioenergi", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir])),
+    #"Added Custom1" = Table.AddColumn(#"Added Custom", "Sort_Helper", each -Number.From([Tanggal awal])),
+    #"Removed Columns" = Table.RemoveColumns(#"Added Custom1",{"Sort_Helper"})
+in
+    #"Removed Columns"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Harga Minyak
+
+(Summary)Harga Minyak
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Harga Minyak"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type any}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_HargaMinyak", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Harga Produk Kilang
+// NOTE: original used Int64 intermediate cast; PostgreSQL returns date directly — simplified.
+
+(Summary)Harga Produk Kilang
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Harga Produk Kilang"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type any}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_HargaKilang", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Volume Minyak
+
+(Summary)Volume Minyak
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Volume Minyak"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_VolumeMinyak", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Volume Produk Kilang
+// NOTE: original used Int64 intermediate cast; PostgreSQL returns date directly — simplified.
+
+(Summary)Volume Produk Kilang
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Volume Produk Kilang"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type any}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_VolumeKilang", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)BI-Rate
+// NOTE: original used Int64 intermediate cast; PostgreSQL returns date directly — simplified.
+
+(Summary)BI-Rate
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)BI-Rate"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_birate", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Idx Keyakinan Konsumen
+
+(Summary)Idx Keyakinan Konsumen
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Idx Keyakinan Konsumen"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_IdxKeyakinanKonsumen", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Idx Penjualan Retail
+
+(Summary)Idx Penjualan Retail
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Idx Penjualan Retail"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_IdxPenjualanRetail", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Idx PMI
+
+(Summary)Idx PMI
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Idx PMI"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_PMI", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Idx Risiko Geopolitik
+
+(Summary)Idx Risiko Geopolitik
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Idx Risiko Geopolitik"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_IdxRisikoGeopolitik", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Idx Volatilitas
+
+(Summary)Idx Volatilitas
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Idx Volatilitas"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_IdxVolatilitas", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)IHSG
+
+(Summary)IHSG
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)IHSG"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_ihsg", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Inflasi
+
+(Summary)Inflasi
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Inflasi"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Inflasi", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Neraca Perdagangan
+
+(Summary)Neraca Perdagangan
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Neraca Perdagangan"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_NeracaPerdagangan", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Nilai Tukar Rupiah
+
+(Summary)Nilai Tukar Rupiah
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Nilai Tukar Rupiah"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_NilaiTukarRupiah", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)PDB
+
+(Summary)PDB
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)PDB"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_PDB", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)JIBOR
+// NOTE: topic is "(Summary)Indonia" — the Excel item name was "(Summary)Indonia"
+
+(Summary)JIBOR
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Indonia"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Jibor", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Bioetanol
+
+(Summary)Bioetanol
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Bioetanol"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Bioetanol", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)RUPTL
+// NOTE: original used Int64 intermediate cast; PostgreSQL returns date directly — simplified.
+
+(Summary)RUPTL
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)RUPTL"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_RUPTL", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)SAF
+
+(Summary)SAF
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)SAF"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_SAF", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Harga EBT
+
+(Summary)Harga EBT
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Harga EBT"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Harga_EBT", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Crackspread_NonBBM
+
+(Summary)Crackspread_NonBBM
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Crackspread_NonBBM"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_CrackspreadNonBBM", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Crackspread_BBM
+
+(Summary)Crackspread_BBM
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Crackspread_BBM"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_CrackspreadBBM", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)WTE
+// NOTE: original used type any → type date two-step; PostgreSQL returns date — simplified to one step.
+
+(Summary)WTE
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)WTE"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_WTE", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Nuklir
+
+(Summary)Nuklir
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Nuklir"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Nuklir", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Data)Biodiesel
+
+(Data)Biodiesel
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    vw_biodiesel = Source{[Schema="public",Item="vw_biodiesel"]}[Data],
+    #"Changed Type" = Table.TransformColumnTypes(vw_biodiesel,{{"Date", type date}, {"Bulan HIP", type text}, {"HIP Biodiesel IDR/L", Int64.Type}}),
+    #"Split Column by Delimiter" = Table.SplitColumn(#"Changed Type", "Bulan HIP", Splitter.SplitTextByDelimiter(" ", QuoteStyle.Csv), {"Bulan HIP.1", "Bulan HIP.2"}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Split Column by Delimiter",{{"Bulan HIP.1", type text}, {"Bulan HIP.2", Int64.Type}}),
+    #"Renamed Columns" = Table.RenameColumns(#"Changed Type1",{{"Bulan HIP.1", "Bulan"}, {"Bulan HIP.2", "Tahun"}}),
+    #"Added Custom" = Table.AddColumn(#"Renamed Columns", "BulanNum", each if [Bulan] = "Januari" then 1
+    else if [Bulan] = "Februari" then 2
+    else if [Bulan] = "Maret" then 3
+    else if [Bulan] = "April" then 4
+    else if [Bulan] = "Mei" then 5
+    else if [Bulan] = "Juni" then 6
+    else if [Bulan] = "Juli" then 7
+    else if [Bulan] = "Agustus" then 8
+    else if [Bulan] = "September" then 9
+    else if [Bulan] = "Oktober" then 10
+    else if [Bulan] = "November" then 11
+    else 12),
+    #"Added Custom1" = Table.AddColumn(#"Added Custom", "Tanggal", each #date([Tahun], [BulanNum], 1)),
+    #"Added Custom2" = Table.AddColumn(#"Added Custom1", "YearMonth_Biodiesel", each Date.ToText([Tanggal], "yyyyMM"))
+in
+    #"Added Custom2"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Data)Bioetanol
+
+(Data)Bioetanol
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    vw_bioetanol = Source{[Schema="public",Item="vw_bioetanol"]}[Data],
+    #"Changed Type" = Table.TransformColumnTypes(vw_bioetanol,{{"Date", type date}, {"Bulan HIP", type text}, {"HIP Bioetanol IDR/L", Int64.Type}, {"Harga Tetes Tebu", Int64.Type}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Data)CPO
+
+(Data)CPO
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    vw_cpo = Source{[Schema="public",Item="vw_cpo"]}[Data],
+    #"Changed Type" = Table.TransformColumnTypes(vw_cpo,{{"Dates", type date}, {"PX_LAST", Int64.Type}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "YearMonth_CPO", each Date.ToText([Dates], "yyyyMM"))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Data)Harga Minyak
+
+(Data)Harga Minyak
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    vw_harga_minyak = Source{[Schema="public",Item="vw_harga_minyak"]}[Data],
+    #"Changed Type" = Table.TransformColumnTypes(vw_harga_minyak,{{"Tahun", Int64.Type}, {"Bulan", type text}, {"Harga", type number}, {"Tanggal", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "BulanNum", each List.PositionOf({"Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"}, [Bulan]) + 1),
+    #"Added Custom1" = Table.AddColumn(#"Added Custom", "TanggalAwal", each #date([Tahun], [BulanNum], 1)),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Added Custom1",{{"Harga_Brent", type number}})
+in
+    #"Changed Type1"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Data)eia
+
+(Data)eia
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    vw_eia = Source{[Schema="public",Item="vw_eia"]}[Data],
+    #"Changed Type" = Table.TransformColumnTypes(vw_eia,{{"Bulan", type text}, {"Tahun", Int64.Type}, {"World Total Production", type number}, {"OPEC", type number}, {"Non-OPEC", type number}, {"Crude Oil", type number}, {"Other Liquids", type number}, {"World Total Consumption", type number}, {"OECD", type number}, {"Non-OECD", type number}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "BulanNum", each if [Bulan] = "Januari" then 1
+    else if [Bulan] = "Februari" then 2
+    else if [Bulan] = "Maret" then 3
+    else if [Bulan] = "April" then 4
+    else if [Bulan] = "Mei" then 5
+    else if [Bulan] = "Juni" then 6
+    else if [Bulan] = "Juli" then 7
+    else if [Bulan] = "Agustus" then 8
+    else if [Bulan] = "September" then 9
+    else if [Bulan] = "Oktober" then 10
+    else if [Bulan] = "November" then 11
+    else if [Bulan] = "Desember" then 12
+    else null),
+    #"Added Custom1" = Table.AddColumn(#"Added Custom", "TanggalAwal", each #date([Tahun], [BulanNum], 1), type date)
+in
+    #"Added Custom1"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Data)SAF
+
+(Data)SAF
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    vw_saf = Source{[Schema="public",Item="vw_saf"]}[Data],
+    #"Changed Type" = Table.TransformColumnTypes(vw_saf,{{"assessDate", type date}, {"value_UCO", Int64.Type}, {"value_SAF", type number}, {"modDate_UCO", type datetime}, {"modDate_SAF", type datetime}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Data)HargaEBT
+// NOTE: requires data_harga_ebt table populated from Excel (one-time manual step)
+
+(Data)HargaEBT
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    vw_harga_ebt = Source{[Schema="public",Item="vw_harga_ebt"]}[Data],
+    #"Changed Type" = Table.TransformColumnTypes(vw_harga_ebt,{{"No", type text}, {"Lokasi", type text}, {"Jenis EBT", type text}, {"Faktor Lokasi", type number}, {"Kelompok HPT", type text}, {"Stage", Int64.Type}, {"cent $/kWh", type number}, {"LCOE cent$/kWh", type number}, {"Battery", type number}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Data)RUPTL
+// NOTE: requires data_ruptl table populated from Excel (one-time manual step)
+// NOTE: "Keterangan " trailing space removed — column in Neon is "Keterangan"
+
+(Data)RUPTL
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    vw_ruptl = Source{[Schema="public",Item="vw_ruptl"]}[Data],
+    #"Changed Type" = Table.TransformColumnTypes(vw_ruptl,{{"ID", Int64.Type}, {"Provinsi", type text}, {"No", Int64.Type}, {"Nama Sistem Tenaga Listrik", type text}, {"Jenis Pembangkit", type text}, {"Lokasi / Nama Pembangkit", type text}, {"Kapasitas (MW)", type number}, {"Target COD Skenario RE Base", Int64.Type}, {"Target COD Skenario ARED", Int64.Type}, {"Status", type text}, {"Pengembang", type text}, {"Keterangan", type any}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Data)Crackspread_BBM
+// NOTE: "Bulan Tanggal" is a computed column derived from year+month — no change needed.
+
+(Data)Crackspread_BBM
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    vw_crackspread_bbm = Source{[Schema="public",Item="vw_crackspread_bbm"]}[Data],
+    #"Added Custom" = Table.AddColumn(vw_crackspread_bbm, "Bulan Tanggal", each #date([year], [month], 1)),
+    #"Changed Type" = Table.TransformColumnTypes(#"Added Custom",{{"year", Int64.Type}, {"month", Int64.Type}, {"price_RON92", type number}, {"price_RON95", type number}, {"price_RON97", type number}, {"price_FO05", type number}, {"price_JetKero", type number}, {"price_GO50", type number}, {"price_GO2500", type number}, {"price_Brent", type number}, {"price_RON92_crackspread", type number}, {"price_RON95_crackspread", type number}, {"price_RON97_crackspread", type number}, {"price_FO05_crackspread", type number}, {"price_JetKero_crackspread", type number}, {"price_GO50_crackspread", type number}, {"price_GO2500_crackspread", type number}, {"Bulan Tanggal", type date}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Data)Crackspread_NonBBM
+// NOTE: "date" is a computed column derived from Year+Month — no change needed.
+
+(Data)Crackspread_NonBBM
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    vw_crackspread_non_bbm = Source{[Schema="public",Item="vw_crackspread_non_bbm"]}[Data],
+    #"Added Custom" = Table.AddColumn(vw_crackspread_non_bbm, "date", each #date([Year], [Month], 1)),
+    #"Changed Type" = Table.TransformColumnTypes(#"Added Custom",{{"Price_Paraxylene", type number}, {"Price_Propylene", type number}, {"Price_Benzene", type number}, {"Price_Butane", type number}, {"Price_Propane", type number}, {"Price_LPG", type number}, {"Price_Brent", type number}, {"Price_Paraxylene_crackspread", type number}, {"Price_Propylene_crackspread", type number}, {"Price_Benzene_crackspread", type number}, {"Price_LPG_crackspread", type number}, {"date", type date}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Data)WTE_Komposisi
+// NOTE: view aggregates (SUM) by tahun — runs after WTE scraper populates data_wte_komposisi.
+
+(Data)WTE_Komposisi
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    vw_wte_komposisi = Source{[Schema="public",Item="vw_wte_komposisi"]}[Data],
+    #"Changed Type" = Table.TransformColumnTypes(vw_wte_komposisi,{{"sisa_makanan", type number}, {"kayu_ranting", type number}, {"kertas_karton", type number}, {"plastik", type number}, {"logam", type number}, {"kain", type number}, {"karet_kulit", type number}, {"kaca", type number}, {"lainnya", type number}, {"tahun", Int64.Type}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Data)WTE_Sumber
+
+(Data)WTE_Sumber
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    vw_wte_sumber = Source{[Schema="public",Item="vw_wte_sumber"]}[Data],
+    #"Changed Type" = Table.TransformColumnTypes(vw_wte_sumber,{{"ss_rumah_tangga", type number}, {"ss_perkantoran", type number}, {"ss_pasar", type number}, {"ss_perniagaan", type number}, {"ss_fasilitas_publik", type number}, {"ss_kawasan", type number}, {"ss_lain", type number}, {"tahun", Int64.Type}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Data)WTE_Timbulan
+
+(Data)WTE_Timbulan
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    vw_wte_timbulan = Source{[Schema="public",Item="vw_wte_timbulan"]}[Data],
+    #"Changed Type" = Table.TransformColumnTypes(vw_wte_timbulan,{{"timbulan_harian", type number}, {"timbulan_tahunan", type number}, {"tahun", Int64.Type}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Data)IAEA_Nuclear_Capacity
+// NOTE: Neon stores long format (year, country, value_mw).
+// "country" column contains metric names (e.g. "Total Net Electrical Capacity[GW]").
+// Table.Pivot converts back to wide format matching original Excel shape.
+
+(Data)IAEA_Nuclear_Capacity
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    vw_long = Source{[Schema="public",Item="vw_iaea_nuclear_capacity_long"]}[Data],
+    #"Pivoted" = Table.Pivot(vw_long, List.Distinct(vw_long[country]), "country", "value_mw"),
+    #"Renamed Year" = Table.RenameColumns(#"Pivoted", {{"year", "Year"}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Year",{{"Year", Int64.Type}, {"Total Net Electrical Capacity[GW]", type number}, {"Number of Operated Reactors", type number}, {"Year-end Total Net Electrical Capacity[GW]", type number}, {"Year-end Operational Reactors", type number}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Data)IAEA_Electrical
+// NOTE: Same long-format pattern as IAEA_Nuclear_Capacity.
+
+(Data)IAEA_Electrical
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    vw_long = Source{[Schema="public",Item="vw_iaea_electrical_long"]}[Data],
+    #"Pivoted" = Table.Pivot(vw_long, List.Distinct(vw_long[country]), "country", "value_twh"),
+    #"Renamed Year" = Table.RenameColumns(#"Pivoted", {{"year", "Year"}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Year",{{"Net Electrical Capacity, GW(e)", type number}, {"Number of Operated Reactors with Data", type number}, {"Electricity Supplied[TW.h]", type number}, {"Year", type number}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Data)IAEA_Country_Stats
+
+(Data)IAEA_Country_Stats
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    vw_iaea_country_stats = Source{[Schema="public",Item="vw_iaea_country_stats"]}[Data],
+    #"Changed Type" = Table.TransformColumnTypes(vw_iaea_country_stats,{{"Country", type text}, {"CountryCode", type text}, {"Reactors_InOperation", Int64.Type}, {"Reactors_UnderConstruction", Int64.Type}, {"Reactors_PermanentShutdown", Int64.Type}, {"NetCapacityMW_InOperation", Int64.Type}, {"NetCapacityMW_UnderConstruction", Int64.Type}, {"NetCapacityMW_PermanentShutdown", Int64.Type}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Data)Kapasitas_EBT
+
+(Data)Kapasitas_EBT
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    vw_kapasitas_ebt = Source{[Schema="public",Item="vw_kapasitas_ebt"]}[Data],
+    #"Changed Type" = Table.TransformColumnTypes(vw_kapasitas_ebt,{{"tahun", Int64.Type}, {"bulan", Int64.Type}, {"plta", type number}, {"pltm", type number}, {"pltmh", type number}, {"pltp", type number}, {"plts", type number}, {"plts_atap", type number}, {"pltb", type number}, {"pltbm", type number}, {"pltbg", type number}, {"pltsa", type number}, {"pltbn", type number}, {"plt_hybrid", type number}, {"total", type number}})
+in
+    #"Changed Type"

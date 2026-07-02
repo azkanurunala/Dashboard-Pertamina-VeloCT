@@ -1,0 +1,1439 @@
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)BI-Rate
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+
+    ExcelWorkbook,
+    BI_Rate_Table = Source{[Name="(Data)BI-Rate",Kind="Sheet"]}[Data],
+    #"Removed Columns" = Table.RemoveColumns(BI_Rate_Table,{"Column3", "Column4"}),
+    #"Removed Top Rows" = Table.Skip(#"Removed Columns",26),
+    #"Promoted Headers" = Table.PromoteHeaders(#"Removed Top Rows", [PromoteAllScalars=true]),
+    #"Renamed Columns1" = Table.RenameColumns(#"Promoted Headers",{{"No. of Obs", "Policy Rate: Month End: Indonesia: BI-Rate"}, {"128", "BI-Rate"}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns1",{{"Policy Rate: Month End: Indonesia: BI-Rate", type date}, {"BI-Rate", type number}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)Kurs
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    Indeks_Dollar_Amerika_Table = Source{[Name="(Data)Kurs",Kind="Sheet"]}[Data],
+    #"Removed Columns" = Table.RemoveColumns(Indeks_Dollar_Amerika_Table,{"Column4", "Column5"}),
+    #"Removed Top Rows" = Table.Skip(#"Removed Columns",26),
+    #"Promoted Headers" = Table.PromoteHeaders(#"Removed Top Rows", [PromoteAllScalars=true]),
+    #"Renamed Columns1" = Table.RenameColumns(#"Promoted Headers",{{"No. of Obs", "Times"}, {"6732", "Indeks Dollar"}, {"6358", "Nilai Tukar Rupiah"}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Renamed Columns1",{{"Times", type date}, {"Indeks Dollar", type number}, {"Nilai Tukar Rupiah", type number}})
+in
+    #"Changed Type1"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)Indeks Konsumen BI
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    Indeks_Kepercayaan_Konsumen__IKK_Table = Source{[Name="(Data)Indeks Konsumen BI",Kind="Sheet"]}[Data],
+    #"Removed Top Rows" = Table.Skip(Indeks_Kepercayaan_Konsumen__IKK_Table,26),
+    #"Promoted Headers" = Table.PromoteHeaders(#"Removed Top Rows", [PromoteAllScalars=true]),
+    #"Renamed Columns1" = Table.RenameColumns(#"Promoted Headers",{{"No. of Obs", "Times"}, {"192", "Indeks Ekspektasi Konsumen"}, {"192_1", "Indeks Ekonomi Saat Ini"}, {"192_2", "Indeks Kepercayaan Konsumen"}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Renamed Columns1",{{"Times", type date}, {"Indeks Ekspektasi Konsumen", type number}, {"Indeks Ekonomi Saat Ini", type number}, {"Indeks Kepercayaan Konsumen", type number}})
+in
+    #"Changed Type1"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)PMI
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    Indeks_Manufaktur_Table = Source{[Name="(Data)PMI",Kind="Sheet"]}[Data],
+    #"Removed Top Rows" = Table.Skip(Indeks_Manufaktur_Table,26),
+    #"Promoted Headers" = Table.PromoteHeaders(#"Removed Top Rows", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"No. of Obs", type date}, {"36", type number}}),
+    #"Renamed Columns" = Table.RenameColumns(#"Changed Type",{{"No. of Obs", "Times"}, {"36", "Indeks Manufaktur"}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Renamed Columns",{{"Times", type date}, {"Indeks Manufaktur", type number}})
+in
+    #"Changed Type1"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)Ritel
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    Indeks_Penjualan_Retail__IPR_Table = Source{[Name="(Data)Sales Ritel",Kind="Sheet"]}[Data],
+    #"Removed Top Rows" = Table.Skip(Indeks_Penjualan_Retail__IPR_Table,26),
+    #"Promoted Headers" = Table.PromoteHeaders(#"Removed Top Rows", [PromoteAllScalars=true]),
+    #"Renamed Columns" = Table.RenameColumns(#"Promoted Headers",{{"No. of Obs", "Times"}, {"192", "Indeks Sales Ritel"}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns",{{"Times", type date}, {"Indeks Sales Ritel", type number}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)Indonia
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    JIBOR_Table = Source{[Name="(Data)Indonia",Kind="Sheet"]}[Data],
+    #"Removed Top Rows" = Table.Skip(JIBOR_Table,26),
+    #"Promoted Headers" = Table.PromoteHeaders(#"Removed Top Rows", [PromoteAllScalars=true]),
+    #"Renamed Columns1" = Table.RenameColumns(#"Promoted Headers",{{"No. of Obs", "Times"}, {"2195", "Indonia"}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns1",{{"Times", type date}, {"Indonia", type number}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)Indeks Volatilitas
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    Table26_Table = Source{[Name="(Data)Volatilitas",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(Table26_Table, [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Date", type date}, {"Last Price", type number}}),
+    #"Renamed Columns" = Table.RenameColumns(#"Changed Type",{{"Last Price", "Indeks Volatilitas (VIX)"}})
+in
+    #"Renamed Columns"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)Geopolitik
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    Table27_Table = Source{[Name="(Data)Geopolitik",Kind="Sheet"]}[Data],
+    #"Removed Top Rows" = Table.Skip(Table27_Table,26),
+    #"Promoted Headers" = Table.PromoteHeaders(#"Removed Top Rows", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"No. of Obs", type date}, {"313", type number}}),
+    #"Renamed Columns" = Table.RenameColumns(#"Changed Type",{{"No. of Obs", "Tanggal"}, {"313", "Indeks Risiko Geopolitik"}})
+in
+    #"Renamed Columns"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)Inflasi
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"My Series_Sheet" = Source{[Item="(Data)Inflasi",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"My Series_Sheet", [PromoteAllScalars=true]),
+    #"Removed Columns" = Table.RemoveColumns(#"Promoted Headers",{"Column6", "Column7", "Column8", "Column9"}),
+    #"Removed Top Rows" = Table.Skip(#"Removed Columns",26),
+    #"Renamed Columns" = Table.RenameColumns(#"Removed Top Rows",{{"Select this link and click Refresh/Edit Download to update data and add or remove series", "Tanggal"}, {"Consumer Price Index: YoY: Volatile", "Volatile Price (YoY)"}, {"Consumer Price Index: YoY: Administered", "Administered Price (YoY)"}, {"Consumer Price Index: YoY: Core", "Inflasi Core (YoY)"}, {"Consumer Price Index: YoY", "Inflasi Umum (YoY)"}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns",{{"Volatile Price (YoY)", type number}, {"Administered Price (YoY)", type number}, {"Inflasi Core (YoY)", type number}, {"Inflasi Umum (YoY)", type number}, {"Tanggal", type date}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)Neraca Perdagangan
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],  // Ganti dengan EXACT NAME
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"My Series_Sheet" = Source{[Item="(Data)Neraca Perdagangan",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"My Series_Sheet", [PromoteAllScalars=true]),
+    #"Removed Top Rows" = Table.Skip(#"Promoted Headers",26),
+    #"Renamed Columns" = Table.RenameColumns(#"Removed Top Rows",{{"Select this link and click Refresh/Edit Download to update data and add or remove series", "Tanggal"}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns",{{"Tanggal", type date}}),
+    #"Rounded Down" = Table.TransformColumns(#"Changed Type",{{"Total Exports: USD mn: Monthly: Indonesia", Number.RoundDown, Int64.Type}, {"Total Imports: USD mn: Monthly: Indonesia", Number.RoundDown, Int64.Type}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Rounded Down",{{"Trade Balance", type number}})
+in
+    #"Changed Type1"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)PDB
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],  // Ganti dengan EXACT NAME
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"My Series_Sheet" = Source{[Name="(Data)GDP yoy",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"My Series_Sheet", [PromoteAllScalars=true]),
+    #"Removed Columns1" = Table.RemoveColumns(#"Promoted Headers",{"Column3", "Column4"}),
+    #"Removed Alternate Rows" = Table.AlternateRows(#"Removed Columns1",0,26,63),
+    #"Renamed Columns" = Table.RenameColumns(#"Removed Alternate Rows",{{"Select this link and click Refresh/Edit Download to update data and add or remove series", "Tanggal"}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns",{{"Tanggal", type date}, {"Gross Domestic Product: SNA 2008: 2010p: YoY %", type number}}),
+    #"Rounded Off" = Table.TransformColumns(#"Changed Type",{{"Gross Domestic Product: SNA 2008: 2010p: YoY %", each Number.Round(_, 2), type number}})
+in
+    #"Rounded Off"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)IHSG
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Makro.xlsx"){0}[Content],  // Ganti dengan EXACT NAME
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"My Series_Sheet" = Source{[Name="(Data)IHSG",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"My Series_Sheet", [PromoteAllScalars=true]),
+    #"Removed Top Rows" = Table.Skip(#"Promoted Headers",26),
+    #"Renamed Columns" = Table.RenameColumns(#"Removed Top Rows",{{"IDX: Index: Composite", "IHSG"}, {"Select this link and click Refresh/Edit Download to update data and add or remove series", "Tanggal"}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns",{{"Tanggal", type date}, {"IHSG", type number}}),
+    #"Rounded Off" = Table.TransformColumns(#"Changed Type",{{"IHSG", each Number.Round(_, 2), type number}}),
+    #"Removed Columns" = Table.RemoveColumns(#"Rounded Off",{"Column3", "Column4", "Column5", "Column6"})
+in
+    #"Removed Columns"
+
+// ─────────────────────────────────────────────────────────────────────────────
+Kategori eia
+
+let
+    Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i45WCs8vyklRCMkvScxRCCjKTylNLsnMz1OK1YlW8g9wdQYz/PLzdOEc56LSlFQF/8wciJqSjNQiBZ/MwtLMlGKwCLKBzvl5xaW5BQgTXZ1dECaCObEA", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [#"Kategori eia" = _t]),
+    #"Replaced Value" = Table.ReplaceValue(Source,"World Total Production","World Oil",Replacer.ReplaceText,{"Kategori eia"}),
+    #"Removed Alternate Rows" = Table.AlternateRows(#"Replaced Value",5,1,5),
+    #"Changed Type" = Table.TransformColumnTypes(#"Removed Alternate Rows",{{"Kategori eia", type text}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)Volume Produk Kilang
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)Volume Produk Kilang_Sheet" = Source{[Item="(News)Volume Produk Kilang",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)Volume Produk Kilang_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type any}, {"date", type any}, {"url", type any}, {"content", type any}, {"source", type any}, {"keyword", type any}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source]),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Added Custom",{{"date", type date}})
+in
+    #"Changed Type1"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)Volume Minyak
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scraping_final.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)Volume Minyak_Sheet" = Source{[Item="(News)Volume Minyak",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)Volume Minyak_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)Biodiesel
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)Bioenergi_Sheet" = Source{[Item="(News)Biodiesel",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)Bioenergi_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)Harga Minyak
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scraping_final.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)Harga Minyak_Sheet" = Source{[Item="(News)Harga Minyak",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)Harga Minyak_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)Harga Produk Kilang
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)Harga Produk Kilang_Sheet" = Source{[Item="(News)Harga Produk Kilang",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)Harga Produk Kilang_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)Biodiesel
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Terstruktur)Data Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Data)Biodesel_Sheet" = Source{[Item="(Data)Biodesel",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Data)Biodesel_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Date", type date}, {"Bulan HIP", type text}, {"HIP Biodiesel IDR/L", Int64.Type}}),
+    #"Split Column by Delimiter" = Table.SplitColumn(#"Changed Type", "Bulan HIP", Splitter.SplitTextByDelimiter(" ", QuoteStyle.Csv), {"Bulan HIP.1", "Bulan HIP.2"}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Split Column by Delimiter",{{"Bulan HIP.1", type text}, {"Bulan HIP.2", Int64.Type}}),
+    #"Renamed Columns" = Table.RenameColumns(#"Changed Type1",{{"Bulan HIP.1", "Bulan"}, {"Bulan HIP.2", "Tahun"}}),
+    #"Added Custom" = Table.AddColumn(#"Renamed Columns", "BulanNum", each if [Bulan] = "Januari" then 1 
+    else if [Bulan] = "Februari" then 2 
+    else if [Bulan] = "Maret" then 3 
+    else if [Bulan] = "April" then 4 
+    else if [Bulan] = "Mei" then 5 
+    else if [Bulan] = "Juni" then 6 
+    else if [Bulan] = "Juli" then 7 
+    else if [Bulan] = "Agustus" then 8 
+    else if [Bulan] = "September" then 9 
+    else if [Bulan] = "Oktober" then 10 
+    else if [Bulan] = "November" then 11 
+    else 12),
+    #"Added Custom1" = Table.AddColumn(#"Added Custom", "Tanggal", each #date([Tahun], [BulanNum], 1)),
+    #"Added Custom2" = Table.AddColumn(#"Added Custom1", "YearMonth_Biodiesel", each Date.ToText([Tanggal], "yyyyMM"))
+in
+    #"Added Custom2"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)CPO
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Terstruktur)Data Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Data)CPO_Sheet" = Source{[Item="(Data)CPO",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Data)CPO_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Dates", type date}, {"PX_LAST", Int64.Type}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "YearMonth_CPO", each Date.ToText([Dates], "yyyyMM"))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)Harga Minyak
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Terstruktur)Data Scraping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Data)Harga Minyak_Sheet" = Source{[Item="(Data)Harga Minyak",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Data)Harga Minyak_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tahun", Int64.Type}, {"Bulan", type text}, {"Harga", type number}, {"Tanggal", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "BulanNum", each List.PositionOf({"Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"}, [Bulan]) + 1),
+    #"Added Custom1" = Table.AddColumn(#"Added Custom", "TanggalAwal", each #date([Tahun], [BulanNum], 1)),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Added Custom1",{{"Harga_Brent", type number}})
+in
+    #"Changed Type1"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)eia
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Terstruktur)Data Scraping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Data)eia_Sheet" = Source{[Item="(Data)eia",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Data)eia_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Bulan", type text}, {"Tahun", Int64.Type}, {"World Total Production", type number}, {"OPEC", type number}, {"Non-OPEC", type number}, {"Crude Oil", type number}, {"Other Liquids", type number}, {"World Total Consumption", type number}, {"OECD", type number}, {"Non-OECD", type number}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "BulanNum", each if [Bulan] = "Januari" then 1
+    else if [Bulan] = "Februari" then 2
+    else if [Bulan] = "Maret" then 3
+    else if [Bulan] = "April" then 4
+    else if [Bulan] = "Mei" then 5
+    else if [Bulan] = "Juni" then 6
+    else if [Bulan] = "Juli" then 7
+    else if [Bulan] = "Agustus" then 8
+    else if [Bulan] = "September" then 9
+    else if [Bulan] = "Oktober" then 10
+    else if [Bulan] = "November" then 11
+    else if [Bulan] = "Desember" then 12
+    else null),
+    #"Added Custom1" = Table.AddColumn(#"Added Custom", "TanggalAwal", each #date([Tahun], [BulanNum], 1), type date)
+in
+    #"Added Custom1"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)Biodiesel
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)Bioenergi_Sheet" = Source{[Item="(Summary)Biodiesel",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)Bioenergi_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Bioenergi", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir])),
+    #"Added Custom1" = Table.AddColumn(#"Added Custom", "Sort_Helper", each -Number.From([Tanggal awal])),
+    #"Removed Columns" = Table.RemoveColumns(#"Added Custom1",{"Sort_Helper"})
+in
+    #"Removed Columns"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)Harga Minyak
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment_final.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)Harga Minyak_Sheet" = Source{[Item="(Summary)Harga Minyak"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)Harga Minyak_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type any}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_HargaMinyak", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)Harga Produk Kilang
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)Harga Produk Kilang_Sheet" = Source{[Item="(Summary)Harga Produk Kilang"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)Harga Produk Kilang_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", Int64.Type}, {"Tanggal akhir", Int64.Type}, {"Summary", type text}, {"Summary Data", type any}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Changed Type",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type1", "Rentang_HargaKilang", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)Volume Minyak
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment_final.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)Volume Minyak_Sheet" = Source{[Item="(Summary)Volume Minyak",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)Volume Minyak_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_VolumeMinyak", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)Volume Produk Kilang
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)Volume Produk Kilang_Sheet" = Source{[Item="(Summary)Volume Produk Kilang",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)Volume Produk Kilang_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", Int64.Type}, {"Tanggal akhir", Int64.Type}, {"Summary", type text}, {"Summary Data", type any}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Changed Type",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type1", "Rentang_VolumeKilang", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)Input_Fosil_Prediction
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Data)Input_Manual.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Data)Input_Fosil_Prediction_Sheet" = Source{[Item="(Data)Input_Fosil_Prediction",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Data)Input_Fosil_Prediction_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tahun", Int64.Type}, {"Brent", type number}, {"FO05 (Price)", type number}, {"GO2500 (Price)", type number}, {"GO50 (Price)", type number}, {"JetKero (Price)", type number}, {"RON92 (Price)", type number}, {"RON95 (Price)", type number}, {"RON97 (Price)", type number}, {"FO05 (Crack Spread)", type number}, {"GO2500 (Crack Spread)", type number}, {"GO50 (Crack Spread)", type number}, {"JetKero (Crack Spread)", type number}, {"RON92 (Crack Spread)", type number}, {"RON95 (Crack Spread)", type number}, {"RON97 (Crack Spread)", type number}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)BI Rate
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)BI Rate_Sheet" = Source{[Item="(News)BI Rate",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)BI Rate_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)IHSG
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)IHSG_Sheet" = Source{[Item="(News)IHSG",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)IHSG_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)indeks kepercayaan knsmn
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)indeks kepercayaan knsmn_Sheet" = Source{[Item="(News)indeks kepercayaan knsmn",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)indeks kepercayaan knsmn_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)indeks kinerja manufaktur
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)indeks kinerja manufaktur_Sheet" = Source{[Item="(News)indeks kinerja manufaktur",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)indeks kinerja manufaktur_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)indeks risiko geopolitik
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)indeks risiko geopolitik_Sheet" = Source{[Item="(News)indeks risiko geopolitik",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)indeks risiko geopolitik_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type any}, {"date", type date}, {"url", type any}, {"content", type any}, {"source", type any}, {"keyword", type any}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)indeks sales retail
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)indeks sales retail_Sheet" = Source{[Item="(News)indeks sales retail",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)indeks sales retail_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)indeks volatilitas
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)indeks volatilitas_Sheet" = Source{[Item="(News)indeks volatilitas",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)indeks volatilitas_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type any}, {"date", type date}, {"url", type any}, {"content", type any}, {"source", type any}, {"keyword", type any}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)Inflasi
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)Inflasi_Sheet" = Source{[Item="(News)Inflasi",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)Inflasi_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)Indonia
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)JIBOR_Sheet" = Source{[Item="(News)Indonia",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)JIBOR_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)Kurs
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)Kurs_Sheet" = Source{[Item="(News)Kurs",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)Kurs_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)neraca perdagangan
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)neraca perdagangan_Sheet" = Source{[Item="(News)neraca perdagangan",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)neraca perdagangan_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)PDB
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)PDB_Sheet" = Source{[Item="(News)PDB",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)PDB_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)BI-Rate
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)BI-Rate_Sheet" = Source{[Item="(Summary)BI-Rate",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)BI-Rate_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", Int64.Type}, {"Tanggal akhir", Int64.Type}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Changed Type",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type1", "Rentang_birate", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)Idx Keyakinan Konsumen
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)Idx Keyakinan Konsumen_Sheet" = Source{[Item="(Summary)Idx Keyakinan Konsumen",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)Idx Keyakinan Konsumen_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", Int64.Type}, {"Tanggal akhir", Int64.Type}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Changed Type",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type1", "Rentang_IdxKeyakinanKonsumen", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)Idx Penjualan Retail
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)Idx Penjualan Retail_Sheet" = Source{[Item="(Summary)Idx Penjualan Retail",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)Idx Penjualan Retail_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", Int64.Type}, {"Tanggal akhir", Int64.Type}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Changed Type",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type1", "Rentang_IdxPenjualanRetail", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)Idx PMI
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)Idx PMI_Sheet" = Source{[Item="(Summary)Idx PMI",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)Idx PMI_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", Int64.Type}, {"Tanggal akhir", Int64.Type}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Changed Type",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type1", "Rentang_PMI", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)Idx Risiko Geopolitik
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)Idx Risiko Geopolitik_Sheet" = Source{[Item="(Summary)Idx Risiko Geopolitik",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)Idx Risiko Geopolitik_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", Int64.Type}, {"Tanggal akhir", Int64.Type}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Changed Type",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type1", "Rentang_IdxRisikoGeopolitik", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)Idx Volatilitas
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)Idx Volatilitas_Sheet" = Source{[Item="(Summary)Idx Volatilitas",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)Idx Volatilitas_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", Int64.Type}, {"Tanggal akhir", Int64.Type}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Changed Type",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type1", "Rentang_IdxVolatilitas", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)IHSG
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)IHSG_Sheet" = Source{[Item="(Summary)IHSG",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)IHSG_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", Int64.Type}, {"Tanggal akhir", Int64.Type}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Changed Type",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type1", "Rentang_ihsg", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)Inflasi
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)Inflasi_Sheet" = Source{[Item="(Summary)Inflasi",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)Inflasi_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", Int64.Type}, {"Tanggal akhir", Int64.Type}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Changed Type",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type1", "Rentang_Inflasi", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)Neraca Perdagangan
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)Neraca Perdagangan_Sheet" = Source{[Item="(Summary)Neraca Perdagangan",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)Neraca Perdagangan_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", Int64.Type}, {"Tanggal akhir", Int64.Type}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Changed Type",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type1", "Rentang_NeracaPerdagangan", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)Nilai Tukar Rupiah
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)Nilai Tukar Rupiah_Sheet" = Source{[Item="(Summary)Nilai Tukar Rupiah",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)Nilai Tukar Rupiah_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", Int64.Type}, {"Tanggal akhir", Int64.Type}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Changed Type",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type1", "Rentang_NilaiTukarRupiah", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)PDB
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)PDB_Sheet" = Source{[Item="(Summary)PDB",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)PDB_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", Int64.Type}, {"Tanggal akhir", Int64.Type}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Changed Type",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type1", "Rentang_PDB", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)JIBOR
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)JIBOR_Sheet" = Source{[Item="(Summary)Indonia",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)JIBOR_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", Int64.Type}, {"Tanggal akhir", Int64.Type}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Changed Type",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type1", "Rentang_Jibor", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)Bioetanol
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Terstruktur)Data Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Data)Bioetanol_Sheet" = Source{[Item="(Data)Bioetanol",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Data)Bioetanol_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Date", type date}, {"Bulan HIP", type text}, {"HIP Bioetanol IDR/L", Int64.Type}, {"Harga Tetes Tebu", Int64.Type}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)Bioetanol
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)Bioetanol_Sheet" = Source{[Item="(News)Bioetanol",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)Bioetanol_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)Bioetanol
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)Bioetanol_Sheet" = Source{[Item="(Summary)Bioetanol",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)Bioetanol_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Bioetanol", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)RUPTL
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Terstruktur)Data Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Data)RUPTL_Sheet" = Source{[Item="(Data)RUPTL",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Data)RUPTL_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"ID", Int64.Type}, {"Provinsi", type text}, {"No", Int64.Type}, {"Nama Sistem Tenaga Listrik", type text}, {"Jenis Pembangkit", type text}, {"Lokasi / Nama Pembangkit", type text}, {"Kapasitas (MW)", type number}, {"Target COD Skenario RE Base", Int64.Type}, {"Target COD Skenario ARED", Int64.Type}, {"Status", type text}, {"Pengembang", type text}, {"Keterangan ", type any}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)RUPTL
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scraping_final.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)RUPTL_Sheet" = Source{[Item="(News)RUPTL",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)RUPTL_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)RUPTL
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment_final.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)RUPTL_Sheet" = Source{[Item="(Summary)RUPTL",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)RUPTL_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", Int64.Type}, {"Tanggal akhir", Int64.Type}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Changed Type",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type1", "Rentang_RUPTL", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)SAF
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)SAF_Sheet" = Source{[Item="(News)SAF",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)SAF_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)SAF
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)SAF_Sheet" = Source{[Item="(Summary)SAF",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)SAF_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_SAF", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)SAF
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Terstruktur)Data Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Data)SAF_Sheet" = Source{[Item="(Data)SAF",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Data)SAF_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"assessDate", type date}, {"value_UCO", Int64.Type}, {"value_SAF", type number}, {"modDate_UCO", type datetime}, {"modDate_SAF", type datetime}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)HargaEBT
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Terstruktur)Data Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Data)HargaEBT_Sheet" = Source{[Item="(Data)HargaEBT",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Data)HargaEBT_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"No", type text},{"Lokasi", type text}, {"Jenis EBT", type text}, {"Faktor Lokasi", type number}, {"Kelompok HPT", type text}, {"Stage", Int64.Type}, {"cent $/kWh", type number}, {"LCOE cent$/kWh", type number}, {"Battery", type number}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)Harga EBT
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scraping_final.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)BI Rate_Sheet" = Source{[Item="(News)EBT",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)BI Rate_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)Harga EBT
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment_final.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)BI-Rate_Sheet" = Source{[Item="(Summary)Harga EBT",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)BI-Rate_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Harga_EBT", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)Crackspread_BBM
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Terstruktur)Data Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Data)SAF_Sheet" = Source{[Item="(Data)Crackspread_BBM",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Data)SAF_Sheet", [PromoteAllScalars=true]),
+    #"Added Custom" = Table.AddColumn(#"Promoted Headers", "Bulan Tanggal", each #date([year], [month], 1)),
+    #"Changed Type" = Table.TransformColumnTypes(#"Added Custom",{{"year", Int64.Type}, {"month", Int64.Type}, {"price_RON92", type number}, {"price_RON95", type number}, {"price_RON97", type number}, {"price_FO05", type number}, {"price_JetKero", type number}, {"price_GO50", type number}, {"price_GO2500", type number}, {"price_Brent", type number}, {"price_RON92_crackspread", type number}, {"price_RON95_crackspread", type number}, {"price_RON97_crackspread", type number}, {"price_FO05_crackspread", type number}, {"price_JetKero_crackspread", type number}, {"price_GO50_crackspread", type number}, {"price_GO2500_crackspread", type number}, {"Bulan Tanggal", type date}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)Crackspread_NonBBM
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Terstruktur)Data Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Data)SAF_Sheet" = Source{[Item="(Data)Crackspread_NON_BBM",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Data)SAF_Sheet", [PromoteAllScalars=true]),
+    #"Added Custom" = Table.AddColumn(#"Promoted Headers", "date", each #date([Year], [Month], 1)),
+    #"Changed Type" = Table.TransformColumnTypes(#"Added Custom",{{"Price_Paraxylene", type number}, {"Price_Propylene", type number}, {"Price_Benzene", type number}, {"Price_Butane", type number}, {"Price_Propane", type number}, {"Price_LPG", type number}, {"Price_Brent", type number}, {"Price_Paraxylene_crackspread", type number}, {"Price_Propylene_crackspread", type number}, {"Price_Benzene_crackspread", type number}, {"Price_LPG_crackspread", type number}, {"date", type date}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)Crackspread_NonBBM
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)BI Rate_Sheet" = Source{[Item="(News)Crackspread_NonBBM",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)BI Rate_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)Crackspread_NonBBM
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)BI-Rate_Sheet" = Source{[Item="(Summary)Crackspread_NonBBM",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)BI-Rate_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_CrackspreadNonBBM", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)Crackspread_BBM
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)BI Rate_Sheet" = Source{[Item="(News)Crackspread_BBM",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)BI Rate_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)Crackspread_BBM
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)BI-Rate_Sheet" = Source{[Item="(Summary)Crackspread_BBM",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)BI-Rate_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_CrackspreadBBM", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)WTE_Komposisi
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Terstruktur)Data Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Data)SAF_Sheet" = Source{[Item="(Data)WTE_Komposisi",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Data)SAF_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"sisa_makanan", type number}, {"kayu_ranting", type number}, {"kertas_karton", type number}, {"plastik", type number}, {"logam", type number}, {"kain", type number}, {"karet_kulit", type number}, {"kaca", type number}, {"lainnya", type number}, {"tahun", Int64.Type}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)WTE
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment_final.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)SAF_Sheet" = Source{[Item="(Summary)WTE",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)SAF_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", type any}, {"Tanggal akhir", type any}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Changed Type",{{"Tanggal akhir", type date}, {"Tanggal awal", type date}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type1", "Rentang_WTE", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)WTE
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scraping_final.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)SAF_Sheet" = Source{[Item="(News)WTE",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)SAF_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)WTE_Sumber
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Terstruktur)Data Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Data)SAF_Sheet" = Source{[Item="(Data)WTE_Sumber",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Data)SAF_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"ss_rumah_tangga", type number}, {"ss_perkantoran", type number}, {"ss_pasar", type number}, {"ss_perniagaan", type number}, {"ss_fasilitas_publik", type number}, {"ss_kawasan", type number}, {"ss_lain", type number}, {"tahun", Int64.Type}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)WTE_Timbulan
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Terstruktur)Data Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Data)SAF_Sheet" = Source{[Item="(Data)WTE_Timbulan",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Data)SAF_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"timbulan_harian", type number}, {"timbulan_tahunan", type number}, {"tahun", Int64.Type}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)IAEA_Nuclear_Capacity
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Terstruktur)Data Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Data)SAF_Sheet" = Source{[Item="(Data)IAEA_Nuclear_Capacity",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Data)SAF_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Year", Int64.Type}, {"Total Net Electrical Capacity[GW]", type number}, {"Number of Operated Reactors", type number}, {"Year-end Total Net Electrical Capacity[GW]", type number}, {"Year-end Operational Reactors", type number}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)IAEA_Electrical
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Terstruktur)Data Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Data)SAF_Sheet" = Source{[Item="(Data)IAEA_Electrical",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Data)SAF_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Net Electrical Capacity, GW(e)", type number}, {"Number of Operated Reactors with Data", type number}, {"Electricity Supplied[TW.h]", type number}, {"Year", type number}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(News)Nuklir
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Scraping_final.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(News)SAF_Sheet" = Source{[Item="(News)Nuklir",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(News)SAF_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Summary)Nuklir
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(News)Sentiment_final.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Summary)SAF_Sheet" = Source{[Item="(Summary)Nuklir",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Summary)SAF_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Nuklir", each Text.From([Tanggal awal]) & " : " & Text.From([Tanggal akhir]))
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)Kapasitas_EBT
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Terstruktur)Data Scraping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"(Data)SAF_Sheet" = Source{[Item="(Data)Kapasitas_EBT",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"(Data)SAF_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"tahun", Int64.Type}, {"bulan", Int64.Type}, {"plta", type number}, {"pltm", type number}, {"pltmh", type number}, {"pltp", type number}, {"plts", type number}, {"plts_atap", type number}, {"pltb", type number}, {"pltbm", type number}, {"pltbg", type number}, {"pltsa", type number}, {"pltbn", type number}, {"plt_hybrid", type number}, {"total", type number}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+Kategori Harga Kilang
+
+let
+    Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i45WCs7MS08syC9KVQhKLc5MKU3MUXDzVzDQMVVVitVBljbQMTJVVQhWcE8szs/MQZM0NVAoKMjFJeuVWuKdWpSPJlqal6NgaQTWkZOZl4pN1hSvrDmSbCwA", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [#"Kategori Harga Kilang" = _t]),
+    #"Changed Type" = Table.TransformColumnTypes(Source,{{"Kategori Harga Kilang", type text}})
+in
+    #"Changed Type"
+
+// ─────────────────────────────────────────────────────────────────────────────
+(Data)IAEA_Country_Stats
+
+let
+    Source = let
+    Source = SharePoint.Files("https://velocitrateknologi-my.sharepoint.com/personal/shelmacecem_velocitrateknologi_onmicrosoft_com/"),
+    FilteredFile = Table.SelectRows(Source, each [Name] = "(Terstruktur)Data Scrapping.xlsx"){0}[Content],
+    ExcelWorkbook = Excel.Workbook(FilteredFile, null, true)
+in
+    ExcelWorkbook,
+    #"Form Ajuan Appraisal_Sheet" = Source{[Item="(Data)IAEA_Country_Stats",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(#"Form Ajuan Appraisal_Sheet", [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Country", type text}, {"CountryCode", type text}, {"Reactors_InOperation", Int64.Type}, {"Reactors_UnderConstruction", Int64.Type}, {"Reactors_PermanentShutdown", Int64.Type}, {"NetCapacityMW_InOperation", Int64.Type}, {"NetCapacityMW_UnderConstruction", Int64.Type}, {"NetCapacityMW_PermanentShutdown", Int64.Type}})
+in
+    #"Changed Type"

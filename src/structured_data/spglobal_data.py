@@ -1014,14 +1014,17 @@ def main_saf_daily():
     print(f"[Main] Rows  : {len(df_pivoted)}")
     print(f"\n{'='*60}\n[Main] SELESAI\n{'='*60}")
 
-def main_saf_weekly():
-    """Scrape and save 7-day historical SAF and UCO prices from S&P Global."""
+def main_saf_weekly(start_date: str | None = None, end_date: str | None = None):
+    """Scrape and save historical SAF and UCO prices from S&P Global.
+
+    Without arguments, fetches the last 7 days. Pass start_date/end_date for backfill.
+    """
     print(f"\n{'='*60}")
     print("SCRAPER SAF — HISTORICAL (WEEKLY)")
     print(f"{'='*60}")
 
-    end_date   = datetime.today().strftime("%Y-%m-%d")
-    start_date = (datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")
+    end_date   = end_date   or datetime.today().strftime("%Y-%m-%d")
+    start_date = start_date or (datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")
 
     sp_token = login_spglobal()
     if not sp_token:
@@ -1210,14 +1213,17 @@ def main_price_forecast_long_term_bbm():
     print(f"\n{'='*60}\n[Main] SELESAI\n{'='*60}")
 
 
-def main_crackspeed_bbm_weekly():
-    """Scrape and save 7-day historical BBM crackspeed prices from S&P Global."""
+def main_crackspeed_bbm_weekly(start_date: str | None = None, end_date: str | None = None):
+    """Scrape and save historical BBM crackspeed prices from S&P Global.
+
+    Without arguments, fetches the last 7 days. Pass start_date/end_date for backfill.
+    """
     print(f"\n{'='*60}")
     print("SCRAPER CRACKSPEED BBM — HISTORICAL (WEEKLY)")
     print(f"{'='*60}")
 
-    end_date   = datetime.today().strftime("%Y-%m-%d")
-    start_date = (datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")
+    end_date   = end_date   or datetime.today().strftime("%Y-%m-%d")
+    start_date = start_date or (datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")
 
     sp_token = login_spglobal()
     if not sp_token:
@@ -1244,14 +1250,17 @@ def main_crackspeed_bbm_weekly():
     print(f"\n{'='*60}\n[Main] SELESAI\n{'='*60}")
 
 
-def main_crackspeed_non_bbm_weekly():
-    """Scrape and save 7-day historical non-BBM crackspeed prices from S&P Global."""
+def main_crackspeed_non_bbm_weekly(start_date: str | None = None, end_date: str | None = None):
+    """Scrape and save historical non-BBM crackspeed prices from S&P Global.
+
+    Without arguments, fetches the last 7 days. Pass start_date/end_date for backfill.
+    """
     print(f"\n{'='*60}")
     print("SCRAPER CRACKSPEED NON BBM — HISTORICAL (WEEKLY)")
     print(f"{'='*60}")
 
-    end_date   = datetime.today().strftime("%Y-%m-%d")
-    start_date = (datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")
+    end_date   = end_date   or datetime.today().strftime("%Y-%m-%d")
+    start_date = start_date or (datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")
 
     sp_token = login_spglobal()
     if not sp_token:

@@ -195,6 +195,76 @@ def find_articles_by_keyword(keyword: str) -> list[dict]:
     print(f"\n[Search] Total articles matching '{keyword}': {len(results)}")
     return results
 
+
+def find_articles_in_monthly_sitemap(keyword: str, year: int, month: int) -> list[dict]:
+    """
+    Fetch Kompas articles matching keyword from historical monthly sitemaps.
+
+    Uses the URL pattern /sitemap-news-{section}-{YYYY}-{MM}.xml, which Kompas
+    keeps for past months. Use this for backfill instead of find_articles_by_keyword,
+    which only crawls the live (current-month) sitemap tree.
+    """
+    keyword_pattern = re.compile(
+        r"\b" + re.escape(keyword.strip().lower()) + r"\b"
+    )
+    results: list[dict] = []
+
+    for section in sorted(KOMPAS_ALLOWED_SITEMAPS):
+        url = f"https://www.kompas.com/sitemap-news-{section}-{year}-{month:02d}.xml"
+        print(f"[Sitemap] Fetching: {url}")
+        try:
+            content = fetch_xml(url)
+            subroot = ET.fromstring(content)
+
+            # If this is itself a sitemap index (e.g. contains daily sub-sitemaps), drill down
+            if _is_sitemap_index(subroot):
+                child_sitemaps = _collect_article_sitemaps(subroot)
+                for child_url in child_sitemaps:
+                    try:
+                        child_content = fetch_xml(child_url)
+                        child_root    = ET.fromstring(child_content)
+                        for url_tag in child_root.findall(".//sm:url", NS_SITEMAP):
+                            info = extract_news_sitemap_entry(url_tag)
+                            if not info:
+                                continue
+                            title    = (info.get("title")    or "").lower()
+                            keywords = (info.get("keywords") or "").lower()
+                            if keyword_pattern.search(title) or keyword_pattern.search(keywords):
+                                results.append({
+                                    "Judul":   info["title"] or info["link"],
+                                    "Link":    info["link"],
+                                    "Tanggal": info["date"] or "-",
+                                })
+                        time.sleep(SITEMAP_FETCH_DELAY)
+                    except Exception as exc:
+                        print(f"[Sitemap] Error on sub-sitemap {child_url}: {exc}")
+                        continue
+            else:
+                url_tags = subroot.findall(".//sm:url", NS_SITEMAP)
+                print(f"   URLs in sitemap: {len(url_tags)}")
+                for url_tag in url_tags:
+                    info = extract_news_sitemap_entry(url_tag)
+                    if not info:
+                        continue
+                    title    = (info.get("title")    or "").lower()
+                    keywords = (info.get("keywords") or "").lower()
+                    if keyword_pattern.search(title) or keyword_pattern.search(keywords):
+                        results.append({
+                            "Judul":   info["title"] or info["link"],
+                            "Link":    info["link"],
+                            "Tanggal": info["date"] or "-",
+                        })
+
+            print(f"   Matches so far: {len(results)}")
+            time.sleep(SITEMAP_FETCH_DELAY)
+
+        except Exception as exc:
+            print(f"[Sitemap] Failed to fetch {url}: {exc}")
+            continue
+
+    print(f"\n[Search] Total articles for '{keyword}' in {year}-{month:02d}: {len(results)}")
+    return results
+
 # Content Cleaning (Kompas-specific
 
 def _clean_article_content(content_div: BeautifulSoup) -> str:

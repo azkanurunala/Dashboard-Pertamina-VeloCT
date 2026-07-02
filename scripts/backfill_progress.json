@@ -1,0 +1,18 @@
+{
+  "started_at": "2026-07-02T17:52:35.847215",
+  "completed_sources": [
+    "eia",
+    "biodiesel_esdm",
+    "bioetanol_esdm",
+    "iaea",
+    "wte",
+    "cpo",
+    "spglobal_saf",
+    "spglobal_crackspeed_bbm",
+    "spglobal_crackspeed_nonbbm",
+    "migas_esdm"
+  ],
+  "last_completed_date_lokal": "2026-01-01",
+  "last_completed_date_intl": null,
+  "completed_kompas_months": []
+}

@@ -102,7 +102,7 @@ _DATE_PATTERNS_OCR = [
     #         With IGNORECASE, "Nomor 35.K/… tanggal 21 Januari 2026 tentang" (Mengingat)
     #         would also match because lowercase "tanggal" becomes equivalent to TANGGAL.
     (rf"NOMOR\s*:?\s*[\w.\s/]+\s+TANGGAL\s*:?\s*(\d{{1,2}})\s+({_MONTH_PATTERN_FUZZY})\s+(\d{{4}})",
-     re.DOTALL),   # ← DOTALL only, NO IGNORECASE
+     re.DOTALL),   # &lt;- DOTALL only, NO IGNORECASE
     # pat[3]: Lampiran header with colon — "TANGGAL : DD Month YYYY"
     (rf"TANGGAL\s*:\s*(\d{{1,2}})\s+({_MONTH_PATTERN_FUZZY})\s+(\d{{4}})",
      re.IGNORECASE | re.DOTALL),
@@ -325,9 +325,9 @@ def download_pdfs(pdf_links, folder=PDF_FOLDER):
                 content = _download_with_retry(url)
                 with open(path, "wb") as f:
                     f.write(content)
-                print(f"  ✓ {filename}")
+                print(f"  [OK] {filename}")
             except Exception as exc:
-                print(f"  ✗ {filename} -> Gagal: {exc}")
+                print(f"  [FAIL] {filename} -> Gagal: {exc}")
                 failed.append(filename)
 
     if failed:
@@ -688,7 +688,7 @@ def extract_icp_from_pdf(filepath: str, start_page: int = 1, end_page: int = 8):
     try:
         pdf = fitz.open(filepath)
     except Exception as exc:
-        print(f"  ✗ {filename}: Tidak bisa dibuka — {exc}")
+        print(f"  [FAIL] {filename}: Tidak bisa dibuka — {exc}")
         return None, None, None, None
 
     try:
@@ -750,12 +750,12 @@ def extract_icp_from_pdf(filepath: str, start_page: int = 1, end_page: int = 8):
         harga_str = f"US${find_price}"  if find_price else "—"
         brent_str = f"US${find_brent}"  if find_brent else "—"
         tgl_str   = find_date           if find_date  else "—"
-        print(f"  ✓ {filename} -> Harga={harga_str} | Brent={brent_str} | Tanggal={tgl_str}")
+        print(f"  [OK] {filename} -> Harga={harga_str} | Brent={brent_str} | Tanggal={tgl_str}")
 
         return find_month, find_price, find_date, find_brent
 
     except Exception as exc:
-        print(f"  ✗ {filename}: Error — {exc}")
+        print(f"  [FAIL] {filename}: Error — {exc}")
         traceback.print_exc()
         return None, None, None, None
     finally:
@@ -819,7 +819,7 @@ def extract_icp_from_all_pdfs(folder: str = PDF_FOLDER,
             except Exception as exc:
                 print(f"[Parse] Gagal hapus {file}: {exc}")
         else:
-            print(f"  ✗ {file} -> Tidak ditemukan harga ICP (file dipertahankan)")
+            print(f"  [FAIL] {file} -> Tidak ditemukan harga ICP (file dipertahankan)")
 
     return pd.DataFrame(results)
 
@@ -863,10 +863,10 @@ def save_to_onedrive(df: pd.DataFrame):
 
     try:
         storage.write_structured_sheet(SHEET_NAME, df_combined)
-        print(f"  ✓ Simpan berhasil -> sheet {SHEET_NAME}")
+        print(f"  [OK] Simpan berhasil -> sheet {SHEET_NAME}")
 
     except Exception as exc:
-        print(f"  ✗ Error saat menyimpan: {exc}")
+        print(f"  [FAIL] Error saat menyimpan: {exc}")
         traceback.print_exc()
 
 
