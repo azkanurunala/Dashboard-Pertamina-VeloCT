@@ -431,7 +431,7 @@ SUMBER_DICT: dict[str, list] = {
 }
 
 
-# SHEET → KEYWORD MAPPING & ACTIVE SHEETS
+# SHEET -> KEYWORD MAPPING & ACTIVE SHEETS
 
 SHEET_TO_KEYWORD: dict[str, str] = {
     # ### Makroekonomi ###
@@ -633,7 +633,7 @@ def apply_post_sinonim_exclude(df: pd.DataFrame, keyword: str, kata: str) -> pd.
     """
     Buang artikel yang mengandung exclude terms spesifik untuk
     kombinasi keyword utama + sinonim tertentu.
-    Contoh: keyword 'Pembangkit listrik nuklir', sinonim 'nuklir' → buang artikel senjata nuklir.
+    Contoh: keyword 'Pembangkit listrik nuklir', sinonim 'nuklir' -> buang artikel senjata nuklir.
     """
     if df.empty:
         return df
@@ -728,7 +728,7 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
                 )
                 df_kata = df_kata[mask].copy()
                 after   = len(df_kata)
-                print(f"    Post-filter '{kata}': {before} → {after} article(s) ({before - after} removed)")
+                print(f"    Post-filter '{kata}': {before} -> {after} article(s) ({before - after} removed)")
 
             df_kata = apply_global_exclude(df_kata)
             df_kata = apply_post_exclude(df_kata, keyword)

@@ -76,8 +76,8 @@ def extract_date_from_url(url: str) -> str:
 
     URL CNBC selalu mengandung tanggal dalam format YYYYMMDD atau
     YYYYMMDDHHmmss di path segment, contoh:
-      /market/20260430-17-740123/...       → 2026-04-30
-      /news/20260605140008-4-740421/...    → 2026-06-05
+      /market/20260430-17-740123/...       -> 2026-04-30
+      /news/20260605140008-4-740421/...    -> 2026-06-05
     Ini adalah sumber tanggal paling reliable — tidak berubah dan tidak
     bergantung pada kapan scraping dijalankan (tidak seperti relative date
     "3 hari yang lalu" yang di-resolve ke waktu scraping).
@@ -601,7 +601,7 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()  # Load .env only when run directly, not when imported
 
-    # tanggal=None → otomatis pakai hari ini
+    # tanggal=None -> otomatis pakai hari ini
     df = main_cnbc(
         keyword="ihsg",
         tanggal=None,

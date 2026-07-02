@@ -48,7 +48,7 @@ MONTHS_ID_FULL = {
 def parse_date_from_title(title):
     """
     Parse full Indonesian date from article title.
-    e.g. 'Posisi Harga Komoditas 5 Januari 2025' → '2025-01-05'
+    e.g. 'Posisi Harga Komoditas 5 Januari 2025' -> '2025-01-05'
     """
     pattern = (
         r"(\d{1,2})\s+"
@@ -69,7 +69,7 @@ def parse_date_from_title(title):
 def parse_date_in_parentheses(date_str, full_text, article_title=None):
     """
     Parse abbreviated Indonesian date from parenthesized price notation.
-    e.g. '(5 Jan)' within a price line → '2025-01-05'
+    e.g. '(5 Jan)' within a price line -> '2025-01-05'
     """
     match = re.search(r"(\d{1,2})\s*(\w+)", date_str)
     if not match:
@@ -314,7 +314,7 @@ def scrape_harga_multi(url, article_title=None):
                             "date_str":    date_str,
                             "parsed_date": parsed_date,
                         })
-                        print(f"[Price] Harga: {harga} | ({date_str}) → {parsed_date}")
+                        print(f"[Price] Harga: {harga} | ({date_str}) -> {parsed_date}")
                     except Exception:
                         continue
                 return harga_list

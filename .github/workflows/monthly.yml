@@ -13,13 +13,9 @@ jobs:
     env:
       STORAGE_BACKEND: neon
       NEON_DB_URL: ${{ secrets.NEON_DB_URL }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      OPENAI_MODEL_NAME: ${{ secrets.OPENAI_MODEL_NAME }}
-      AI_TYPE: ${{ secrets.AI_TYPE }}
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-      SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
-      SPREADSHEET_ID_STRUCTURE: ${{ secrets.SPREADSHEET_ID_STRUCTURE }}
+      SPGLOBAL_USERNAME: ${{ secrets.SPGLOBAL_USERNAME }}
+      SPGLOBAL_PASSWORD: ${{ secrets.SPGLOBAL_PASSWORD }}
+      EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
       MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
       MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
       MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
