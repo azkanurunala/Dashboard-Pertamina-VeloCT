@@ -2,7 +2,10 @@ name: Monthly (EIA + ESDM OCR + Biodiesel + Bioetanol + Crackspread + WTE + IAEA
 
 on:
   schedule:
-    - cron: "0 1 1 * *"   # 1st of every month, 08:00 WIB
+    # 08:00 WIB pada tanggal: 1 (EIA+ESDM+biodiesel+bioetanol), 12 (petrochemical +
+    # BBM forecast), 15 (WTE SIPSN + IAEA), 28 (kapasitas EBT).
+    # Gating per-tanggal ada di src/scheduler/scheduling_month.py.
+    - cron: "0 1 1,12,15,28 * *"
   workflow_dispatch:
 
 jobs:
