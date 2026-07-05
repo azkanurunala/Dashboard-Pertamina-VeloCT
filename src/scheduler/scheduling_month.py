@@ -38,45 +38,55 @@ def run_monthly_tasks():
         today       = datetime.now()
         current_day = today.day
 
-        # ===== STEP 1: EIA Data Scraping =====
-        print("\n[Main] >>> STEP 1: Menjalankan EIA Data Scraping")
-        print(SEPARATOR_THIN)
-        try:
-            main_eia()
-            print("[Main] EIA Data Scraping selesai")
-        except Exception as e:
-            print(f"[Main] ERROR pada EIA Data Scraping: {e}")
-            traceback.print_exc()
+        # Cron workflow monthly fire tanggal 1, 12, 15, dan 28.
+        # Step 1-4 (scraping bulanan berat, termasuk OCR) cukup jalan sekali per
+        # bulan: dilewati pada tanggal khusus 12/15/28, tetap jalan pada tanggal 1
+        # maupun manual dispatch di tanggal lain.
+        skip_base_steps = current_day in (DAY_PETROCHEMICAL, DAY_NUCLEAR, DAY_EBT)
 
-        # ===== STEP 2: ESDM Price Data Scraping =====
-        print("\n[Main] >>> STEP 2: Menjalankan ESDM Price Data Scraping")
-        print(SEPARATOR_THIN)
-        try:
-            main_price_esdm()
-            print("[Main] ESDM Price Data Scraping selesai")
-        except Exception as e:
-            print(f"[Main] ERROR pada ESDM Price Data Scraping: {e}")
-            traceback.print_exc()
+        if skip_base_steps:
+            print(f"\n[Main] STEP 1-4 DILEWATI (tanggal {current_day}: "
+                  "hanya step bergating tanggal yang dijalankan)")
+        else:
+            # ===== STEP 1: EIA Data Scraping =====
+            print("\n[Main] >>> STEP 1: Menjalankan EIA Data Scraping")
+            print(SEPARATOR_THIN)
+            try:
+                main_eia()
+                print("[Main] EIA Data Scraping selesai")
+            except Exception as e:
+                print(f"[Main] ERROR pada EIA Data Scraping: {e}")
+                traceback.print_exc()
 
-        # ===== STEP 3: Biodiesel ESDM Data Scraping =====
-        print("\n[Main] >>> STEP 3: Menjalankan Biodiesel ESDM Data Scraping")
-        print(SEPARATOR_THIN)
-        try:
-            main_biodiesel_esdm()
-            print("[Main] Biodiesel ESDM Data Scraping selesai")
-        except Exception as e:
-            print(f"[Main] ERROR pada Biodiesel ESDM Data Scraping: {e}")
-            traceback.print_exc()
+            # ===== STEP 2: ESDM Price Data Scraping =====
+            print("\n[Main] >>> STEP 2: Menjalankan ESDM Price Data Scraping")
+            print(SEPARATOR_THIN)
+            try:
+                main_price_esdm()
+                print("[Main] ESDM Price Data Scraping selesai")
+            except Exception as e:
+                print(f"[Main] ERROR pada ESDM Price Data Scraping: {e}")
+                traceback.print_exc()
 
-        # ===== STEP 4: Bioetanol ESDM Data Scraping =====
-        print("\n[Main] >>> STEP 4: Menjalankan Bioetanol ESDM Data Scraping")
-        print(SEPARATOR_THIN)
-        try:
-            main_bioetanol_esdm()
-            print("[Main] Bioetanol ESDM Data Scraping selesai")
-        except Exception as e:
-            print(f"[Main] ERROR pada Bioetanol ESDM Data Scraping: {e}")
-            traceback.print_exc()
+            # ===== STEP 3: Biodiesel ESDM Data Scraping =====
+            print("\n[Main] >>> STEP 3: Menjalankan Biodiesel ESDM Data Scraping")
+            print(SEPARATOR_THIN)
+            try:
+                main_biodiesel_esdm()
+                print("[Main] Biodiesel ESDM Data Scraping selesai")
+            except Exception as e:
+                print(f"[Main] ERROR pada Biodiesel ESDM Data Scraping: {e}")
+                traceback.print_exc()
+
+            # ===== STEP 4: Bioetanol ESDM Data Scraping =====
+            print("\n[Main] >>> STEP 4: Menjalankan Bioetanol ESDM Data Scraping")
+            print(SEPARATOR_THIN)
+            try:
+                main_bioetanol_esdm()
+                print("[Main] Bioetanol ESDM Data Scraping selesai")
+            except Exception as e:
+                print(f"[Main] ERROR pada Bioetanol ESDM Data Scraping: {e}")
+                traceback.print_exc()
 
         # ===== STEP 5: Harga dan Crackspread BBM dan Non BBM (Hanya tanggal 12) =====
         if current_day == DAY_PETROCHEMICAL:
@@ -118,9 +128,6 @@ def run_monthly_tasks():
             print("\n[Main] STEP 6: Scraping Data Sampah dan Nuklir - DILEWATI")
             print(f"[Main] Tanggal {current_day}, bukan tanggal {DAY_NUCLEAR}. Scraping tidak dijalankan")
             print(SEPARATOR_THIN)
-            print("\n" + SEPARATOR_THICK)
-            print("MONTHLY TASKS COMPLETED")
-            print(SEPARATOR_THICK + "\n")
 
         # ===== STEP 7: Scraping Data Kapasitas EBT (Hanya tanggal 28) =====
         if current_day == DAY_EBT:
@@ -134,6 +141,10 @@ def run_monthly_tasks():
                 traceback.print_exc()
         else:
             print("[Main] STEP 7: Scraping Data Kapasitas EBT - DILEWATI")
+
+        print("\n" + SEPARATOR_THICK)
+        print("MONTHLY TASKS COMPLETED")
+        print(SEPARATOR_THICK + "\n")
 
     except Exception as e:
         print(f"[Main] ERROR FATAL SAAT MENJALANKAN MONTHLY TASKS: {e}")
