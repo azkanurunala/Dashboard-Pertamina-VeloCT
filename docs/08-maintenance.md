@@ -88,6 +88,7 @@ Rotasi: perbarui nilai di GitHub Secrets **dan** `.env` lokal. Khusus `NEON_DB_U
 - **`.env` di mesin dev berisi kredensial asli** (Gemini, Neon, S&P, MS client secret, service account Google). File ini tidak boleh masuk git (cek `.gitignore`), tidak boleh dibagikan mentah saat handover — pihak baru harus menerima kredensial lewat jalur aman, lalu **rotasi semua kredensial setelah handover**.
 - **`token.json` di root** = cache token OAuth MS Graph. Jangan di-commit; hapus aman (akan dibuat ulang saat auth berikutnya).
 - `GOOGLE_CREDENTIALS`/`SPREADSHEET_ID*` di `.env` adalah sisa era Google Sheets — tidak dipakai kode aktif; kandidat dibersihkan.
+- Untuk serah terima sistem: inventaris lengkap akun/kredensial + checklist rotasi ada di [handover/02-inventaris-aset-akses.md](handover/02-inventaris-aset-akses.md).
 
 ## Manajemen Database Neon
 

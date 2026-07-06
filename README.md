@@ -70,3 +70,4 @@ Detail setup lengkap: [docs/09-pengembangan.md](docs/09-pengembangan.md).
 | [docs/07-power-bi.md](docs/07-power-bi.md) | Koneksi Power BI ke Neon, Power Query migrasi |
 | [docs/08-maintenance.md](docs/08-maintenance.md) | Runbook maintenance: monitoring, troubleshooting, secrets, known issues |
 | [docs/09-pengembangan.md](docs/09-pengembangan.md) | Panduan pengembangan: setup lokal, menambah sumber data/fitur baru |
+| [docs/handover/](docs/handover/) | Paket serah terima: BAST, inventaris aset & akses, runbook hari pertama, biaya & lisensi, diagram alur data |
