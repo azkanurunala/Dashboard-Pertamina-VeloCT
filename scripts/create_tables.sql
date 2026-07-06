@@ -344,6 +344,7 @@ CREATE TABLE IF NOT EXISTS data_harga_ebt (
     id               SERIAL PRIMARY KEY,
     "No"             TEXT,
     "Lokasi"         TEXT,
+    "Provinsi"       TEXT,
     "Jenis EBT"      TEXT,
     "Faktor Lokasi"  DOUBLE PRECISION,
     "Kelompok HPT"   TEXT,
