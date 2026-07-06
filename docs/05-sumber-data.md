@@ -1,8 +1,8 @@
-# 05 — Sumber Data & Scraper
+#### 05 — Sumber Data & Scraper
 
 Dua kelompok: **data terstruktur** (`src/structured_data/`, output tabel `data_*`) dan **berita** (`src/news/`, output `news_articles`).
 
-## Data Terstruktur
+##### Data Terstruktur
 
 | Sumber | File | Endpoint / situs | Auth (env) | Output tabel | Jadwal |
 |---|---|---|---|---|---|
@@ -21,11 +21,11 @@ Catatan:
 - **S&P Global** satu-satunya sumber terstruktur berbayar/berkredensial; kegagalan auth mematikan SAF + semua crackspeed/crackspread sekaligus.
 - **ESDM OCR** paling rapuh: bergantung format PDF pengumuman + akurasi OCR. Perubahan layout PDF = perlu penyesuaian parsing di `migas_esdm.py`.
 
-## Berita
+##### Berita
 
 Semua scraper berita ada di `src/news/`, dipanggil orchestrator dengan `(keyword, date_filter)`, hasil digabung → dedup per `(url, topic)` → `news_articles`.
 
-### Scraper lokal (dipakai `main_news_scraping_lokal.py`)
+###### Scraper lokal (dipakai `main_news_scraping_lokal.py`)
 
 | File | Situs / endpoint |
 |---|---|
@@ -40,7 +40,7 @@ Semua scraper berita ada di `src/news/`, dipanggil orchestrator dengan `(keyword
 | `google_news.py` | `news.google.com/rss/search` + sitemap CNN/CNBC (pre-filter keyword sebelum fetch konten — lihat commit `301cf6e2`) |
 | `spglobal_news.py` | `api.ci.spglobal.com/news-insights/v1/` (butuh `SPGLOBAL_*`) |
 
-### Scraper internasional (dipakai `main_news_scraping_internasional.py`)
+###### Scraper internasional (dipakai `main_news_scraping_internasional.py`)
 
 | File | Situs / endpoint |
 |---|---|
@@ -53,7 +53,7 @@ Semua scraper berita ada di `src/news/`, dipanggil orchestrator dengan `(keyword
 | `energiesmedia.py` | `energiesmedia.com` |
 | `spglobal_news.py` | (sama dengan lokal) |
 
-### Topik berita (nilai `topic` di `news_articles`)
+###### Topik berita (nilai `topic` di `news_articles`)
 
 25 topik lokal, format `(News)<Topik>`:
 
@@ -67,16 +67,16 @@ Biodiesel, SAF, Bioetanol, RUPTL, EBT, WTE, Nuklir
 
 Scraper internasional menulis ke tabel yang sama dengan nilai topic versi internasionalnya.
 
-### Routing keyword → scraper
+###### Routing keyword → scraper
 
 Peta keyword → daftar scraper dan keyword → sheet/topik ada di dict besar dalam `main_news_scraping_lokal.py` dan `main_news_scraping_internasional.py`. **Sebagian besar topik sedang dinonaktifkan (dikomentari)** — periksa dict aktif di file tersebut untuk tahu topik apa yang benar-benar jalan sekarang. Mengaktifkan topik = uncomment entri di dict + pastikan sheet/topik terdaftar di daftar sheet aktif orchestrator.
 
-### Perilaku tanggal
+###### Perilaku tanggal
 
 - Di CI (`CI=true`): scrape berita "kemarin" (H-1).
 - Di lokal: rentang `START_DATE`/`END_DATE` hardcoded di masing-masing orchestrator — sesuaikan sebelum run manual.
 - Backfill historis berita: `scripts/backfill.py --sources news_lokal news_intl` (loop harian) atau `kompas_monthly` (sitemap bulanan Kompas).
 
-## Menambah Sumber Baru
+##### Menambah Sumber Baru
 
 Checklist lengkap di [09-pengembangan.md](09-pengembangan.md).

@@ -1,4 +1,4 @@
-# Dashboard-Pertamina-VeloCT
+# Dashboard SPEED Pertamina Energy Institute
 
 Pipeline pengumpulan data otomatis untuk dashboard energi Pertamina (Power BI). Sistem ini melakukan scraping berita energi (lokal & internasional), data terstruktur komoditas (minyak mentah, biodiesel, bioetanol, CPO, SAF, petrokimia, nuklir, EBT, waste-to-energy), lalu merangkum sentimen berita dengan AI (Google Gemini) dan menyimpan semuanya ke **Neon PostgreSQL** yang dikonsumsi dashboard Power BI.
 
@@ -47,8 +47,8 @@ Catatan: cron GitHub Actions free tier biasa terlambat 3–5 jam dari jadwal. Ce
 ## Quickstart (Dev Lokal)
 
 ```bash
-git clone https://github.com/shelmasalsa17/Dashboard-Pertamina-VeloCT.git
-cd Dashboard-Pertamina-VeloCT
+git clone <URL-REPO-GITHUB>
+cd <NAMA-FOLDER-REPO>
 python -m venv .venv && .venv\Scripts\activate      # Windows
 pip install -r requirements.txt psycopg2-binary
 copy .env.example .env                               # lalu isi kredensial
@@ -70,3 +70,6 @@ Detail setup lengkap: [docs/09-pengembangan.md](docs/09-pengembangan.md).
 | [docs/07-power-bi.md](docs/07-power-bi.md) | Koneksi Power BI ke Neon, Power Query migrasi |
 | [docs/08-maintenance.md](docs/08-maintenance.md) | Runbook maintenance: monitoring, troubleshooting, secrets, known issues |
 | [docs/09-pengembangan.md](docs/09-pengembangan.md) | Panduan pengembangan: setup lokal, menambah sumber data/fitur baru |
+| [docs/handover/](docs/handover/) | Paket serah terima: BAST, inventaris aset & akses, runbook hari pertama, biaya & lisensi, diagram alur data |
+| [docs/how-to/](docs/how-to/) | Panduan step-by-step: setup, run manual, cek scheduler, backfill, tambah topik/sumber, Power BI, rotasi kredensial, backup/restore |
+| [docs/DOKUMENTASI-HANDOVER-LENGKAP.md](docs/DOKUMENTASI-HANDOVER-LENGKAP.md) | **Satu dokumen gabungan** seluruh docs + how-to + handover, dengan daftar isi ber-link (juga tersedia [.docx](docs/DOKUMENTASI-HANDOVER-LENGKAP.docx)) |
