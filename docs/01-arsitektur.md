@@ -1,8 +1,8 @@
-# 01 — Arsitektur Sistem
+#### 01 — Arsitektur Sistem
 
-Dokumen ini menjelaskan arsitektur end-to-end Dashboard-Pertamina-VeloCT: dari scraping sumber data sampai konsumsi di Power BI.
+Dokumen ini menjelaskan arsitektur end-to-end Dashboard SPEED Pertamina Energy Institute: dari scraping sumber data sampai konsumsi di Power BI.
 
-## Gambaran Umum
+##### Gambaran Umum
 
 Sistem terdiri dari 4 lapisan:
 
@@ -24,7 +24,7 @@ GitHub Actions (cron)
                  └─ _OneDriveBackend→ src/helpers/onedrive_helper.py (MS Graph)
 ```
 
-## Struktur Folder
+##### Struktur Folder
 
 | Path | Fungsi |
 |---|---|
@@ -39,22 +39,22 @@ GitHub Actions (cron)
 | `logs/` | Artefak run backfill lokal (`backfill.log`, `backfill.pid`). Pipeline produksi log ke stdout GitHub Actions. |
 | `src/code_scrapping/` | **Legacy mati** — hanya berisi `.pyc` tanpa sumber `.py`. Kandidat dihapus. |
 
-## Alur Data End-to-End
+##### Alur Data End-to-End
 
-### Berita → sentimen
+###### Berita → sentimen
 
 1. Orchestrator berita (`main_news_scraping_lokal.py` / `_internasional.py`) membaca sheet berita existing via `storage.read_all_news_sheets()`, menjalankan scraper per keyword/topik, dedup terhadap URL yang sudah ada, lalu `storage.write_news_file()` → tabel `news_articles` (kolom `topic` = nama sheet Excel, mis. `(News)Harga Minyak`).
 2. Orchestrator sentimen membaca artikel terbaru per topik, membangun prompt analis berbahasa Indonesia, memanggil Gemini (`summary_helper.py`), lalu `storage.write_sentiment_file()` → tabel `news_sentiment` (kolom `topic` = nama sheet `(Summary)...`).
 
-### Data terstruktur
+###### Data terstruktur
 
 Setiap scraper `structured_data/*.py` mengambil data dari situs/API sumber, membentuk DataFrame dengan kolom persis seperti sheet Excel aslinya, lalu `storage.write_structured_sheet("(Data)Nama", df)` → upsert ke tabel `data_*` sesuai peta `SHEET_TO_TABLE`.
 
-### Konsumsi Power BI
+###### Konsumsi Power BI
 
 Power BI (mode Import) membaca tabel `news_articles`/`news_sentiment` (difilter per `topic`) dan view `vw_*` untuk data terstruktur. Detail di [07-power-bi.md](07-power-bi.md).
 
-## Prinsip Desain Penting
+##### Prinsip Desain Penting
 
 - **Backend-agnostic:** kode scraper tidak tahu datanya masuk ke PostgreSQL atau Excel. Satu-satunya switch adalah env `STORAGE_BACKEND` (lihat [02-migrasi-storage.md](02-migrasi-storage.md)).
 - **Idempoten via upsert:** semua tulis ke Neon memakai `INSERT ... ON CONFLICT ... DO UPDATE` dengan conflict key per tabel ([03-database.md](03-database.md)). Menjalankan ulang pipeline tidak menggandakan data.

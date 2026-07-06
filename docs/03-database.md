@@ -1,6 +1,6 @@
-# 03 — Database Neon PostgreSQL
+#### 03 — Database Neon PostgreSQL
 
-## Koneksi
+##### Koneksi
 
 - Provider: [Neon](https://neon.tech) (serverless PostgreSQL), region `ap-southeast-1`.
 - Server: `ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech`, database `neondb`.
@@ -14,18 +14,18 @@ Query manual cepat:
 psql $NEON_DB_URL -c "SELECT topic, COUNT(*) FROM news_articles GROUP BY topic ORDER BY 2 DESC;"
 ```
 
-## Setup Skema
+##### Setup Skema
 
 ```bash
 python scripts/run_schema.py                      # scripts/create_tables.sql (CREATE TABLE IF NOT EXISTS — aman diulang)
 psql $NEON_DB_URL -f scripts/create_views.sql     # 20 view vw_* untuk Power BI
 ```
 
-## Daftar Tabel (22 tabel)
+##### Daftar Tabel (22 tabel)
 
 Sumber kebenaran: [scripts/create_tables.sql](../scripts/create_tables.sql) dan `SHEET_TO_TABLE`/`SHEET_CONFLICT_COLS` di [src/helpers/storage_backend.py](../src/helpers/storage_backend.py). Kolom ber-huruf-besar/spasi di-quote (`"Bulan HIP"`) — dipertahankan persis dari Excel agar Power Query tidak berubah.
 
-### Berita & sentimen (topic-discriminated)
+###### Berita & sentimen (topic-discriminated)
 
 | Tabel | Sumber sheet Excel | Conflict key (UNIQUE) |
 |---|---|---|
@@ -34,7 +34,7 @@ Sumber kebenaran: [scripts/create_tables.sql](../scripts/create_tables.sql) dan 
 
 Kolom `news_articles`: `title, date, url, content, source, keyword` + `topic` (nama sheet asal). Kolom `news_sentiment`: `"Tanggal awal", "Tanggal akhir", "Summary", "Summary Data"` + `topic`.
 
-### Data terstruktur
+###### Data terstruktur
 
 | Sheet Excel | Tabel | Conflict key | Penulis | Jadwal |
 |---|---|---|---|---|
@@ -57,14 +57,14 @@ Kolom `news_articles`: `title, date, url, content, source, keyword` + `topic` (n
 | (Data)Crackspeed_BBM | `data_crackspeed_bbm` | `"assessDate"` | `spglobal_data.py` | weekly |
 | (Data)Crackspeed_NonBBM | `data_crackspeed_non_bbm` | `"assessDate"` | `spglobal_data.py` | weekly |
 
-### Tabel statis (diisi sekali dari Excel, tanpa scraper)
+###### Tabel statis (diisi sekali dari Excel, tanpa scraper)
 
 | Tabel | Conflict key | Catatan |
 |---|---|---|
 | `data_ruptl` | `"ID"` | Data RUPTL |
 | `data_harga_ebt` | **tidak ada UNIQUE** | ⚠️ Tidak bisa di-upsert — load ulang akan menduplikasi baris. Bila perlu reload: `TRUNCATE data_harga_ebt;` dulu, atau tambahkan UNIQUE constraint. |
 
-### ⚠️ Crackspread vs Crackspeed
+###### ⚠️ Crackspread vs Crackspeed
 
 Dua keluarga tabel yang mirip namanya tapi **berbeda isi** (perbedaan berasal dari typo historis yang kini jadi konvensi, dipertahankan di SQL + kode + Power Query):
 
@@ -73,19 +73,19 @@ Dua keluarga tabel yang mirip namanya tapi **berbeda isi** (perbedaan berasal da
 
 Jangan "memperbaiki" ejaan ini — akan memutus Power Query dan `SHEET_TO_TABLE`.
 
-## Kasus Khusus
+##### Kasus Khusus
 
-### IAEA wide↔long
+###### IAEA wide↔long
 
 Excel/Power BI memakai format wide (baris = tahun, kolom = negara); PostgreSQL menyimpan long: `year INTEGER, country TEXT, value_mw/value_twh NUMERIC`, UNIQUE `(year, country)`. Transformasi otomatis di `storage_backend.py` (`_melt_iaea`/`_pivot_iaea`). View `vw_iaea_nuclear_capacity_long` dan `vw_iaea_electrical_long` mengekspos format long ke Power BI, yang kemudian melakukan `Table.Pivot` sendiri.
 
-### WTE dynamic schema
+###### WTE dynamic schema
 
 Kolom data SIPSN berubah antar tahun. `neon_helper.create_table_if_needed()` membuat tabel dari dtype DataFrame dan menambah kolom baru via `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` saat kolom baru muncul. Nilai numerik tersimpan sebagai teks dengan pemisah ribuan koma — view `vw_wte_*` yang membersihkannya (`REPLACE(...,',','')::numeric`).
 
 Untuk melihat kolom aktual dari API: `python scripts/sample_wte_columns.py`.
 
-## Views (20, untuk Power BI)
+##### Views (20, untuk Power BI)
 
 Didefinisikan di [scripts/create_views.sql](../scripts/create_views.sql). Konvensi: view mengecualikan kolom `id`, mempertahankan urutan dan kapitalisasi kolom Excel (alias `price_ron92 AS "price_RON92"` dsb.), dan menangani pembersihan tipe (WTE).
 
@@ -93,6 +93,6 @@ Didefinisikan di [scripts/create_views.sql](../scripts/create_views.sql). Konven
 
 `news_articles` dan `news_sentiment` dibaca Power BI langsung dari tabel (filter per `topic`), bukan lewat view.
 
-## Menambah Tabel Baru
+##### Menambah Tabel Baru
 
 Checklist lengkap ada di [09-pengembangan.md](09-pengembangan.md). Ringkas: tambah DDL di `create_tables.sql` (dengan UNIQUE constraint = conflict key) → daftarkan di `SHEET_TO_TABLE` + `SHEET_CONFLICT_COLS` → tambah view di `create_views.sql` → jalankan `run_schema.py`.

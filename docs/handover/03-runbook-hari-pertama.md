@@ -1,8 +1,8 @@
-# Runbook Operator Hari Pertama
+#### Runbook Operator Hari Pertama
 
 Panduan diagnosis untuk operator baru menghadapi 3 masalah paling umum. Pelengkap [docs/08-maintenance.md](../08-maintenance.md) (checklist rutin, tabel gejala scraper, backup) — baca itu dulu sebagai dasar.
 
-## Prasyarat Akses
+##### Prasyarat Akses
 
 Sebelum hari pertama, pastikan punya:
 - [ ] Akses repo GitHub (minimal write, idealnya admin untuk kelola secrets)
@@ -12,7 +12,7 @@ Sebelum hari pertama, pastikan punya:
 
 ---
 
-## Skenario 1: Workflow Merah di GitHub Actions
+##### Skenario 1: Workflow Merah di GitHub Actions
 
 1. Buka **Actions** → klik run yang gagal → cari step merah. Log terstruktur `>>> STEP n: ...` diikuti traceback. **Periksa seluruh log** — satu step gagal tidak membatalkan step lain, bisa jadi lebih dari satu yang gagal.
 2. Cocokkan gejala dengan tabel diagnosis di [docs/08-maintenance.md](../08-maintenance.md#diagnosis-scraper-rusak-situs-berubah) (404 = situs pindah, 403/429 = diblokir, 0 baris = selector berubah, auth error = password expired, dst).
@@ -23,7 +23,7 @@ Sebelum hari pertama, pastikan punya:
 
 > Run "MISSED" (tidak fire sama sekali) ≠ gagal. Cek `!! WORKFLOW STATE: disabled_inactivity` via `python scripts/check_workflow_schedules.py` — GitHub mematikan cron setelah 60 hari repo tanpa aktivitas; re-enable di tab Actions.
 
-## Skenario 2: Data Tidak Update di Dashboard Power BI
+##### Skenario 2: Data Tidak Update di Dashboard Power BI
 
 Urutan diagnosis — dari hulu ke hilir, berhenti di titik pertama yang bermasalah:
 
@@ -39,7 +39,7 @@ Urutan diagnosis — dari hulu ke hilir, berhenti di titik pertama yang bermasal
 4. **Power BI refresh?** Mode **Import** — data hanya berubah setelah refresh manual/terjadwal. Refresh butuh **dua kredensial**: PostgreSQL (Neon) dan SharePoint (macro series). Kredensial Neon berubah (mis. habis rotasi) → update di **Data source settings**.
 5. Masih buntu → cek query M di `scripts/power_query_migrated.txt` (sumber kebenaran M-code); pastikan nama kolom view = nama yang di-expect Power Query (case-sensitive!).
 
-## Skenario 3: API Key Expired / Kena Limit
+##### Skenario 3: API Key Expired / Kena Limit
 
 | Layanan | Gejala di log | Tindakan |
 |---|---|---|
@@ -52,7 +52,7 @@ Cara update secret: repo → **Settings → Secrets and variables → Actions** 
 
 ---
 
-## Eskalasi
+##### Eskalasi
 
 | Masalah | Kontak | Keterangan |
 |---|---|---|
@@ -61,7 +61,7 @@ Cara update secret: repo → **Settings → Secrets and variables → Actions** 
 | Langganan S&P Global | `[ISI: PIC kontrak Platts di PEI]` | |
 | Power BI / lisensi Microsoft | `[ISI: IT PEI]` | |
 
-## Rekomendasi Transisi
+##### Rekomendasi Transisi
 
 1. **Walkthrough terekam** 1–2 sesi: live demo buka Actions, query Neon, jalankan satu scraper lokal, refresh Power BI.
 2. **Periode shadow 2–4 minggu**: operator PEI pegang checklist rutin [docs/08](../08-maintenance.md), developer lama standby.

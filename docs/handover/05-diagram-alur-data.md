@@ -1,8 +1,8 @@
-# Diagram Alur Data End-to-End
+#### Diagram Alur Data End-to-End
 
 Diagram Mermaid — render otomatis di GitHub. Versi teknis detail ada di [docs/01-arsitektur.md](../01-arsitektur.md).
 
-## Versi Ringkas (untuk manajemen)
+##### Versi Ringkas (untuk manajemen)
 
 Sistem mengumpulkan data energi secara otomatis dari belasan sumber publik dan berlangganan (berita, harga komoditas, statistik pemerintah), memprosesnya di cloud tanpa server sendiri (GitHub Actions), merangkum sentimen berita dengan AI (Google Gemini), menyimpan hasilnya ke database cloud (Neon PostgreSQL), dan menyajikannya sebagai dashboard Power BI yang di-refresh berkala. Seluruh rantai berjalan otomatis pada jadwal harian/mingguan/bulanan tanpa intervensi manual.
 
@@ -15,7 +15,7 @@ flowchart LR
     D --> E["📊 Dashboard<br/>(Power BI)"]
 ```
 
-## Versi Teknis
+##### Versi Teknis
 
 ```mermaid
 flowchart TB
@@ -67,7 +67,7 @@ flowchart TB
     PQ --> DASH
 ```
 
-## Titik Rawan (untuk operator)
+##### Titik Rawan (untuk operator)
 
 | Titik di diagram | Risiko | Rujukan |
 |---|---|---|
