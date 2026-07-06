@@ -1,10 +1,10 @@
-# 09 — Panduan Pengembangan Lanjutan
+#### 09 — Panduan Pengembangan Lanjutan
 
-## Setup Lokal
+##### Setup Lokal
 
 ```bash
-git clone https://github.com/shelmasalsa17/Dashboard-Pertamina-VeloCT.git
-cd Dashboard-Pertamina-VeloCT
+git clone <URL-REPO-GITHUB>
+cd <NAMA-FOLDER-REPO>
 python -m venv .venv
 .venv\Scripts\activate                      # Windows (Linux/Mac: source .venv/bin/activate)
 pip install -r requirements.txt psycopg2-binary
@@ -15,12 +15,12 @@ copy .env.example .env                       # isi kredensial (minta lewat jalur
 
 Python 3.11 (samakan dengan CI). Chrome terpasang lokal diperlukan untuk scraper Selenium (IAEA, beberapa berita).
 
-### Pilih backend saat dev
+###### Pilih backend saat dev
 
 - `STORAGE_BACKEND=onedrive` (default) — aman untuk eksperimen, menulis ke Excel OneDrive, tidak menyentuh DB produksi. Butuh kredensial `MS_*`.
 - `STORAGE_BACKEND=neon` — menulis ke database produksi. **Hati-hati**: tidak ada database staging. Untuk uji tulis yang aman, buat [branch database di Neon](https://neon.tech/docs/introduction/branching) dan arahkan `NEON_DB_URL` ke branch itu.
 
-### Menjalankan komponen secara terpisah
+###### Menjalankan komponen secara terpisah
 
 ```bash
 python src/scheduler/scheduling_day_morning.py     # pipeline penuh
@@ -30,7 +30,7 @@ python -c "import sys; sys.path.append('src'); from structured_data.migas_eia im
 
 Perhatikan: di lokal (tanpa `CI=true`) orchestrator berita memakai `START_DATE`/`END_DATE` hardcoded — sesuaikan dulu di file orchestrator.
 
-## Checklist: Menambah Sumber Data Terstruktur Baru
+##### Checklist: Menambah Sumber Data Terstruktur Baru
 
 Ikuti pola scraper yang ada (contoh paling sederhana: `cpo_gapki.py`; dengan auth API: `migas_eia.py`).
 
@@ -49,7 +49,7 @@ Ikuti pola scraper yang ada (contoh paling sederhana: `cpo_gapki.py`; dengan aut
 8. **Monitoring/backfill** (opsional) — tambahkan ke `scripts/backfill.py` bila butuh pengisian historis.
 9. **Dokumentasi** — daftarkan di tabel [05-sumber-data.md](05-sumber-data.md) dan [03-database.md](03-database.md).
 
-## Checklist: Menambah Scraper / Topik Berita
+##### Checklist: Menambah Scraper / Topik Berita
 
 - **Situs berita baru:** buat `src/news/nama_situs.py` meniru scraper serupa (sitemap → `kompas.py`/`cnn.py`; RSS → `tempo.py`/`oilprice.py`; search → `bisnis_indonesia.py`). Kontrak: fungsi menerima `(keyword, date_filter)` dan mengembalikan DataFrame `title, date, url, content, source, keyword`.
 - **Registrasi:** tambahkan ke dict keyword → scraper di `main_news_scraping_lokal.py` atau `_internasional.py`.
@@ -57,15 +57,15 @@ Ikuti pola scraper yang ada (contoh paling sederhana: `cpo_gapki.py`; dengan aut
 - **Mengaktifkan topik nonaktif:** banyak topik sudah ada tapi dikomentari di dict orchestrator (lihat [05-sumber-data.md](05-sumber-data.md)) — cukup uncomment.
 - **Sentimen untuk topik baru:** daftarkan sheet `(Summary)Topik` di orchestrator sentimen yang sesuai (harian lokal/intl atau mingguan; di mingguan banyak yang tinggal di-uncomment).
 
-## Mengubah Jadwal / Menambah Workflow
+##### Mengubah Jadwal / Menambah Workflow
 
 Lihat [04-pipeline-scheduling.md](04-pipeline-scheduling.md) bagian "Mengubah Jadwal". Ingat 3 hal: cron dalam UTC, hanya jalan dari `main`, dan update `scripts/check_workflow_schedules.py` agar monitoring mengikuti.
 
-## Mengganti Model / Provider AI
+##### Mengganti Model / Provider AI
 
 Lihat [06-ai-sentiment.md](06-ai-sentiment.md). Ganti model Gemini = satu baris di `summary_helper.py:34`. Ganti provider = rewrite `setup_gemini()`/`summarize_all_news()` + secrets workflow.
 
-## Konvensi Kode Proyek Ini
+##### Konvensi Kode Proyek Ini
 
 - **Logging = `print`** dengan prefix `[Main]`/`[NamaScraper]` + banner `===`/`---`. Tidak ada modul `logging`. Konsisten saja dengan pola ini (log terbaca di GitHub Actions).
 - **Error handling:** `try/except Exception` per step/scraper + `traceback.print_exc()`; jangan biarkan satu sumber mematikan pipeline. Exit code ≠ 0 hanya untuk kegagalan fatal seluruh pipeline.
@@ -75,7 +75,7 @@ Lihat [06-ai-sentiment.md](06-ai-sentiment.md). Ganti model Gemini = satu baris 
 - **Import path:** scheduler menambah `src/` ke `sys.path`; modul saling import tanpa prefix `src.` (`from helpers.storage_backend import storage`). Jalankan script dari root repo.
 - **Branch:** kerja di `dev`, merge ke `main` untuk produksi (cron hanya membaca `main`). PR ke `main`.
 
-## Ide Pengembangan Prioritas (backlog saran)
+##### Ide Pengembangan Prioritas (backlog saran)
 
 1. **Scraper seri makroekonomi** (BI-Rate, Kurs, Inflasi, dst.) → Neon, supaya SharePoint bisa dipensiunkan sepenuhnya ([07-power-bi.md](07-power-bi.md)). Sebagian sumber sudah ada scraper-nya (BI, BPS) tinggal diarahkan ke tabel data.
 2. **Notifikasi kegagalan** — step terakhir workflow yang mengirim alert (email/Telegram) bila ada step gagal, atau jadwalkan `check_workflow_schedules.py` sebagai workflow tersendiri.

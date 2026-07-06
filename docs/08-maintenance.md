@@ -1,12 +1,12 @@
-# 08 — Runbook Maintenance
+#### 08 — Runbook Maintenance
 
-## Checklist Rutin
+##### Checklist Rutin
 
-### Harian (opsional, 2 menit)
+###### Harian (opsional, 2 menit)
 - Lihat tab **Actions** di GitHub: run terakhir daily morning/afternoon hijau?
 - Ingat: delay 3–5 jam dari jadwal itu normal (free tier).
 
-### Mingguan
+###### Mingguan
 - `python scripts/check_workflow_schedules.py` — exit 0 & "ALL SCHEDULERS HEALTHY" = beres.
 - Spot-check data terbaru:
   ```sql
@@ -15,7 +15,7 @@
   SELECT topic, MAX("Tanggal awal") FROM news_sentiment GROUP BY topic;
   ```
 
-### Bulanan
+###### Bulanan
 - Cek run monthly tanggal 1/12/15/28 sukses (Actions atau script monitoring).
 - Cek ukuran database vs limit 512 MB free tier:
   ```sql
@@ -26,7 +26,7 @@
   (Pertumbuhan terbesar biasanya `news_articles` karena kolom `content`. Bila mendekati limit: arsip/hapus artikel lama, atau upgrade plan.)
 - **Pastikan ada aktivitas repo dalam 60 hari terakhir** — GitHub menonaktifkan scheduled workflow setelah 60 hari tanpa aktivitas. Commit apa pun mereset timer; script monitoring mendeteksi state `disabled_inactivity`.
 
-## Monitoring Scheduler
+##### Monitoring Scheduler
 
 ```bash
 python scripts/check_workflow_schedules.py            # default
@@ -40,14 +40,14 @@ Interpretasi output:
 - `!! WORKFLOW STATE: disabled_inactivity` — re-enable di tab Actions (klik workflow → "Enable workflow").
 - Exit code: 0 sehat, 1 ada masalah (bisa dipakai untuk alert otomatis).
 
-## Menangani Run Gagal
+##### Menangani Run Gagal
 
 1. Buka log run di Actions. Struktur log jelas per step: `>>> STEP n: ...` diikuti error + traceback. Satu step gagal **tidak** membatalkan step lain — periksa seluruh log, jangan cuma step pertama yang merah.
 2. Identifikasi step gagal → lihat tabel scraper di [05-sumber-data.md](05-sumber-data.md) untuk tahu file & sumber datanya.
 3. Re-run: **Actions → workflow → Run workflow** (dispatch). Aman diulang — semua tulisan idempoten (upsert). Untuk monthly perhatikan gating tanggal ([04-pipeline-scheduling.md](04-pipeline-scheduling.md)).
 4. Bila gap data beberapa hari: gunakan `scripts/backfill.py --sources <sumber> --start ... --end ...` ([02-migrasi-storage.md](02-migrasi-storage.md)).
 
-## Diagnosis Scraper Rusak (situs berubah)
+##### Diagnosis Scraper Rusak (situs berubah)
 
 Pola kegagalan umum dan langkahnya:
 
@@ -68,9 +68,9 @@ set STORAGE_BACKEND=neon
 python -c "import sys; sys.path.append('src'); from structured_data.cpo_gapki import main_scraper_cpo; main_scraper_cpo()"
 ```
 
-## Secrets & Kredensial
+##### Secrets & Kredensial
 
-### Daftar GitHub Secrets (Settings → Secrets and variables → Actions)
+###### Daftar GitHub Secrets (Settings → Secrets and variables → Actions)
 
 | Secret | Dipakai oleh | Workflow |
 |---|---|---|
@@ -83,14 +83,14 @@ python -c "import sys; sys.path.append('src'); from structured_data.cpo_gapki im
 
 Rotasi: perbarui nilai di GitHub Secrets **dan** `.env` lokal. Khusus `NEON_DB_URL`, perbarui juga kredensial PostgreSQL di Power BI (Data source settings).
 
-### ⚠️ Peringatan Keamanan
+###### ⚠️ Peringatan Keamanan
 
 - **`.env` di mesin dev berisi kredensial asli** (Gemini, Neon, S&P, MS client secret, service account Google). File ini tidak boleh masuk git (cek `.gitignore`), tidak boleh dibagikan mentah saat handover — pihak baru harus menerima kredensial lewat jalur aman, lalu **rotasi semua kredensial setelah handover**.
 - **`token.json` di root** = cache token OAuth MS Graph. Jangan di-commit; hapus aman (akan dibuat ulang saat auth berikutnya).
 - `GOOGLE_CREDENTIALS`/`SPREADSHEET_ID*` di `.env` adalah sisa era Google Sheets — tidak dipakai kode aktif; kandidat dibersihkan.
 - Untuk serah terima sistem: inventaris lengkap akun/kredensial + checklist rotasi ada di [handover/02-inventaris-aset-akses.md](handover/02-inventaris-aset-akses.md).
 
-## Manajemen Database Neon
+##### Manajemen Database Neon
 
 - Console: https://console.neon.tech — monitoring storage/compute, connection string, rotasi password.
 - Backup/export manual:
@@ -101,7 +101,7 @@ Rotasi: perbarui nilai di GitHub Secrets **dan** `.env` lokal. Khusus `NEON_DB_U
 - Neon punya point-in-time restore (history retention terbatas di free tier) — cek console sebelum melakukan operasi destruktif.
 - Skema aman dijalankan ulang kapan pun (`CREATE TABLE IF NOT EXISTS` / `CREATE OR REPLACE VIEW`).
 
-## Known Issues (per Juli 2026)
+##### Known Issues (per Juli 2026)
 
 | Isu | Dampak | Saran |
 |---|---|---|

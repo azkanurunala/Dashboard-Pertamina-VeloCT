@@ -1,6 +1,6 @@
-# 02 — Migrasi Storage: OneDrive Excel → Neon PostgreSQL
+#### 02 — Migrasi Storage: OneDrive Excel → Neon PostgreSQL
 
-## Latar Belakang
+##### Latar Belakang
 
 Sampai pertengahan 2026, seluruh hasil scraping disimpan sebagai 3 file Excel di OneDrive/SharePoint (via MS Graph API):
 
@@ -14,7 +14,7 @@ Masalahnya: file Excel sebagai "database" rapuh (lock, corrupt, race antar pipel
 
 **Kenapa Neon:** free tier 512 MB cukup, compute auto-suspend dan resume <1 detik (dibanding Supabase yang mem-pause seluruh project setelah 1 minggu tidak aktif — fatal untuk pipeline harian).
 
-## Mekanisme Switch: `STORAGE_BACKEND`
+##### Mekanisme Switch: `STORAGE_BACKEND`
 
 Semua baca/tulis lewat satu modul: [src/helpers/storage_backend.py](../src/helpers/storage_backend.py).
 
@@ -45,7 +45,7 @@ storage.write_structured_sheet("(Data)Biodesel", df)
 
 Kedua backend mengimplementasikan interface yang sama, jadi scraper tidak perlu tahu backend aktif.
 
-### Pemetaan sheet → tabel
+###### Pemetaan sheet → tabel
 
 Di backend Neon, nama sheet Excel dipetakan ke tabel PostgreSQL lewat dict `SHEET_TO_TABLE` dan kunci upsert `SHEET_CONFLICT_COLS` (keduanya di `storage_backend.py`). Daftar lengkap ada di [03-database.md](03-database.md). Ringkas:
 
@@ -53,12 +53,12 @@ Di backend Neon, nama sheet Excel dipetakan ke tabel PostgreSQL lewat dict `SHEE
 - Semua sheet `(Summary)*` → **satu** tabel `news_sentiment`, dibedakan kolom `topic`.
 - Tiap sheet `(Data)*` → tabel `data_*` masing-masing.
 
-### Transformasi khusus di backend Neon
+###### Transformasi khusus di backend Neon
 
 - **IAEA wide↔long:** sheet `(Data)IAEA_Nuclear_Capacity` dan `(Data)IAEA_Electrical` di Excel berbentuk wide (baris = tahun, kolom = negara). Di PostgreSQL disimpan long (`year, country, value_mw/value_twh`). Fungsi `_melt_iaea` (saat tulis) dan `_pivot_iaea` (saat baca) di `storage_backend.py` membuat transformasi ini transparan — scraper tetap bekerja dengan format wide.
 - **WTE dynamic schema:** kolom data SIPSN berubah-ubah, jadi tabel `data_wte_*` dibuat/di-ALTER otomatis dari dtype DataFrame via `create_table_if_needed()` di [src/helpers/neon_helper.py](../src/helpers/neon_helper.py).
 
-## Apa yang Sudah Migrasi vs Belum
+##### Apa yang Sudah Migrasi vs Belum
 
 | Kategori | Status |
 |---|---|
@@ -71,16 +71,16 @@ Di backend Neon, nama sheet Excel dipetakan ke tabel PostgreSQL lewat dict `SHEE
 
 Konsekuensi: **OneDrive/SharePoint belum bisa dimatikan total.** Secrets `MS_*` dan `ONEDRIVE_*` masih diinject ke semua workflow (dipakai bila fallback ke backend onedrive dan oleh script migrasi).
 
-## Script Migrasi & Backfill
+##### Script Migrasi & Backfill
 
-### Setup skema (sekali per database)
+###### Setup skema (sekali per database)
 
 ```bash
 python scripts/run_schema.py            # menjalankan scripts/create_tables.sql
 psql $NEON_DB_URL -f scripts/create_views.sql
 ```
 
-### Migrasi data Excel → Neon (one-time)
+###### Migrasi data Excel → Neon (one-time)
 
 [scripts/migrate_excel_to_neon.py](../scripts/migrate_excel_to_neon.py) membaca semua sheet dari OneDrive lalu upsert ke Neon. Tabel WTE dikecualikan (kolom dinamis) — jalankan `wte_sipsn.py` dengan `STORAGE_BACKEND=neon` sebagai gantinya.
 
@@ -89,7 +89,7 @@ psql $NEON_DB_URL -f scripts/create_views.sql
 python scripts/migrate_excel_to_neon.py
 ```
 
-### Backfill historis (gap Okt 2025 – Jun 2026)
+###### Backfill historis (gap Okt 2025 – Jun 2026)
 
 [scripts/backfill.py](../scripts/backfill.py) mengisi kekosongan data historis. Dapat di-interrupt dan di-resume — progres disimpan ke `scripts/backfill_progress.json` setelah tiap unit kerja.
 
@@ -109,7 +109,7 @@ Tier sumber (lihat docstring file untuk daftar penuh):
 
 Format `backfill_progress.json`: `completed_sources[]`, `last_completed_date_lokal`, `last_completed_date_intl`, `completed_kompas_months[]`. Hapus entri untuk memaksa jalan ulang sumber tertentu.
 
-## Status OneDrive Legacy
+##### Status OneDrive Legacy
 
 - [src/helpers/onedrive_helper.py](../src/helpers/onedrive_helper.py) **dipertahankan** — dipakai internal `_OneDriveBackend` dan `migrate_excel_to_neon.py`. Token MS Graph di-refresh otomatis pada tiap operasi tulis.
 - Backend onedrive masih berfungsi penuh; berguna untuk dev lokal tanpa akses Neon, atau rollback darurat (set `STORAGE_BACKEND=onedrive` di workflow — data akan menyimpang dari Neon sejak saat itu, perlu migrasi ulang saat kembali).

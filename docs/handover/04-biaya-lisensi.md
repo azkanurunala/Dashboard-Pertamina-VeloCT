@@ -1,4 +1,4 @@
-# Biaya & Lisensi
+#### Biaya & Lisensi
 
 Ringkasan tier layanan saat ini, limit yang berlaku, sinyal kapan harus upgrade, dan perkiraan biayanya. Seluruh sistem saat ini berjalan **tanpa biaya langganan** kecuali S&P Global (langganan korporat) dan lisensi Power BI.
 
@@ -12,13 +12,13 @@ Ringkasan tier layanan saat ini, limit yang berlaku, sinyal kapan harus upgrade,
 | **EIA API** | Gratis (API key registrasi) | Rate limit longgar, tidak relevan di volume sekarang | — | Tetap gratis |
 | **SharePoint/OneDrive** | Bagian Microsoft 365 | — | Hanya dipakai macro series Power BI + legacy dev | Sudah tercakup lisensi M365 PEI |
 
-## Catatan Keputusan Arsitektur Terkait Biaya
+##### Catatan Keputusan Arsitektur Terkait Biaya
 
 - **Power BI mode Import, bukan DirectQuery** — disengaja: compute Neon free tier auto-suspend, DirectQuery akan sering timeout dan menahan compute aktif terus (boros bila upgrade ke paid). Jangan diubah tanpa membaca [docs/07-power-bi.md](../07-power-bi.md).
 - **Model `gemini-2.5-flash-lite`** dipilih untuk biaya/kecepatan; ganti model cukup satu konstanta di `src/helpers/summary_helper.py` ([docs/06](../06-ai-sentiment.md)).
 - Torch/EasyOCR di monthly workflow diinstal versi CPU-only untuk menghindari disk-full runner gratis — jangan "dirapikan" jadi instalasi default.
 
-## Skenario Total Biaya
+##### Skenario Total Biaya
 
 | Skenario | Perkiraan/bulan | Kapan relevan |
 |---|---|---|

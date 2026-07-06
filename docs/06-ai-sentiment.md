@@ -1,6 +1,6 @@
-# 06 — AI & Analisis Sentimen Berita
+#### 06 — AI & Analisis Sentimen Berita
 
-## Provider Aktif: Google Gemini
+##### Provider Aktif: Google Gemini
 
 Satu-satunya titik pemanggilan AI di seluruh repo: [src/helpers/summary_helper.py](../src/helpers/summary_helper.py).
 
@@ -9,7 +9,7 @@ Satu-satunya titik pemanggilan AI di seluruh repo: [src/helpers/summary_helper.p
 
 > ⚠️ **Klarifikasi konfigurasi:** `.env.example` memuat `AI_TYPE=OPENAI`, `OPENAI_API_KEY`, `OPENAI_MODEL_NAME=gpt-4o` — **tidak ada kode yang membacanya**. Ini sisa scaffold rencana migrasi provider yang belum pernah dieksekusi. Provider produksi tetap Gemini; workflow CI hanya menginject `GEMINI_API_KEY`. Jangan bingung karenanya.
 
-## Alur Sentimen
+##### Alur Sentimen
 
 Tiga orchestrator memakai `setup_gemini` + `summarize_all_news`:
 
@@ -28,13 +28,13 @@ Langkah umum tiap orchestrator:
 
 Nilai `topic` yang aktif saat ini: `(Summary)Nilai Tukar Rupiah`, `(Summary)IHSG`, `(Summary)Indonia` (lokal harian), `(Summary)Idx Volatilitas` (internasional), `(Summary)Crackspread BBM` (mingguan). Topik mingguan lain (Inflasi, BI-Rate, PDB, Biodiesel, SAF, dst.) ada di kode tapi dikomentari — mengaktifkannya cukup uncomment di `main_sentiment_news_mingguan.py`.
 
-## Catatan Operasional
+##### Catatan Operasional
 
 - **Start date hardcoded:** orchestrator sentimen punya default tanggal awal yang di-hardcode (era backfill, `2026-04-17`). Di CI perilaku mengikuti `CI=true` (harian). Bila menjalankan lokal dan hasilnya aneh, cek konstanta tanggal di file orchestrator.
 - **Kuota/limit Gemini:** free tier punya rate limit; kegagalan API hanya menggagalkan step sentimen (step lain jalan terus). Ringkasan yang bolong bisa diisi ulang dengan menjalankan orchestrator sentimen secara manual di tanggal yang sama (upsert menimpa).
 - **Biaya:** `gemini-2.5-flash-lite` dipilih karena murah/cepat; volume panggilan kecil (≤ jumlah topik aktif per hari).
 
-## Mengganti Provider AI (mis. ke OpenAI/Azure OpenAI)
+##### Mengganti Provider AI (mis. ke OpenAI/Azure OpenAI)
 
 Titik ubah minimal:
 

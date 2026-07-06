@@ -1,12 +1,12 @@
-# Inventaris Aset & Akses
+#### Inventaris Aset & Akses
 
 Daftar semua akun, kredensial, dan aset yang harus berpindah tangan saat handover, plus checklist rotasi. Pelengkap [docs/08-maintenance.md](../08-maintenance.md) bagian "Secrets & Kredensial".
 
-## 1. Akun & Layanan
+##### 1. Akun & Layanan
 
 | Aset | Pemilik sekarang | Penerima (PEI) | Cara transfer |
 |---|---|---|---|
-| Repo GitHub `shelmasalsa17/Dashboard-Pertamina-VeloCT` | Akun personal `shelmasalsa17` | `[ISI: org/akun PEI]` | **Transfer ownership** (Settings → General → Transfer) ke org PEI, atau minimal tambah admin. Catatan: transfer mempertahankan Actions & secrets, tapi URL remote berubah — update remote di mesin dev & Power BI docs |
+| Repo GitHub `[NAMA-REPO-GITHUB]` | Akun personal `shelmasalsa17` | `[ISI: org/akun PEI]` | **Transfer ownership** (Settings → General → Transfer) ke org PEI, atau minimal tambah admin. Catatan: transfer mempertahankan Actions & secrets, tapi URL remote berubah — update remote di mesin dev & Power BI docs |
 | Akun Neon PostgreSQL | `[ISI: email pemilik]` | `[ISI]` | Transfer project ke org Neon PEI (console.neon.tech → Project settings), atau ganti kepemilikan akun. Project: `neondb`, region `ap-southeast-1` |
 | Google AI Studio (Gemini API key) | `[ISI: akun Google]` | `[ISI]` | PEI buat API key baru di akun sendiri → ganti secret `GEMINI_API_KEY`. Jangan pakai key lama |
 | Aplikasi Microsoft/MS Graph (OneDrive legacy) | `[ISI: tenant/akun]` | `[ISI]` | Hanya perlu bila fallback OneDrive dipertahankan; kalau tidak, hapus secrets MS_*/ONEDRIVE_* dari workflow (lihat Known Issues docs/08) |
@@ -15,7 +15,7 @@ Daftar semua akun, kredensial, dan aset yang harus berpindah tangan saat handove
 | File `.pbix` + workspace Power BI | `[ISI: akun publish]` | `[ISI]` | Serahkan file + pindahkan ownership dataset/report di Power BI Service; set ulang kredensial data source (Neon + SharePoint) |
 | Akses SharePoint (macro series) | `[ISI]` | `[ISI]` | Pastikan akun refresh Power BI PEI punya akses ke file SharePoint tersebut |
 
-## 2. GitHub Secrets per Workflow
+##### 2. GitHub Secrets per Workflow
 
 (Settings → Secrets and variables → Actions. Nilai TIDAK ditulis di sini — serahkan lewat jalur aman.)
 
@@ -28,7 +28,7 @@ Daftar semua akun, kredensial, dan aset yang harus berpindah tangan saat handove
 | `MS_CLIENT_ID` / `MS_CLIENT_SECRET` / `MS_TENANT_ID` / `MS_USER_EMAIL` | ✓ | ✓ | ✓ | ✓ | MS Graph OAuth (legacy OneDrive) |
 | `ONEDRIVE_FILE_PATH` / `ONEDRIVE_SENTIMENT_PATH` / `ONEDRIVE_DATA_PATH` | ✓ | ✓ | ✓ | ✓ | Path Excel OneDrive (legacy) |
 
-## 3. Environment Variable Lokal (`.env`)
+##### 3. Environment Variable Lokal (`.env`)
 
 Template: `.env.example`. Var aktif:
 
@@ -46,7 +46,7 @@ Template: `.env.example`. Var aktif:
 
 Var **tidak terpakai** (scaffold/legacy, boleh dibersihkan): `AI_TYPE`, `OPENAI_API_KEY`, `OPENAI_MODEL_NAME`, `GOOGLE_CREDENTIALS`, `SPREADSHEET_ID`, `SPREADSHEET_ID_STRUCTURE`.
 
-## 4. Checklist Rotasi Kredensial Pasca-Handover
+##### 4. Checklist Rotasi Kredensial Pasca-Handover
 
 Prinsip: **semua kredensial yang pernah dipegang pihak lama dianggap bocor** — rotasi total. Detail peringatan keamanan (.env, token.json): [docs/08-maintenance.md](../08-maintenance.md) bagian "Peringatan Keamanan".
 
