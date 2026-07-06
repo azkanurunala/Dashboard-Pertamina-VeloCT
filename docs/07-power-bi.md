@@ -1,13 +1,13 @@
-# 07 — Power BI & Power Query
+#### 07 — Power BI & Power Query
 
-## Dua File Referensi
+##### Dua File Referensi
 
 | File | Isi |
 |---|---|
 | [power_query_names.txt](../power_query_names.txt) (root) | Snapshot **asli** semua M-query Power BI era SharePoint (semua query membaca `SharePoint.Files(...)` → `Excel.Workbook`). Berfungsi sebagai inventaris & arsip pra-migrasi. |
 | [scripts/power_query_migrated.txt](../scripts/power_query_migrated.txt) | M-query **pengganti** pasca-migrasi. Tiap query bertanda `[NEON]` (sudah dipindah ke PostgreSQL — ganti M-code-nya) atau `[UNCHANGED]` (tetap SharePoint — **jangan diganti**). |
 
-## Prasyarat Koneksi (sekali per file .pbix)
+##### Prasyarat Koneksi (sekali per file .pbix)
 
 1. Skema Neon sudah terpasang: `scripts/create_tables.sql` + `scripts/create_views.sql` (lihat [03-database.md](03-database.md)).
 2. Tabel statis `data_ruptl` dan `data_harga_ebt` sudah diisi (one-time dari Excel).
@@ -18,7 +18,7 @@
    - Kredensial: user/password dari `NEON_DB_URL` (Neon Console → Connection Details). Power BI menyimpan kredensial per-server, jadi cukup sekali isi.
    - Bila muncul error enkripsi, gunakan koneksi terenkripsi (Neon mewajibkan SSL).
 
-## Prosedur Mengganti Query (migrasi per query)
+##### Prosedur Mengganti Query (migrasi per query)
 
 1. Power BI Desktop → **Transform Data** (Power Query Editor).
 2. Pilih query yang bertanda `[NEON]` di `power_query_migrated.txt`.
@@ -26,7 +26,7 @@
 4. Ulangi untuk semua query `[NEON]`; biarkan yang `[UNCHANGED]`.
 5. **Close & Apply** → refresh penuh → simpan .pbix.
 
-## Pola M-code Neon
+##### Pola M-code Neon
 
 ```m
 let
@@ -43,22 +43,22 @@ Pola per jenis data:
 - **Sentimen:** sama, dari `news_sentiment` dengan `[topic] = "(Summary)X"`.
 - **Terstruktur:** baca view `vw_*` (bukan tabel) — view sudah membuang `id`, memulihkan kapitalisasi kolom, dan membersihkan tipe. IAEA: baca view long (`vw_iaea_*_long`) lalu `Table.Pivot` kolom `country` untuk kembali ke bentuk wide.
 
-## Yang Tetap di SharePoint (`[UNCHANGED]`)
+##### Yang Tetap di SharePoint (`[UNCHANGED]`)
 
-- Semua seri makroekonomi dari `(Data)Makro.xlsx`: BI-Rate, Kurs, PMI, Inflasi, IHSG, PDB, Geopolitik, Volatilitas, Neraca Perdagangan, dll. **Tidak ada scraper untuk data ini** — diupdate manual di SharePoint (`velocitrateknologi-my.sharepoint.com`).
+- Semua seri makroekonomi dari `(Data)Makro.xlsx`: BI-Rate, Kurs, PMI, Inflasi, IHSG, PDB, Geopolitik, Volatilitas, Neraca Perdagangan, dll. **Tidak ada scraper untuk data ini** — diupdate manual di SharePoint (`<tenant>-my.sharepoint.com`).
 - `(Data)Input_Fosil_Prediction` dari `(Data)Input_Manual.xlsx` (input manual).
 - Tabel literal statis di M (mis. `Kategori eia`, `Kategori Harga Kilang`).
 
 Konsekuensi: refresh dashboard tetap butuh kredensial SharePoint **dan** Neon. SharePoint baru bisa dilepas bila seri makro dipindahkan (dibuatkan scraper/loader ke Neon — kandidat pengembangan, lihat [09-pengembangan.md](09-pengembangan.md)).
 
-## Menambah Query Baru dari Neon
+##### Menambah Query Baru dari Neon
 
 1. Pastikan tabel/view-nya ada (untuk data terstruktur baru, buat view di `create_views.sql`).
 2. Power Query: **New Source → PostgreSQL** (server/db sama) atau duplikasi query Neon yang ada lalu ganti `Item="nama_view"`.
 3. Ikuti konvensi: pakai view untuk data terstruktur; buang kolom `id`; jangan lakukan agregasi berat di M bila bisa di view SQL.
 4. Catat query baru di `scripts/power_query_migrated.txt` supaya file itu tetap menjadi sumber kebenaran M-code.
 
-## Troubleshooting Refresh
+##### Troubleshooting Refresh
 
 | Gejala | Kemungkinan penyebab |
 |---|---|

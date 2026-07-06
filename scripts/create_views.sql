@@ -63,14 +63,25 @@ FROM data_iaea_electrical;
 
 -- ── CRACKSPREAD / CRACKSPEED VIEWS ───────────────────────────────────────────
 
+-- NOTE: table columns are lowercase (unquoted DDL folds case in PostgreSQL);
+-- alias to the exact mixed-case names Power Query expects.
 CREATE OR REPLACE VIEW vw_crackspread_bbm AS
 SELECT year, month,
-       price_RON92, price_RON95, price_RON97, price_FO05,
-       price_JetKero, price_GO50, price_GO2500, price_Brent,
-       price_RON92_crackspread, price_RON95_crackspread,
-       price_RON97_crackspread, price_FO05_crackspread,
-       price_JetKero_crackspread, price_GO50_crackspread,
-       price_GO2500_crackspread
+       price_ron92   AS "price_RON92",
+       price_ron95   AS "price_RON95",
+       price_ron97   AS "price_RON97",
+       price_fo05    AS "price_FO05",
+       price_jetkero AS "price_JetKero",
+       price_go50    AS "price_GO50",
+       price_go2500  AS "price_GO2500",
+       price_brent   AS "price_Brent",
+       price_ron92_crackspread   AS "price_RON92_crackspread",
+       price_ron95_crackspread   AS "price_RON95_crackspread",
+       price_ron97_crackspread   AS "price_RON97_crackspread",
+       price_fo05_crackspread    AS "price_FO05_crackspread",
+       price_jetkero_crackspread AS "price_JetKero_crackspread",
+       price_go50_crackspread    AS "price_GO50_crackspread",
+       price_go2500_crackspread  AS "price_GO2500_crackspread"
 FROM data_crackspread_bbm;
 
 CREATE OR REPLACE VIEW vw_crackspread_non_bbm AS
@@ -83,12 +94,21 @@ FROM data_crackspread_non_bbm;
 
 CREATE OR REPLACE VIEW vw_crackspread_bbm_year AS
 SELECT year,
-       price_RON92, price_RON95, price_RON97, price_FO05,
-       price_JetKero, price_GO50, price_GO2500, price_Brent,
-       price_RON92_crackspread, price_RON95_crackspread,
-       price_RON97_crackspread, price_FO05_crackspread,
-       price_JetKero_crackspread, price_GO50_crackspread,
-       price_GO2500_crackspread
+       price_ron92   AS "price_RON92",
+       price_ron95   AS "price_RON95",
+       price_ron97   AS "price_RON97",
+       price_fo05    AS "price_FO05",
+       price_jetkero AS "price_JetKero",
+       price_go50    AS "price_GO50",
+       price_go2500  AS "price_GO2500",
+       price_brent   AS "price_Brent",
+       price_ron92_crackspread   AS "price_RON92_crackspread",
+       price_ron95_crackspread   AS "price_RON95_crackspread",
+       price_ron97_crackspread   AS "price_RON97_crackspread",
+       price_fo05_crackspread    AS "price_FO05_crackspread",
+       price_jetkero_crackspread AS "price_JetKero_crackspread",
+       price_go50_crackspread    AS "price_GO50_crackspread",
+       price_go2500_crackspread  AS "price_GO2500_crackspread"
 FROM data_crackspread_bbm_year;
 
 CREATE OR REPLACE VIEW vw_crackspeed_bbm AS
@@ -122,18 +142,20 @@ FROM data_crackspeed_non_bbm;
 -- runtime by neon_helper.create_table_if_needed() when the WTE scraper runs.
 -- If these views fail, run the WTE scraper first, then re-run this file.
 
+-- NOTE: scraper stores values as text with US-style thousands separators
+-- (e.g. "54,830.04"); strip commas and blank-out empty strings before cast.
 CREATE OR REPLACE VIEW vw_wte_komposisi AS
 SELECT
     tahun,
-    SUM(sisa_makanan::numeric)   AS sisa_makanan,
-    SUM(kayu_ranting::numeric)   AS kayu_ranting,
-    SUM(kertas_karton::numeric)  AS kertas_karton,
-    SUM(plastik::numeric)        AS plastik,
-    SUM(logam::numeric)          AS logam,
-    SUM(kain::numeric)           AS kain,
-    SUM(karet_kulit::numeric)    AS karet_kulit,
-    SUM(kaca::numeric)           AS kaca,
-    SUM(lainnya::numeric)        AS lainnya
+    SUM(NULLIF(REPLACE(sisa_makanan,  ',', ''), '')::numeric) AS sisa_makanan,
+    SUM(NULLIF(REPLACE(kayu_ranting,  ',', ''), '')::numeric) AS kayu_ranting,
+    SUM(NULLIF(REPLACE(kertas_karton, ',', ''), '')::numeric) AS kertas_karton,
+    SUM(NULLIF(REPLACE(plastik,       ',', ''), '')::numeric) AS plastik,
+    SUM(NULLIF(REPLACE(logam,         ',', ''), '')::numeric) AS logam,
+    SUM(NULLIF(REPLACE(kain,          ',', ''), '')::numeric) AS kain,
+    SUM(NULLIF(REPLACE(karet_kulit,   ',', ''), '')::numeric) AS karet_kulit,
+    SUM(NULLIF(REPLACE(kaca,          ',', ''), '')::numeric) AS kaca,
+    SUM(NULLIF(REPLACE(lainnya,       ',', ''), '')::numeric) AS lainnya
 FROM data_wte_komposisi
 GROUP BY tahun
 ORDER BY tahun;
@@ -141,13 +163,13 @@ ORDER BY tahun;
 CREATE OR REPLACE VIEW vw_wte_sumber AS
 SELECT
     tahun,
-    SUM(ss_rumah_tangga::numeric)     AS ss_rumah_tangga,
-    SUM(ss_perkantoran::numeric)      AS ss_perkantoran,
-    SUM(ss_pasar::numeric)            AS ss_pasar,
-    SUM(ss_perniagaan::numeric)       AS ss_perniagaan,
-    SUM(ss_fasilitas_publik::numeric) AS ss_fasilitas_publik,
-    SUM(ss_kawasan::numeric)          AS ss_kawasan,
-    SUM(ss_lain::numeric)             AS ss_lain
+    SUM(NULLIF(REPLACE(ss_rumah_tangga,     ',', ''), '')::numeric) AS ss_rumah_tangga,
+    SUM(NULLIF(REPLACE(ss_perkantoran,      ',', ''), '')::numeric) AS ss_perkantoran,
+    SUM(NULLIF(REPLACE(ss_pasar,            ',', ''), '')::numeric) AS ss_pasar,
+    SUM(NULLIF(REPLACE(ss_perniagaan,       ',', ''), '')::numeric) AS ss_perniagaan,
+    SUM(NULLIF(REPLACE(ss_fasilitas_publik, ',', ''), '')::numeric) AS ss_fasilitas_publik,
+    SUM(NULLIF(REPLACE(ss_kawasan,          ',', ''), '')::numeric) AS ss_kawasan,
+    SUM(NULLIF(REPLACE(ss_lain,             ',', ''), '')::numeric) AS ss_lain
 FROM data_wte_sumber
 GROUP BY tahun
 ORDER BY tahun;
@@ -155,8 +177,8 @@ ORDER BY tahun;
 CREATE OR REPLACE VIEW vw_wte_timbulan AS
 SELECT
     tahun,
-    SUM(timbulan_harian::numeric)  AS timbulan_harian,
-    SUM(timbulan_tahunan::numeric) AS timbulan_tahunan
+    SUM(NULLIF(REPLACE(timbulan_harian,  ',', ''), '')::numeric) AS timbulan_harian,
+    SUM(NULLIF(REPLACE(timbulan_tahunan, ',', ''), '')::numeric) AS timbulan_tahunan
 FROM data_wte_timbulan
 GROUP BY tahun
 ORDER BY tahun;
