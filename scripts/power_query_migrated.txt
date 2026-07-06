@@ -1190,7 +1190,7 @@ in
 let
     Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
     vw_harga_ebt = Source{[Schema="public",Item="vw_harga_ebt"]}[Data],
-    #"Changed Type" = Table.TransformColumnTypes(vw_harga_ebt,{{"No", type text}, {"Lokasi", type text}, {"Jenis EBT", type text}, {"Faktor Lokasi", type number}, {"Kelompok HPT", type text}, {"Stage", Int64.Type}, {"cent $/kWh", type number}, {"LCOE cent$/kWh", type number}, {"Battery", type number}})
+    #"Changed Type" = Table.TransformColumnTypes(vw_harga_ebt,{{"No", type text}, {"Lokasi", type text}, {"Provinsi", type text}, {"Jenis EBT", type text}, {"Faktor Lokasi", type number}, {"Kelompok HPT", type text}, {"Stage", Int64.Type}, {"cent $/kWh", type number}, {"LCOE cent$/kWh", type number}, {"Battery", type number}})
 in
     #"Changed Type"
 
@@ -1238,38 +1238,43 @@ in
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Data)WTE_Komposisi
-// NOTE: view aggregates (SUM) by tahun — runs after WTE scraper populates data_wte_komposisi.
+// NOTE: reads raw table (not aggregate view) to preserve "Nama Provinsi"/"Nama Kota/Kabupaten" detail.
 
 (Data)WTE_Komposisi
 
 let
     Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
-    vw_wte_komposisi = Source{[Schema="public",Item="vw_wte_komposisi"]}[Data],
-    #"Changed Type" = Table.TransformColumnTypes(vw_wte_komposisi,{{"sisa_makanan", type number}, {"kayu_ranting", type number}, {"kertas_karton", type number}, {"plastik", type number}, {"logam", type number}, {"kain", type number}, {"karet_kulit", type number}, {"kaca", type number}, {"lainnya", type number}, {"tahun", Int64.Type}})
+    data_wte_komposisi = Source{[Schema="public",Item="data_wte_komposisi"]}[Data],
+    #"Removed Columns" = Table.RemoveColumns(data_wte_komposisi,{"id"}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Removed Columns",{{"Nama Provinsi", type text}, {"Nama Kota/Kabupaten", type text}, {"sisa_makanan", type number}, {"kayu_ranting", type number}, {"kertas_karton", type number}, {"plastik", type number}, {"logam", type number}, {"kain", type number}, {"karet_kulit", type number}, {"kaca", type number}, {"lainnya", type number}, {"tahun", Int64.Type}})
 in
     #"Changed Type"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Data)WTE_Sumber
+// NOTE: reads raw table (not aggregate view) to preserve "Nama Provinsi"/"Nama Kota/Kabupaten" detail.
 
 (Data)WTE_Sumber
 
 let
     Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
-    vw_wte_sumber = Source{[Schema="public",Item="vw_wte_sumber"]}[Data],
-    #"Changed Type" = Table.TransformColumnTypes(vw_wte_sumber,{{"ss_rumah_tangga", type number}, {"ss_perkantoran", type number}, {"ss_pasar", type number}, {"ss_perniagaan", type number}, {"ss_fasilitas_publik", type number}, {"ss_kawasan", type number}, {"ss_lain", type number}, {"tahun", Int64.Type}})
+    data_wte_sumber = Source{[Schema="public",Item="data_wte_sumber"]}[Data],
+    #"Removed Columns" = Table.RemoveColumns(data_wte_sumber,{"id"}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Removed Columns",{{"Nama Provinsi", type text}, {"Nama Kota/Kabupaten", type text}, {"ss_rumah_tangga", type number}, {"ss_perkantoran", type number}, {"ss_pasar", type number}, {"ss_perniagaan", type number}, {"ss_fasilitas_publik", type number}, {"ss_kawasan", type number}, {"ss_lain", type number}, {"tahun", Int64.Type}})
 in
     #"Changed Type"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Data)WTE_Timbulan
+// NOTE: reads raw table (not aggregate view) to preserve "Nama Provinsi"/"Nama Kota/Kabupaten" detail.
 
 (Data)WTE_Timbulan
 
 let
     Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
-    vw_wte_timbulan = Source{[Schema="public",Item="vw_wte_timbulan"]}[Data],
-    #"Changed Type" = Table.TransformColumnTypes(vw_wte_timbulan,{{"timbulan_harian", type number}, {"timbulan_tahunan", type number}, {"tahun", Int64.Type}})
+    data_wte_timbulan = Source{[Schema="public",Item="data_wte_timbulan"]}[Data],
+    #"Removed Columns" = Table.RemoveColumns(data_wte_timbulan,{"id"}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Removed Columns",{{"Nama Provinsi", type text}, {"Nama Kota/Kabupaten", type text}, {"timbulan_harian", type number}, {"timbulan_tahunan", type number}, {"tahun", Int64.Type}})
 in
     #"Changed Type"
 
