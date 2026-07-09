@@ -1,10 +1,12 @@
-"""backfill_sentiment_daily.py -- Backfill DAILY Gemini summaries for all topics.
+"""backfill_sentiment_daily.py -- Backfill Gemini summaries for all topics.
 
 The production sentiment orchestrators only move forward from the latest
 "Tanggal akhir" per topic, so historical gaps are never filled. This script
-walks a historical date range and, for every (topic, day) that has articles
-in news_articles but no row in news_sentiment, generates a one-day summary
-and upserts it (conflict key: topic + "Tanggal awal").
+walks a historical date range and, for every (topic, period) that has articles
+in news_articles but no row in news_sentiment, generates a summary and upserts
+it (conflict key: topic + "Tanggal awal"). Period length matches each topic's
+production cadence: 1-day windows for DAILY_TOPICS, 7-day windows for
+everything else (mirroring main_sentiment_news_mingguan.py).
 
 Usage:
     python scripts/backfill_sentiment_daily.py                          # 8 bulan ke belakang
@@ -77,14 +79,27 @@ TOPICS: dict[str, tuple[list[str], str]] = {
 }
 
 
-def month_windows(start: date, end: date) -> list[tuple[str, date, date]]:
-    """30-day windows, newest first, covering [start, end]."""
+# Topics processed daily by the production "harian" orchestrators
+# (main_sentiment_news_lokal_harian.py / main_sentiment_news_internasional_harian.py).
+# Everything else in TOPICS is processed weekly by main_sentiment_news_mingguan.py
+# (SUMMARY_WINDOW_DAYS=6, i.e. 7-day windows) — the backfill must match that
+# cadence or Power BI ends up with daily rows where weekly ones are expected.
+DAILY_TOPICS = {"Nilai Tukar Rupiah", "IHSG", "Indonia", "Indeks Volatilitas"}
+
+
+def topic_windows(topic: str, start: date, end: date) -> list[tuple[str, date, date]]:
+    """Newest-first windows sized to match the topic's production cadence.
+
+    Daily topics get 1-day windows; everything else gets 7-day windows
+    (mirroring SUMMARY_WINDOW_DAYS in main_sentiment_news_mingguan.py).
+    """
+    length_days = 0 if topic in DAILY_TOPICS else 6
     windows = []
     n = 1
     win_end = end
     while win_end >= start:
-        win_start = max(start, win_end - timedelta(days=29))
-        windows.append((f"bulan-{n}", win_start, win_end))
+        win_start = max(start, win_end - timedelta(days=length_days))
+        windows.append((f"periode-{n}", win_start, win_end))
         win_end = win_start - timedelta(days=1)
         n += 1
     return windows
@@ -102,6 +117,21 @@ def main() -> None:
 
     from helpers.storage_backend import storage
     from helpers.summary_helper import setup_gemini, summarize_all_news
+    import psycopg2
+
+    def _query(sql, params, retries=3):
+        """Koneksi segar per query + retry — tahan drop koneksi Neon."""
+        last = None
+        for _ in range(retries):
+            try:
+                with psycopg2.connect(os.environ["NEON_DB_URL"]) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(sql, params)
+                        return cur.fetchall()
+            except psycopg2.Error as exc:
+                last = exc
+                time.sleep(3)
+        raise last
 
     start = date.fromisoformat(args.start)
     end = date.fromisoformat(args.end)
@@ -110,59 +140,61 @@ def main() -> None:
     print(f"Rentang: {start} -> {end} | topik: {len(topics)} | dry-run: {args.dry_run}")
 
     model = None if args.dry_run else setup_gemini()
-    windows = month_windows(start, end)
 
     total_written = 0
     for topic, (news_sheets, summary_sheet) in topics.items():
         print(f"\n{'=' * 60}\n[{topic}] -> {summary_sheet}\n{'=' * 60}")
 
-        # Artikel per hari
-        frames = []
+        # Artikel per hari — query ringan (hanya date+content dalam rentang),
+        # bukan SELECT * seluruh topik (39 MB+ memutus koneksi Neon free tier)
+        rows = []
         for sheet in news_sheets:
-            df = storage.read_news_sheet(sheet)
-            if not df.empty and "date" in df.columns:
-                df["date"] = pd.to_datetime(df["date"], errors="coerce").dt.normalize()
-                frames.append(df[["date", "content"]].dropna())
-        if not frames:
-            print("  (tidak ada artikel sama sekali, lewati)")
+            rows += _query(
+                """SELECT date::date, content FROM news_articles
+                   WHERE topic = %s AND content IS NOT NULL
+                     AND date::date BETWEEN %s AND %s""",
+                (sheet, start, end),
+            )
+        if not rows:
+            print("  (tidak ada artikel dalam rentang, lewati)")
             continue
-        articles = pd.concat(frames, ignore_index=True)
+        articles = pd.DataFrame(rows, columns=["date", "content"])
+        articles["date"] = pd.to_datetime(articles["date"])
 
-        # Hari yang sudah punya summary
-        existing = storage.read_sentiment_sheet(summary_sheet)
-        have_days: set = set()
-        if not existing.empty and "Tanggal awal" in existing.columns:
-            have_days = set(pd.to_datetime(existing["Tanggal awal"], errors="coerce").dt.date.dropna())
+        # Periode (hari atau minggu, tergantung cadence topik) yang sudah punya summary
+        have_starts = {r[0] for r in _query(
+            'SELECT "Tanggal awal" FROM news_sentiment WHERE topic = %s',
+            (summary_sheet,),
+        )}
 
-        for win_name, win_start, win_end in windows:
-            day = win_end
-            while day >= win_start:
-                if day not in have_days:
-                    day_ts = pd.Timestamp(day)
-                    day_articles = articles[articles["date"] == day_ts]["content"].astype(str).tolist()
-                    if day_articles:
-                        print(f"  [{win_name}] {day}: {len(day_articles)} artikel -> summarize", flush=True)
-                        if not args.dry_run:
-                            try:
-                                summary = summarize_all_news(
-                                    model, day_articles, day_ts, day_ts,
-                                    news_sheets, ROLE_PROMPT, SPESIFIC_PROMPT,
-                                )
-                                if summary:
-                                    row = pd.DataFrame([{
-                                        "Tanggal awal": day,
-                                        "Tanggal akhir": day,
-                                        "Summary": summary,
-                                        "Summary Data": None,
-                                    }])
-                                    storage.write_sentiment_file({summary_sheet: row})
-                                    total_written += 1
-                            except Exception as exc:
-                                print(f"    ERROR: {exc}")
-                            time.sleep(args.delay)
-                        else:
-                            total_written += 1
-                day -= timedelta(days=1)
+        for win_name, win_start, win_end in topic_windows(topic, start, end):
+            if win_start in have_starts:
+                continue
+            mask = (articles["date"] >= pd.Timestamp(win_start)) & (articles["date"] <= pd.Timestamp(win_end))
+            window_articles = articles.loc[mask, "content"].astype(str).tolist()
+            if not window_articles:
+                continue
+            print(f"  [{win_name}] {win_start} -> {win_end}: {len(window_articles)} artikel -> summarize", flush=True)
+            if not args.dry_run:
+                try:
+                    summary = summarize_all_news(
+                        model, window_articles, pd.Timestamp(win_start), pd.Timestamp(win_end),
+                        news_sheets, ROLE_PROMPT, SPESIFIC_PROMPT,
+                    )
+                    if summary:
+                        row = pd.DataFrame([{
+                            "Tanggal awal": win_start,
+                            "Tanggal akhir": win_end,
+                            "Summary": summary,
+                            "Summary Data": None,
+                        }])
+                        storage.write_sentiment_file({summary_sheet: row})
+                        total_written += 1
+                except Exception as exc:
+                    print(f"    ERROR: {exc}")
+                time.sleep(args.delay)
+            else:
+                total_written += 1
 
     print(f"\nSELESAI. Summary {'akan ' if args.dry_run else ''}ditulis: {total_written}")
 

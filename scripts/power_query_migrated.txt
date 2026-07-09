@@ -325,7 +325,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Volume Produk Kilang"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type any}, {"date", type any}, {"url", type any}, {"content", type any}, {"source", type any}, {"keyword", type any}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source]),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source]),
     #"Changed Type1" = Table.TransformColumnTypes(#"Added Custom",{{"date", type date}})
 in
     #"Changed Type1"
@@ -341,7 +341,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Volume Minyak"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -356,7 +356,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Biodiesel"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -371,7 +371,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Harga Minyak"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -386,7 +386,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Harga Produk Kilang"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -401,7 +401,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)BI Rate"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -416,7 +416,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)IHSG"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -431,7 +431,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Indeks Kepercayaan Knsmn"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -446,7 +446,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Indeks Kinerja Manufaktur"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -461,7 +461,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Indeks Risiko Geopolitik"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type any}, {"date", type date}, {"url", type any}, {"content", type any}, {"source", type any}, {"keyword", type any}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -476,7 +476,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Indeks Penjualan Ritel"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -491,7 +491,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Indeks Volatilitas"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type any}, {"date", type date}, {"url", type any}, {"content", type any}, {"source", type any}, {"keyword", type any}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -506,7 +506,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Inflasi"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -521,7 +521,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Indonia"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -536,7 +536,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Kurs"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -551,7 +551,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Neraca Perdagangan"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -566,7 +566,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)PDB"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -581,7 +581,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Bioetanol"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -596,7 +596,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)RUPTL"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -611,7 +611,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)SAF"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -627,7 +627,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)EBT"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -642,7 +642,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Crackspread Non-BBM"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -657,7 +657,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Crackspread BBM"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -672,7 +672,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)WTE"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -687,7 +687,7 @@ let
     Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Nuklir"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Text.From([date]) & "] " & [title] & " - " & [source])
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
 in
     #"Added Custom"
 
@@ -703,10 +703,9 @@ let
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
     #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Bioenergi", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
-    #"Added Custom1" = Table.AddColumn(#"Added Custom", "Sort_Helper", each -Number.From([Tanggal awal])),
-    #"Removed Columns" = Table.RemoveColumns(#"Added Custom1",{"Sort_Helper"})
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Removed Columns"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)Harga Minyak
@@ -719,9 +718,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Harga Minyak"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type any}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_HargaMinyak", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_HargaMinyak", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)Harga Produk Kilang
@@ -735,9 +735,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Harga Produk Kilang"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type any}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_HargaKilang", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_HargaKilang", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)Volume Minyak
@@ -750,9 +751,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Volume Minyak"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_VolumeMinyak", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_VolumeMinyak", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)Volume Produk Kilang
@@ -766,9 +768,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Volume Produk Kilang"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type any}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_VolumeKilang", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_VolumeKilang", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)BI-Rate
@@ -782,9 +785,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)BI-Rate"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_birate", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_birate", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)Idx Keyakinan Konsumen
@@ -797,9 +801,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Idx Kepercayaan Konsum"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_IdxKeyakinanKonsumen", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_IdxKeyakinanKonsumen", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)Idx Penjualan Retail
@@ -812,9 +817,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Idx Penjualan Ritel"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_IdxPenjualanRetail", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_IdxPenjualanRetail", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)Idx PMI
@@ -827,9 +833,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Idx PMI"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_PMI", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_PMI", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)Idx Risiko Geopolitik
@@ -842,9 +849,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Idx Risiko Geopolitik"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_IdxRisikoGeopolitik", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_IdxRisikoGeopolitik", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)Idx Volatilitas
@@ -857,9 +865,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Idx Volatilitas"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_IdxVolatilitas", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_IdxVolatilitas", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)IHSG
@@ -872,9 +881,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)IHSG"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_ihsg", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_ihsg", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)Inflasi
@@ -887,9 +897,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Inflasi"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Inflasi", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Inflasi", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)Neraca Perdagangan
@@ -902,9 +913,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Neraca Perdagangan"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_NeracaPerdagangan", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_NeracaPerdagangan", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)Nilai Tukar Rupiah
@@ -917,9 +929,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Nilai Tukar Rupiah"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_NilaiTukarRupiah", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_NilaiTukarRupiah", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)PDB
@@ -932,9 +945,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)PDB"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_PDB", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_PDB", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)JIBOR
@@ -948,9 +962,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Indonia"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Jibor", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Jibor", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)Bioetanol
@@ -963,9 +978,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Bioetanol"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Bioetanol", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Bioetanol", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)RUPTL
@@ -979,9 +995,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)RUPTL"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_RUPTL", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_RUPTL", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)SAF
@@ -994,9 +1011,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)SAF"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_SAF", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_SAF", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)Harga EBT
@@ -1009,9 +1027,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Harga EBT"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Harga_EBT", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Harga_EBT", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)Crackspread_NonBBM
@@ -1024,9 +1043,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Crackspread Non-BBM"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_CrackspreadNonBBM", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_CrackspreadNonBBM", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)Crackspread_BBM
@@ -1039,9 +1059,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Crackspread BBM"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_CrackspreadBBM", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_CrackspreadBBM", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)WTE
@@ -1055,9 +1076,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)WTE"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_WTE", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_WTE", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Summary)Nuklir
@@ -1070,9 +1092,10 @@ let
     Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Nuklir"),
     Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
     #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
-    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Nuklir", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy"))
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Nuklir", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
 in
-    #"Added Custom"
+    #"Sorted Rows"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Data)Biodiesel
