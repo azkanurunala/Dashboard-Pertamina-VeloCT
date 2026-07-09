@@ -30,8 +30,9 @@ def setup_gemini() -> genai.GenerativeModel:
 
     genai.configure(api_key=api_key)
     print("[Setup] Gemini configured successfully.")
-    # return genai.GenerativeModel("gemini-2.5-flash")
-    return genai.GenerativeModel("gemini-2.5-flash-lite")
+    # gemini-2.5-flash / gemini-2.5-flash-lite were retired by Google (404) — pinned to
+    # the current-generation equivalent tier.
+    return genai.GenerativeModel("gemini-3.1-flash-lite")
 
 
 # Date Utilities
