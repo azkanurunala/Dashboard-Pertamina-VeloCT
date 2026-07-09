@@ -35,7 +35,7 @@ WORKFLOWS = {
     "daily_morning.yml": ("Daily Morning", "0 1 * * 1-5", 14),
     "daily_afternoon.yml": ("Daily Afternoon", "0 7 * * 1-5", 14),
     "weekly.yml": ("Weekly", "0 1 * * 1", 35),
-    "monthly.yml": ("Monthly", "0 1 1 * *", 120),
+    "monthly.yml": ("Monthly", "0 1 1,12,15,28 * *", 120),
 }
 
 
