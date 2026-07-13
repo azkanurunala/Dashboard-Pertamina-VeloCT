@@ -69,7 +69,7 @@ TOPICS: dict[str, dict] = {
 
     # "Indeks Kepercayaan Konsumen": {
     #     "target_sheets": ["(News)Indeks Kepercayaan Knsmn"],
-    #     "output_sheet": "(Summary)Idx Kepercayaan Konsum",
+    #     "output_sheet": "(Summary)Idx Kepercayaan Konsumen",
     #     "has_data_sentiment": False,
     #     "role_prompt" : "Ekonom",
     #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
@@ -241,32 +241,60 @@ TOPICS: dict[str, dict] = {
     #                        "Saat merangkum, abaikan berita tentang nuklir yang hanya terkait senjata dan tidak berkaitan dengan pembangkit listrik."
     # },
 
-    "Crackspread_BBM": {
-        "target_sheets": ["(News)Crackspread BBM"],
-        "output_sheet": "(Summary)Crackspread BBM",
-        "has_data_sentiment": False,
-        "role_prompt": "analis pasar energi dan BBM di Indonesia",
-        "spesific_prompt": (
-            "Gunakan bahasa yang ringkas, faktual, dan netral tanpa kata hiperbolik seperti \"signifikan\", \"dahsyat\", atau sejenisnya. "
-            "Setiap poin ringkasan harus terdiri dari satu kalimat. "
-            "Fokus pada isu yang memengaruhi crack spread BBM seperti Pertamax, Pertalite, Solar, Avtur, harga minyak mentah, margin kilang, biaya produksi, distribusi, dan kebijakan harga BBM. "
-            "Kecualikan berita yang bersifat kasus hukum, kriminal, atau politik yang tidak berdampak langsung pada harga atau margin BBM."
-        ),
-    },
-    
-    # "Crackspread_Non_BBM": {
-    #     "target_sheets": ["(News)Crackspread Non-BBM"],
-    #     "output_sheet": "(Summary)Crackspread Non-BBM",
+    # "Crackspread_BBM": {
+    #     "target_sheets": ["(News)Crackspread BBM"],
+    #     "output_sheet": "(Summary)Crackspread BBM",
     #     "has_data_sentiment": False,
-    #     "role_prompt": "analis pasar energi dan produk kilang non-BBM di Indonesia",
+    #     "role_prompt": "analis pasar energi dan BBM di Indonesia",
     #     "spesific_prompt": (
     #         "Gunakan bahasa yang ringkas, faktual, dan netral tanpa kata hiperbolik seperti \"signifikan\", \"dahsyat\", atau sejenisnya. "
     #         "Setiap poin ringkasan harus terdiri dari satu kalimat. "
-    #         "Fokus pada isu yang memengaruhi crack spread dan margin produk non-BBM seperti LPG, petrokimia, nafta, propilena, butilena, sulfur, dan produk samping kilang lainnya. "
-    #         "Perhatikan faktor harga minyak mentah, margin kilang, biaya produksi, permintaan industri, distribusi, serta kebijakan energi yang berdampak langsung pada produk non-BBM. "
-    #         "Kecualikan berita yang bersifat kasus hukum, kriminal, atau politik yang tidak berdampak langsung pada harga atau margin produk non-BBM."
+    #         "Fokus pada isu yang memengaruhi crack spread BBM seperti Pertamax, Pertalite, Solar, Avtur, harga minyak mentah, margin kilang, biaya produksi, distribusi, dan kebijakan harga BBM. "
+    #         "Kecualikan berita yang bersifat kasus hukum, kriminal, atau politik yang tidak berdampak langsung pada harga atau margin BBM."
     #     ),
     # },
+    
+    "Crackspread Non-BBM": {
+        "target_sheets": ["(News)Crackspread Non-BBM"],
+        "output_sheet": "(Summary)Crackspread Non-BBM",
+        "has_data_sentiment": False,
+        "role_prompt": "analis pasar energi dan produk kilang non-BBM di Indonesia",
+        "spesific_prompt": (
+            "Gunakan bahasa yang ringkas, faktual, dan netral tanpa kata hiperbolik seperti \"signifikan\", \"dahsyat\", atau sejenisnya. "
+            "Setiap poin ringkasan harus terdiri dari satu kalimat. "
+            "Fokus pada isu yang memengaruhi crack spread dan margin produk non-BBM seperti LPG, petrokimia, nafta, propilena, butilena, sulfur, dan produk samping kilang lainnya. "
+            "Perhatikan faktor harga minyak mentah, margin kilang, biaya produksi, permintaan industri, distribusi, serta kebijakan energi yang berdampak langsung pada produk non-BBM. "
+            "Kecualikan berita yang bersifat kasus hukum, kriminal, atau politik yang tidak berdampak langsung pada harga atau margin produk non-BBM."
+        ),
+    },
+    
+    "Harga Produk Petrokimia": {
+        "target_sheets": ["(News)Crackspread Non-BBM"],
+        "output_sheet": "(Summary)Harga Petrokimia",
+        "has_data_sentiment": False,
+        "role_prompt": "analis pasar petrokimia dan harga produk turunan kilang di Indonesia",
+        "spesific_prompt": (
+            "Gunakan bahasa yang ringkas, faktual, dan netral tanpa kata hiperbolik seperti \"signifikan\", \"dahsyat\", atau sejenisnya. "
+            "Setiap poin ringkasan harus terdiri dari satu kalimat. "
+            "Fokus khusus pada pergerakan harga produk petrokimia seperti nafta, propilena, polipropilena, etilena, polietilena, butadiene, benzena, dan produk turunan petrokimia lainnya. "
+            "Perhatikan faktor harga minyak mentah sebagai bahan baku, permintaan dari industri manufaktur dan plastik, kapasitas produksi, gangguan pasokan, serta dinamika harga di pasar Asia yang memengaruhi harga produk petrokimia. "
+            "Kecualikan berita yang bersifat kasus hukum, kriminal, atau politik yang tidak berdampak langsung pada harga produk petrokimia."
+        ),
+    },
+
+    "Volume Produk Petrokimia": {
+        "target_sheets": ["(News)Crackspread Non-BBM"],
+        "output_sheet": "(Summary)Volume Petrokimia",
+        "has_data_sentiment": False,
+        "role_prompt": "analis pasar petrokimia dan volume produksi/permintaan produk kilang non-BBM di Indonesia",
+        "spesific_prompt": (
+            "Gunakan bahasa yang ringkas, faktual, dan netral tanpa kata hiperbolik seperti \"signifikan\", \"dahsyat\", atau sejenisnya. "
+            "Setiap poin ringkasan harus terdiri dari satu kalimat. "
+            "Fokus khusus pada volume produksi, ekspor-impor, kapasitas kilang, serta permintaan pasar untuk produk petrokimia seperti nafta, propilena, polipropilena, etilena, polietilena, dan produk turunan lainnya. "
+            "Perhatikan faktor kapasitas produksi kilang, gangguan operasional (maintenance/turnaround), kebijakan ekspor-impor, serta pertumbuhan permintaan industri yang memengaruhi volume produk petrokimia. "
+            "Kecualikan berita yang bersifat kasus hukum, kriminal, atau politik yang tidak berdampak langsung pada volume produk petrokimia."
+        ),
+    },
 }
 
 
