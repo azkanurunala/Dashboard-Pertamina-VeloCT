@@ -63,25 +63,27 @@ FROM data_iaea_electrical;
 
 -- ── CRACKSPREAD / CRACKSPEED VIEWS ───────────────────────────────────────────
 
--- NOTE: table columns are lowercase (unquoted DDL folds case in PostgreSQL);
--- alias to the exact mixed-case names Power Query expects.
+-- NOTE: data_crackspread_bbm/_year have TWO sets of price columns — an
+-- unquoted-DDL lowercase set (price_ron92...) that is always NULL (dead/ghost,
+-- never written), and the quoted mixed-case set ("price_RON92"...) that
+-- neon_helper.py actually upserts into. Select the quoted set only.
 CREATE OR REPLACE VIEW vw_crackspread_bbm AS
 SELECT year, month,
-       price_ron92   AS "price_RON92",
-       price_ron95   AS "price_RON95",
-       price_ron97   AS "price_RON97",
-       price_fo05    AS "price_FO05",
-       price_jetkero AS "price_JetKero",
-       price_go50    AS "price_GO50",
-       price_go2500  AS "price_GO2500",
-       price_brent   AS "price_Brent",
-       price_ron92_crackspread   AS "price_RON92_crackspread",
-       price_ron95_crackspread   AS "price_RON95_crackspread",
-       price_ron97_crackspread   AS "price_RON97_crackspread",
-       price_fo05_crackspread    AS "price_FO05_crackspread",
-       price_jetkero_crackspread AS "price_JetKero_crackspread",
-       price_go50_crackspread    AS "price_GO50_crackspread",
-       price_go2500_crackspread  AS "price_GO2500_crackspread"
+       "price_RON92",
+       "price_RON95",
+       "price_RON97",
+       "price_FO05",
+       "price_JetKero",
+       "price_GO50",
+       "price_GO2500",
+       "price_Brent",
+       "price_RON92_crackspread",
+       "price_RON95_crackspread",
+       "price_RON97_crackspread",
+       "price_FO05_crackspread",
+       "price_JetKero_crackspread",
+       "price_GO50_crackspread",
+       "price_GO2500_crackspread"
 FROM data_crackspread_bbm;
 
 CREATE OR REPLACE VIEW vw_crackspread_non_bbm AS
@@ -94,21 +96,21 @@ FROM data_crackspread_non_bbm;
 
 CREATE OR REPLACE VIEW vw_crackspread_bbm_year AS
 SELECT year,
-       price_ron92   AS "price_RON92",
-       price_ron95   AS "price_RON95",
-       price_ron97   AS "price_RON97",
-       price_fo05    AS "price_FO05",
-       price_jetkero AS "price_JetKero",
-       price_go50    AS "price_GO50",
-       price_go2500  AS "price_GO2500",
-       price_brent   AS "price_Brent",
-       price_ron92_crackspread   AS "price_RON92_crackspread",
-       price_ron95_crackspread   AS "price_RON95_crackspread",
-       price_ron97_crackspread   AS "price_RON97_crackspread",
-       price_fo05_crackspread    AS "price_FO05_crackspread",
-       price_jetkero_crackspread AS "price_JetKero_crackspread",
-       price_go50_crackspread    AS "price_GO50_crackspread",
-       price_go2500_crackspread  AS "price_GO2500_crackspread"
+       "price_RON92",
+       "price_RON95",
+       "price_RON97",
+       "price_FO05",
+       "price_JetKero",
+       "price_GO50",
+       "price_GO2500",
+       "price_Brent",
+       "price_RON92_crackspread",
+       "price_RON95_crackspread",
+       "price_RON97_crackspread",
+       "price_FO05_crackspread",
+       "price_JetKero_crackspread",
+       "price_GO50_crackspread",
+       "price_GO2500_crackspread"
 FROM data_crackspread_bbm_year;
 
 CREATE OR REPLACE VIEW vw_crackspeed_bbm AS
