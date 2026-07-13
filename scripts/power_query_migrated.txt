@@ -1234,13 +1234,17 @@ in
 // ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (Data)Crackspread_BBM
 // NOTE: "Bulan Tanggal" is a computed column derived from year+month — no change needed.
+// NOTE: filtered to Jul 2023 onward (min: Jul 2023).
+// NOTE: source view vw_crackspread_bbm fixed 2026-07-13 — was reading dead lowercase
+// ghost columns (always NULL), now reads the real mixed-case columns. See create_views.sql.
 
 (Data)Crackspread_BBM
 
 let
     Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
     vw_crackspread_bbm = Source{[Schema="public",Item="vw_crackspread_bbm"]}[Data],
-    #"Added Custom" = Table.AddColumn(vw_crackspread_bbm, "Bulan Tanggal", each #date([year], [month], 1)),
+    #"Filtered Rows" = Table.SelectRows(vw_crackspread_bbm, each [year] > 2023 or ([year] = 2023 and [month] >= 7)),
+    #"Added Custom" = Table.AddColumn(#"Filtered Rows", "Bulan Tanggal", each #date([year], [month], 1)),
     #"Changed Type" = Table.TransformColumnTypes(#"Added Custom",{{"year", Int64.Type}, {"month", Int64.Type}, {"price_RON92", type number}, {"price_RON95", type number}, {"price_RON97", type number}, {"price_FO05", type number}, {"price_JetKero", type number}, {"price_GO50", type number}, {"price_GO2500", type number}, {"price_Brent", type number}, {"price_RON92_crackspread", type number}, {"price_RON95_crackspread", type number}, {"price_RON97_crackspread", type number}, {"price_FO05_crackspread", type number}, {"price_JetKero_crackspread", type number}, {"price_GO50_crackspread", type number}, {"price_GO2500_crackspread", type number}, {"Bulan Tanggal", type date}})
 in
     #"Changed Type"
