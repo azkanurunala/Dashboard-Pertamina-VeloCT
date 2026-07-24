@@ -21,44 +21,44 @@ DEFAULT_START_DATE = datetime(2026, 4, 17)
 # Topic Configuration
 
 TOPICS: dict[str, dict] = {
-    # "Nilai Tukar Rupiah": {
-    #     "target_sheets": ["(News)Kurs"],
-    #     "output_sheet": "(Summary)Nilai Tukar Rupiah",
-    #     "role_prompt": "Ekonom",
-    #     "spesific_prompt": (
-    #         "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. "
-    #         "Fokus pada waktu, aktor utama, dan dampaknya secara global atau regional "
-    #         "dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
-    #         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan "
-    #         "em dash/semicolon), dan exclude kasus-kasus hukum!"
-    #     ),
-    # },
-    
-    # "IHSG": {
-    #     "target_sheets": ["(News)IHSG"],
-    #     "output_sheet": "(Summary)IHSG",
-    #     "role_prompt": "Ekonom",
-    #     "spesific_prompt": (
-    #         "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. "
-    #         "Fokus pada waktu, aktor utama, dan dampaknya secara global atau regional "
-    #         "dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
-    #         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan "
-    #         "em dash/semicolon), dan exclude kasus-kasus hukum!"
-    #     ),
-    # },
-    
-    # "Indonia": {
-    #     "target_sheets": ["(News)Indonia"],
-    #     "output_sheet": "(Summary)Indonia",
-    #     "role_prompt": "Ekonom",
-    #     "spesific_prompt": (
-    #         "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. "
-    #         "Fokus pada waktu, aktor utama, dan dampaknya secara global atau regional "
-    #         "dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
-    #         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan "
-    #         "em dash/semicolon), dan exclude kasus-kasus hukum!"
-    #     ),
-    # },
+    "Nilai Tukar Rupiah": {
+        "target_sheets": ["(News)Kurs"],
+        "output_sheet": "(Summary)Nilai Tukar Rupiah",
+        "role_prompt": "Ekonom",
+        "spesific_prompt": (
+            "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. "
+            "Fokus pada waktu, aktor utama, dan dampaknya secara global atau regional "
+            "dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
+            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan "
+            "em dash/semicolon), dan exclude kasus-kasus hukum!"
+        ),
+    },
+
+    "IHSG": {
+        "target_sheets": ["(News)IHSG"],
+        "output_sheet": "(Summary)IHSG",
+        "role_prompt": "Ekonom",
+        "spesific_prompt": (
+            "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. "
+            "Fokus pada waktu, aktor utama, dan dampaknya secara global atau regional "
+            "dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
+            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan "
+            "em dash/semicolon), dan exclude kasus-kasus hukum!"
+        ),
+    },
+
+    "Indonia": {
+        "target_sheets": ["(News)Indonia"],
+        "output_sheet": "(Summary)Indonia",
+        "role_prompt": "Ekonom",
+        "spesific_prompt": (
+            "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. "
+            "Fokus pada waktu, aktor utama, dan dampaknya secara global atau regional "
+            "dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
+            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan "
+            "em dash/semicolon), dan exclude kasus-kasus hukum!"
+        ),
+    },
 }
 
 

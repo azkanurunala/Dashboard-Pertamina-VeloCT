@@ -32,92 +32,92 @@ from news.tempo import scrape_tempo
 
 SINONIM_DICT: dict[str, list[str]] = {
     # ### Makroekonomi ###
-    # "indeks risiko geopolitik ": ["tekanan geopolitik ", "geopolitik "],
-    # "indeks volatilitas ": ["volatilitas "],
-    # "kurs ": ["nilai tukar rupiah ", "dolar ", "kurs rupiah ", "kurs dolar "],
-    # "ihsg ": ["pasar saham "],
-    # "inflasi ": [],
-    # "bi rate ": ["suku bunga ", "bunga bi "],
-    # "indonia ": [],
-    # "indeks sales retail ": ["indeks penjualan ritel ", "indeks ritel ", "indeks penjualan retail ", "indeks retail ", "survei penjualan eceran "],
-    # "indeks kepercayaan konsumen ": ["indeks kepercayaan pelanggan ", "ekspektasi konsumen ", "indeks keyakinan konsumen ", "survei konsumen bi ", "keyakinan konsumen "],
-    # "indeks kinerja manufaktur ": ["kinerja manufaktur ", "pmi manufaktur ", "pmi indonesia "],
-    # "indeks kinerja jasa ": ["kinerja jasa ", "pmi jasa ", "pmi sektor jasa "],
-    # "neraca perdagangan ": ["trade balance ", "neraca dagang "],
-    # "pertumbuhan domestik bruto ": ["PDB ", "pertumbuhan ekonomi ", "produk domestik bruto "],
-    
+    "indeks risiko geopolitik ": ["tekanan geopolitik ", "geopolitik "],
+    "indeks volatilitas ": ["volatilitas "],
+    "kurs ": ["nilai tukar rupiah ", "dolar ", "kurs rupiah ", "kurs dolar "],
+    "ihsg ": ["pasar saham "],
+    "inflasi ": [],
+    "bi rate ": ["suku bunga ", "bunga bi "],
+    "indonia ": [],
+    "indeks sales retail ": ["indeks penjualan ritel ", "indeks ritel ", "indeks penjualan retail ", "indeks retail ", "survei penjualan eceran "],
+    "indeks kepercayaan konsumen ": ["indeks kepercayaan pelanggan ", "ekspektasi konsumen ", "indeks keyakinan konsumen ", "survei konsumen bi ", "keyakinan konsumen "],
+    "indeks kinerja manufaktur ": ["kinerja manufaktur ", "pmi manufaktur ", "pmi indonesia "],
+    "indeks kinerja jasa ": ["kinerja jasa ", "pmi jasa ", "pmi sektor jasa "],
+    "neraca perdagangan ": ["trade balance ", "neraca dagang "],
+    "pertumbuhan domestik bruto ": ["PDB ", "pertumbuhan ekonomi ", "produk domestik bruto "],
+
     # ### Hulu Migas ###
-    # "harga minyak ": [
-    #     "minyak mentah ", "harga minyak mentah ", "icp ", "wti ", "brent ", "dubai crude price ", "dated brent ",
-    # ],
-    # "volume minyak ": [
-    #     "volume bbm ", "minyak mentah ", "lifting minyak ", "produksi minyak ", "impor minyak mentah ",
-    # ],
-    
+    "harga minyak ": [
+        "minyak mentah ", "harga minyak mentah ", "icp ", "wti ", "brent ", "dubai crude price ", "dated brent ",
+    ],
+    "volume minyak ": [
+        "volume bbm ", "minyak mentah ", "lifting minyak ", "produksi minyak ", "impor minyak mentah ",
+    ],
+
     # ### Produk Kilang Pertamina ###
-    # "harga produk kilang pertamina ": [
-    #     "bbm ", "harga kilang pertamina ", "kilang pertamina ", "kilang ", "refinery ", "harga pertamina ",
-    #     "harga bbm pertamina ", "harga pertamax ", "harga pertalite ", "harga solar ", "harga avtur ", "rdmp ",
-    #     "harga bensin ", "harga gasoline ", "harga diesel ",
-    # ],
+    "harga produk kilang pertamina ": [
+        "bbm ", "harga kilang pertamina ", "kilang pertamina ", "kilang ", "refinery ", "harga pertamina ",
+        "harga bbm pertamina ", "harga pertamax ", "harga pertalite ", "harga solar ", "harga avtur ", "rdmp ",
+        "harga bensin ", "harga gasoline ", "harga diesel ",
+    ],
     "volume produk kilang pertamina ": [
         "bbm ", "volume kilang pertamina ", "volume kilang ", "refinery ", "volume pertamina ",
         "kilang pertamina ", "produksi bbm ", "rdmp ", "kapasitas kilang ", "kilang balikpapan ", "kilang tuban ", "impor bbm ",
         "bbm pertamina ", "pertamax ", "pertalite ", "solar ", "avtur ", "produksi kilang ",
     ],
-    # "RON 92 ": [
-    #     "pertamax ", "RON 95 ", "RON 97 ", "Residual FO ", "Fuel Oil", "Jet Fuel ", "Avtur ",
-    #     "Kerosene ", "refinery ", "refined products ", "refining ", "oil products ", "Gasoline ",
-    #     "Heavy Oil ", "Diesel ", "Gasoil ", "Naphtha ", "LPG ", "Biodiesel ", "Biogasoline ",
-    #     "Petroleum Coke ", "Oil price ", "fuel cost ", "fuel price ",
-    # ],
-    
+    "RON 92 ": [
+        "pertamax ", "RON 95 ", "RON 97 ", "Residual FO ", "Fuel Oil", "Jet Fuel ", "Avtur ",
+        "Kerosene ", "refinery ", "refined products ", "refining ", "oil products ", "Gasoline ",
+        "Heavy Oil ", "Diesel ", "Gasoil ", "Naphtha ", "LPG ", "Biodiesel ", "Biogasoline ",
+        "Petroleum Coke ", "Oil price ", "fuel cost ", "fuel price ",
+    ],
+
     # ### Petrokimia Hulu ###
-    # "Petrochemical ": [
-    #     "chemical ", "aromatic ", "olefin ", "polymer ", "LPG ",
-    #     "Paraxylene ", "Propylene ", "Benzene ", "Green Coke ",
-    #     "petrochemicals ", "petrokimia ", "petrochemical complex ",
-    #     "aromatic compound ", "BTX aromatic ", "senyawa aromatik ",
-    #     "green petroleum coke ", "petroleum coke ", "polyethylene", 
-    #     "polypropylene", "etilena", "propilena",
-    # ],
-    
+    "Petrochemical ": [
+        "chemical ", "aromatic ", "olefin ", "polymer ", "LPG ",
+        "Paraxylene ", "Propylene ", "Benzene ", "Green Coke ",
+        "petrochemicals ", "petrokimia ", "petrochemical complex ",
+        "aromatic compound ", "BTX aromatic ", "senyawa aromatik ",
+        "green petroleum coke ", "petroleum coke ", "polyethylene",
+        "polypropylene", "etilena", "propilena",
+    ],
+
     # ### Bioenergi ###
-    # "biodiesel ": [
-    #     "minyak kelapa sawit ", "crude palm oil ", "CPO ", "minyak sawit ", "kelapa sawit ", "sawit ",
-    #     "HIP BBN Biodesel ", "biodiesel ", "harga fame ", "harga indeks pasar biodiesel ", "b40 ", "b50 ", "biodiesel ", "biofuel ",
-    # ],
-    # "SAF ": [
-    #     "UCO ", "CORSIA ", "SAFCo ", "biorefinery ", "minyak jelantah ", "bioavtur ",
-    #     "bioavtur pertamina", "pome",
-    # ],
-    # "bioetanol ": [
-    #     "tebu ", "gula ", "molase ", "etanol ", "ethanol ", "bioethanol ", "tetes tebu ",
-    #     "gula tebu ", "industri gula ",
-    # ],
-        
+    "biodiesel ": [
+        "minyak kelapa sawit ", "crude palm oil ", "CPO ", "minyak sawit ", "kelapa sawit ", "sawit ",
+        "HIP BBN Biodesel ", "biodiesel ", "harga fame ", "harga indeks pasar biodiesel ", "b40 ", "b50 ", "biodiesel ", "biofuel ",
+    ],
+    "SAF ": [
+        "UCO ", "CORSIA ", "SAFCo ", "biorefinery ", "minyak jelantah ", "bioavtur ",
+        "bioavtur pertamina", "pome",
+    ],
+    "bioetanol ": [
+        "tebu ", "gula ", "molase ", "etanol ", "ethanol ", "bioethanol ", "tetes tebu ",
+        "gula tebu ", "industri gula ",
+    ],
+
     ### Ketenagalistrikan, energi baru dan terbarukan ###
-    # "RUPTL ": [
-    #     "PLN ", "IPP ", "PJBL ", "ketenagalistrikan ",
-    #     "batubara ", "batu bara ", "panas bumi ", "surya ", "nuklir ",
-    #     "BESS ", "PLTA ", "PLTAL ", "PLTB ", "PLTBg ", "PLTBm ", "PLTD ", "PLTG ",
-    #     "PLTGU ", "PLTM ", "PLTMG ", "PLTN ", "PLTP ", "PLTS ", "PLTSa ", "PLTU ",
-    #     "transmisi listrik ", "transmisi tenaga listrik ", 
-    #     "panel surya ", "energi surya ", "tenaga surya ",
-    # ],
-    # "LCOE ": [
-    #     "harga jual listrik EBT ", "harga listrik EBT ",
-    #     "PLTA ", "PLTS ", "PLTB ", "BESS ", "PLTBm ", "panas bumi ", 
-    #     "PLTP ", "PLTBg ", "PLN ", "IPP ", "PJBL ",
-    # ],
-    # "WTE ": [
-    #     "waste to energy ", "sampah ", "sampah jadi listrik ", 
-    #     "sampah jadi energi ", "insinerator ", "PSEL "
-    # ],
-    # "Pembangkit listrik nuklir ": [
-    #     "PLTN ", "pembangkit nuklir ", "reaktor nuklir ", 
-    #     "energi nuklir ", "nuklir ",
-    # ],
+    "RUPTL ": [
+        "PLN ", "IPP ", "PJBL ", "ketenagalistrikan ",
+        "batubara ", "batu bara ", "panas bumi ", "surya ", "nuklir ",
+        "BESS ", "PLTA ", "PLTAL ", "PLTB ", "PLTBg ", "PLTBm ", "PLTD ", "PLTG ",
+        "PLTGU ", "PLTM ", "PLTMG ", "PLTN ", "PLTP ", "PLTS ", "PLTSa ", "PLTU ",
+        "transmisi listrik ", "transmisi tenaga listrik ",
+        "panel surya ", "energi surya ", "tenaga surya ",
+    ],
+    "LCOE ": [
+        "harga jual listrik EBT ", "harga listrik EBT ",
+        "PLTA ", "PLTS ", "PLTB ", "BESS ", "PLTBm ", "panas bumi ",
+        "PLTP ", "PLTBg ", "PLN ", "IPP ", "PJBL ",
+    ],
+    "WTE ": [
+        "waste to energy ", "sampah ", "sampah jadi listrik ",
+        "sampah jadi energi ", "insinerator ", "PSEL "
+    ],
+    "Pembangkit listrik nuklir ": [
+        "PLTN ", "pembangkit nuklir ", "reaktor nuklir ",
+        "energi nuklir ", "nuklir ",
+    ],
 }
 
 
@@ -392,42 +392,42 @@ NUKLIR_KEYWORDS: list[str] = ["nuklir ", "PLTN "]
 
 SUMBER_DICT: dict[str, list] = {
     # ### Makroekonomi ###
-    # "indeks risiko geopolitik ": [main_bloomberg_technoz],
-    # "indeks volatilitas ": [main_bloomberg_technoz],
-    # "kurs ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
-    # "ihsg ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
-    # "inflasi ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bps],
-    # "bi rate ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
-    # "indonia ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
-    # "indeks sales retail ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
-    # "indeks kepercayaan konsumen ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
-    # "indeks kinerja manufaktur ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
-    # "indeks kinerja jasa ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
-    # "neraca perdagangan ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bps],
-    # "pertumbuhan domestik bruto ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bps],
-    
+    "indeks risiko geopolitik ": [main_bloomberg_technoz],
+    "indeks volatilitas ": [main_bloomberg_technoz],
+    "kurs ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    "ihsg ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    "inflasi ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bps],
+    "bi rate ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
+    "indonia ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
+    "indeks sales retail ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
+    "indeks kepercayaan konsumen ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
+    "indeks kinerja manufaktur ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    "indeks kinerja jasa ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
+    "neraca perdagangan ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bps],
+    "pertumbuhan domestik bruto ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bps],
+
     # ### Hulu Migas ###
-    # "harga minyak ": [scrape_kontan_bbm, main_bisnis_indonesia, main_bloomberg_technoz],
-    # "volume minyak ": [scrape_kontan_bbm, main_bisnis_indonesia, main_bloomberg_technoz],
-    
+    "harga minyak ": [scrape_kontan_bbm, main_bisnis_indonesia, main_bloomberg_technoz],
+    "volume minyak ": [scrape_kontan_bbm, main_bisnis_indonesia, main_bloomberg_technoz],
+
     # ### Produk Kilang Pertamina ###
-    # "harga produk kilang pertamina ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
+    "harga produk kilang pertamina ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
     "volume produk kilang pertamina ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    # "RON 92 ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    
+    "RON 92 ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
+
     # ## Petrokimia Hulu ###
-    # "Petrochemical ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    
+    "Petrochemical ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
+
     # ## Bioenergi
-    # "biodiesel ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    # "SAF ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    # "bioetanol ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    
+    "biodiesel ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
+    "SAF ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
+    "bioetanol ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
+
     ### Ketenagalistrikan, EBT ###
-    # "RUPTL ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    # "LCOE ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    # "WTE ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    # "Pembangkit listrik nuklir ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
+    "RUPTL ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
+    "LCOE ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
+    "WTE ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
+    "Pembangkit listrik nuklir ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
 }
 
 
@@ -435,82 +435,82 @@ SUMBER_DICT: dict[str, list] = {
 
 SHEET_TO_KEYWORD: dict[str, str] = {
     # ### Makroekonomi ###
-    # "(News)Indeks Risiko Geopolitik": "indeks risiko geopolitik ",
-    # "(News)Indeks Volatilitas": "indeks volatilitas ",
-    # "(News)Kurs": "kurs ",
-    # "(News)IHSG": "ihsg ",
-    # "(News)Inflasi": "inflasi ",
-    # "(News)BI Rate": "bi rate ",
-    # "(News)Indonia": "indonia ",
-    # "(News)Indeks Penjualan Ritel": "indeks sales retail ",
-    # "(News)Indeks Kepercayaan Knsmn": "indeks kepercayaan konsumen ",
-    # "(News)Indeks Kinerja Manufaktur": "indeks kinerja manufaktur ",
-    # "(News)Indeks Kinerja Jasa": "indeks kinerja jasa ",
-    # "(News)Neraca Perdagangan": "neraca perdagangan ",
-    # "(News)PDB": "pertumbuhan domestik bruto ",
-    
+    "(News)Indeks Risiko Geopolitik": "indeks risiko geopolitik ",
+    "(News)Indeks Volatilitas": "indeks volatilitas ",
+    "(News)Kurs": "kurs ",
+    "(News)IHSG": "ihsg ",
+    "(News)Inflasi": "inflasi ",
+    "(News)BI Rate": "bi rate ",
+    "(News)Indonia": "indonia ",
+    "(News)Indeks Penjualan Ritel": "indeks sales retail ",
+    "(News)Indeks Kepercayaan Knsmn": "indeks kepercayaan konsumen ",
+    "(News)Indeks Kinerja Manufaktur": "indeks kinerja manufaktur ",
+    "(News)Indeks Kinerja Jasa": "indeks kinerja jasa ",
+    "(News)Neraca Perdagangan": "neraca perdagangan ",
+    "(News)PDB": "pertumbuhan domestik bruto ",
+
     # ### Hulu Migas ###
-    # "(News)Harga Minyak": "harga minyak ",
-    # "(News)Volume Minyak": "volume minyak ",
-    
+    "(News)Harga Minyak": "harga minyak ",
+    "(News)Volume Minyak": "volume minyak ",
+
     # ### Produk Kilang Pertamina ###
-    # "(News)Harga Produk Kilang": "harga produk kilang pertamina ",
+    "(News)Harga Produk Kilang": "harga produk kilang pertamina ",
     "(News)Volume Produk Kilang": "volume produk kilang pertamina ",
-    # "(News)Crackspread BBM": "RON 92 ",
-    
+    "(News)Crackspread BBM": "RON 92 ",
+
     # ### Petrokimia Hulu ###
-    # "(News)Crackspread Non-BBM": "Petrochemical ",
-    
+    "(News)Crackspread Non-BBM": "Petrochemical ",
+
     # ### Bioenenergi ###
-    # "(News)Biodiesel": "biodiesel ",
-    # "(News)SAF": "SAF ",
-    # "(News)Bioetanol": "bioetanol ",
-    
+    "(News)Biodiesel": "biodiesel ",
+    "(News)SAF": "SAF ",
+    "(News)Bioetanol": "bioetanol ",
+
     ### Ketenagalistrikan, EBT ###
-    # "(News)RUPTL": "RUPTL ",
-    # "(News)EBT": "LCOE ",
-    # "(News)WTE": "WTE ",
-    # "(News)Nuklir": "Pembangkit listrik nuklir ",
+    "(News)RUPTL": "RUPTL ",
+    "(News)EBT": "LCOE ",
+    "(News)WTE": "WTE ",
+    "(News)Nuklir": "Pembangkit listrik nuklir ",
 }
 
 ACTIVE_SHEETS: list[str] = [
     # ### Makroekonomi ###
-    # "(News)Indeks Risiko Geopolitik",
-    # "(News)Indeks Volatilitas",
-    # "(News)Kurs",
-    # "(News)IHSG",
-    # "(News)Inflasi",
-    # "(News)BI Rate",
-    # "(News)Indonia",
-    # "(News)Indeks Penjualan Ritel",
-    # "(News)Indeks Kepercayaan Knsmn",
-    # "(News)Indeks Kinerja Manufaktur",
-    # "(News)Indeks Kinerja Jasa",
-    # "(News)Neraca Perdagangan",
-    # "(News)PDB",
+    "(News)Indeks Risiko Geopolitik",
+    "(News)Indeks Volatilitas",
+    "(News)Kurs",
+    "(News)IHSG",
+    "(News)Inflasi",
+    "(News)BI Rate",
+    "(News)Indonia",
+    "(News)Indeks Penjualan Ritel",
+    "(News)Indeks Kepercayaan Knsmn",
+    "(News)Indeks Kinerja Manufaktur",
+    "(News)Indeks Kinerja Jasa",
+    "(News)Neraca Perdagangan",
+    "(News)PDB",
 
     ### Hulu Migas ###
-    # "(News)Harga Minyak",
-    # "(News)Volume Minyak",
-    
+    "(News)Harga Minyak",
+    "(News)Volume Minyak",
+
     # ### Produk Kilang Pertamina ###
-    # "(News)Harga Produk Kilang",
+    "(News)Harga Produk Kilang",
     "(News)Volume Produk Kilang",
-    # "(News)Crackspread BBM",
-    
+    "(News)Crackspread BBM",
+
     # ### Petrokimia Hulu ###
-    # "(News)Crackspread Non-BBM",
-    
+    "(News)Crackspread Non-BBM",
+
     # ### Bioenergi ###
-    # "(News)Biodiesel",
-    # "(News)SAF",
-    # "(News)Bioetanol",
-    
+    "(News)Biodiesel",
+    "(News)SAF",
+    "(News)Bioetanol",
+
     ### Ketenagalistrikan, EBT ###
-    # "(News)RUPTL",
-    # "(News)EBT",
-    # "(News)WTE",
-    # "(News)Nuklir",
+    "(News)RUPTL",
+    "(News)EBT",
+    "(News)WTE",
+    "(News)Nuklir",
 ]
 
 
