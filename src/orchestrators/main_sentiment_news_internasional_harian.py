@@ -33,6 +33,19 @@ TOPICS: dict[str, dict] = {
             "em dash/semicolon), dan exclude kasus-kasus hukum!"
         ),
     },
+
+    "Indeks Risiko Geopolitik": {
+        "target_sheets": ["(News)Indeks Risiko Geopolitik"],
+        "output_sheet": "(Summary)Idx Risiko Geopolitik",
+        "role_prompt": "Ekonom",
+        "spesific_prompt": (
+            "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. "
+            "Fokus pada waktu, aktor utama, dan dampaknya secara global atau regional "
+            "dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
+            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan "
+            "em dash/semicolon), dan exclude kasus-kasus hukum!"
+        ),
+    },
 }
 
 

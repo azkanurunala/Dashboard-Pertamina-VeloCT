@@ -27,219 +27,219 @@ SUMMARY_WINDOW_DAYS = 6
 # Topic Configuration
 
 TOPICS: dict[str, dict] = {
-    # "Indeks Risiko Geopolitik": {
-    #     "target_sheets": ["(News)Indeks Risiko Geopolitik"],
-    #     "output_sheet": "(Summary)Idx Risiko Geopolitik",
-    #     "has_data_sentiment": False,
-    #     "role_prompt" : "Ekonom",
-    #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
-    #                         "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
-    #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
-    # },
+    "Indeks Risiko Geopolitik": {
+        "target_sheets": ["(News)Indeks Risiko Geopolitik"],
+        "output_sheet": "(Summary)Idx Risiko Geopolitik",
+        "has_data_sentiment": False,
+        "role_prompt" : "Ekonom",
+        "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
+                            "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
+                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
+    },
 
-    # "Inflasi": {
-    #     "target_sheets": ["(News)Inflasi"],
-    #     "output_sheet": "(Summary)Inflasi",
-    #     "has_data_sentiment": False,
-    #     "role_prompt" : "Ekonom",
-    #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
-    #                         "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
-    #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
-    # },
+    "Inflasi": {
+        "target_sheets": ["(News)Inflasi"],
+        "output_sheet": "(Summary)Inflasi",
+        "has_data_sentiment": False,
+        "role_prompt" : "Ekonom",
+        "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
+                            "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
+                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
+    },
 
-    # "BI Rate": {
-    #     "target_sheets": ["(News)BI Rate"],
-    #     "output_sheet": "(Summary)BI-Rate",
-    #     "has_data_sentiment": False,
-    #     "role_prompt" : "Ekonom",
-    #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
-    #                         "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
-    #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
-    # },
+    "BI Rate": {
+        "target_sheets": ["(News)BI Rate"],
+        "output_sheet": "(Summary)BI-Rate",
+        "has_data_sentiment": False,
+        "role_prompt" : "Ekonom",
+        "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
+                            "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
+                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
+    },
 
-    # "Indeks Penjualan Ritel": {
-    #     "target_sheets": ["(News)Indeks Penjualan Ritel"],
-    #     "output_sheet": "(Summary)Idx Penjualan Ritel",
-    #     "has_data_sentiment": False,
-    #     "role_prompt" : "Ekonom",
-    #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
-    #                         "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
-    #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
-    # },
+    "Indeks Penjualan Ritel": {
+        "target_sheets": ["(News)Indeks Penjualan Ritel"],
+        "output_sheet": "(Summary)Idx Penjualan Ritel",
+        "has_data_sentiment": False,
+        "role_prompt" : "Ekonom",
+        "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
+                            "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
+                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
+    },
 
-    # "Indeks Kepercayaan Konsumen": {
-    #     "target_sheets": ["(News)Indeks Kepercayaan Knsmn"],
-    #     "output_sheet": "(Summary)Idx Kepercayaan Konsumen",
-    #     "has_data_sentiment": False,
-    #     "role_prompt" : "Ekonom",
-    #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
-    #                         "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
-    #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
-    # },
+    "Indeks Kepercayaan Konsumen": {
+        "target_sheets": ["(News)Indeks Kepercayaan Knsmn"],
+        "output_sheet": "(Summary)Idx Kepercayaan Konsum",
+        "has_data_sentiment": False,
+        "role_prompt" : "Ekonom",
+        "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
+                            "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
+                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
+    },
 
-    # "Indeks PMI": {
-    #     "target_sheets": ["(News)Indeks Kinerja Manufaktur", "(News)Indeks Kinerja Jasa"],
-    #     "output_sheet": "(Summary)Idx PMI",
-    #     "has_data_sentiment": False,
-    #     "role_prompt" : "Ekonom",
-    #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
-    #                         "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
-    #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
-    # },
+    "Indeks PMI": {
+        "target_sheets": ["(News)Indeks Kinerja Manufaktur", "(News)Indeks Kinerja Jasa"],
+        "output_sheet": "(Summary)Idx PMI",
+        "has_data_sentiment": False,
+        "role_prompt" : "Ekonom",
+        "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
+                            "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
+                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
+    },
 
-    # "Neraca Perdagangan": {
-    #     "target_sheets": ["(News)Neraca Perdagangan"],
-    #     "output_sheet": "(Summary)Neraca Perdagangan",
-    #     "has_data_sentiment": False,
-    #     "role_prompt" : "Ekonom",
-    #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
-    #                         "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
-    #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
-    # },
+    "Neraca Perdagangan": {
+        "target_sheets": ["(News)Neraca Perdagangan"],
+        "output_sheet": "(Summary)Neraca Perdagangan",
+        "has_data_sentiment": False,
+        "role_prompt" : "Ekonom",
+        "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
+                            "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
+                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan exclude kasus-kasus hukum!"
+    },
 
-    # "PDB": {
-    #     "target_sheets": ["(News)PDB"],
-    #     "output_sheet": "(Summary)PDB",
-    #     "has_data_sentiment": False,
-    #     "role_prompt" : "Ekonom",
-    #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
-    #                         "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
-    #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan Gunakan satuan dan "
-    #                         "waktu secara konsisten (USD/bbl, mb/d, kuartal, tahun). Dan exclude kasus-kasus hukum!"
-    # },
+    "PDB": {
+        "target_sheets": ["(News)PDB"],
+        "output_sheet": "(Summary)PDB",
+        "has_data_sentiment": False,
+        "role_prompt" : "Ekonom",
+        "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
+                            "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
+                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan Gunakan satuan dan "
+                            "waktu secara konsisten (USD/bbl, mb/d, kuartal, tahun). Dan exclude kasus-kasus hukum!"
+    },
 
-    # "Harga Minyak": {
-    #     "target_sheets": ["(News)Harga Minyak"],
-    #     "output_sheet": "(Summary)Harga Minyak",
-    #     "has_data_sentiment": False,
-    #     "role_prompt" : "industri minyak dan gas",
-    #     "spesific_prompt": "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama "
-    #                        "yang mempengaruhi HARGA minyak. Fokus pada pergerakan harga, faktor "
-    #                        "pendorong harga (supply shock, kebijakan OPEC, sanksi, geopolitik), "
-    #                        "dan level harga terkini (USD/bbl). Berikan data kuantitatif bila ada. "
-    #                        "Gaya Bahasa: Factual dan profesional, tanpa opini atau spekulasi, "
-    #                        "hindari tanda baca berlebihan, gunakan satuan konsisten (USD/bbl). "
-    #                        "Exclude kasus-kasus hukum!"
-    # },
+    "Harga Minyak": {
+        "target_sheets": ["(News)Harga Minyak"],
+        "output_sheet": "(Summary)Harga Minyak",
+        "has_data_sentiment": False,
+        "role_prompt" : "industri minyak dan gas",
+        "spesific_prompt": "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama "
+                           "yang mempengaruhi HARGA minyak. Fokus pada pergerakan harga, faktor "
+                           "pendorong harga (supply shock, kebijakan OPEC, sanksi, geopolitik), "
+                           "dan level harga terkini (USD/bbl). Berikan data kuantitatif bila ada. "
+                           "Gaya Bahasa: Factual dan profesional, tanpa opini atau spekulasi, "
+                           "hindari tanda baca berlebihan, gunakan satuan konsisten (USD/bbl). "
+                           "Exclude kasus-kasus hukum!"
+    },
 
-    # "Volume Minyak": {
-    #     "target_sheets": ["(News)Volume Minyak"],
-    #     "output_sheet": "(Summary)Volume Minyak",
-    #     "has_data_sentiment": False,
-    #     "role_prompt" : "industri minyak dan gas",
-    #     "spesific_prompt": "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama "
-    #                        "yang mempengaruhi VOLUME/PRODUKSI minyak. Fokus pada lifting, produksi, "
-    #                        "impor/ekspor, kapasitas kilang, dan kuota produksi (mb/d). "
-    #                        "Berikan data kuantitatif bila ada. "
-    #                        "Gaya Bahasa: Factual dan profesional, tanpa opini atau spekulasi, "
-    #                        "hindari tanda baca berlebihan, gunakan satuan konsisten (mb/d, bbl). "
-    #                        "Exclude kasus-kasus hukum!"
-    # },
+    "Volume Minyak": {
+        "target_sheets": ["(News)Volume Minyak"],
+        "output_sheet": "(Summary)Volume Minyak",
+        "has_data_sentiment": False,
+        "role_prompt" : "industri minyak dan gas",
+        "spesific_prompt": "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama "
+                           "yang mempengaruhi VOLUME/PRODUKSI minyak. Fokus pada lifting, produksi, "
+                           "impor/ekspor, kapasitas kilang, dan kuota produksi (mb/d). "
+                           "Berikan data kuantitatif bila ada. "
+                           "Gaya Bahasa: Factual dan profesional, tanpa opini atau spekulasi, "
+                           "hindari tanda baca berlebihan, gunakan satuan konsisten (mb/d, bbl). "
+                           "Exclude kasus-kasus hukum!"
+    },
 
-    # "Harga Produk Kilang": {
-    #     "target_sheets": ["(News)Harga Produk Kilang"],
-    #     "output_sheet": "(Summary)Harga Produk Kilang",
-    #     "has_data_sentiment": False,
-    #     "role_prompt" : "industri minyak dan gas",
-    #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
-    #                         "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
-    #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan Gunakan satuan dan "
-    #                         "waktu secara konsisten (USD/bbl, mb/d, kuartal, tahun). Dan exclude kasus-kasus hukum!"
-    # },
+    "Harga Produk Kilang": {
+        "target_sheets": ["(News)Harga Produk Kilang"],
+        "output_sheet": "(Summary)Harga Produk Kilang",
+        "has_data_sentiment": False,
+        "role_prompt" : "industri minyak dan gas",
+        "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
+                            "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
+                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan Gunakan satuan dan "
+                            "waktu secara konsisten (USD/bbl, mb/d, kuartal, tahun). Dan exclude kasus-kasus hukum!"
+    },
 
-    # "Volume Produk Kilang": {
-    #     "target_sheets": ["(News)Volume Produk Kilang"],
-    #     "output_sheet": "(Summary)Volume Produk Kilang",
-    #     "has_data_sentiment": False,
-    #     "role_prompt" : "industri minyak dan gas",
-    #     "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
-    #                         "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
-    #                         "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan Gunakan satuan dan "
-    #                         "waktu secara konsisten (USD/bbl, mb/d, kuartal, tahun). Dan exclude kasus-kasus hukum!"
-    # },
+    "Volume Produk Kilang": {
+        "target_sheets": ["(News)Volume Produk Kilang"],
+        "output_sheet": "(Summary)Volume Produk Kilang",
+        "has_data_sentiment": False,
+        "role_prompt" : "industri minyak dan gas",
+        "spesific_prompt" : "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. Fokus pada waktu, aktor utama, dan "
+                            "dampaknya secara global atau regional dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
+                            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan em dash/semicolon), dan Gunakan satuan dan "
+                            "waktu secara konsisten (USD/bbl, mb/d, kuartal, tahun). Dan exclude kasus-kasus hukum!"
+    },
 
-    # "Biodiesel": {
-    #     "target_sheets": ["(News)Biodiesel"],
-    #     "output_sheet": "(Summary)Biodiesel",
-    #     "has_data_sentiment": True,
-    #     "role_prompt" : "analis bioenergi",
-    #     "spesific_prompt" : "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst."
-    #                         "Serta hasil summary fokus pada movement data saja, serta exclude kasus-kasus hukum!"
-    # },
+    "Biodiesel": {
+        "target_sheets": ["(News)Biodiesel"],
+        "output_sheet": "(Summary)Biodiesel",
+        "has_data_sentiment": True,
+        "role_prompt" : "analis bioenergi",
+        "spesific_prompt" : "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst."
+                            "Serta hasil summary fokus pada movement data saja, serta exclude kasus-kasus hukum!"
+    },
 
-    # "Bioetanol": {
-    #     "target_sheets": ["(News)Bioetanol"],
-    #     "output_sheet": "(Summary)Bioetanol",
-    #     "has_data_sentiment": True,
-    #     "role_prompt" : "analis bioenergi",
-    #     "spesific_prompt" : "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst."
-    #                         "Serta hasil summary fokus pada movement data saja, serta exclude kasus-kasus hukum!"
-    # },
+    "Bioetanol": {
+        "target_sheets": ["(News)Bioetanol"],
+        "output_sheet": "(Summary)Bioetanol",
+        "has_data_sentiment": True,
+        "role_prompt" : "analis bioenergi",
+        "spesific_prompt" : "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst."
+                            "Serta hasil summary fokus pada movement data saja, serta exclude kasus-kasus hukum!"
+    },
 
 
-    # "SAF": {
-    #     "target_sheets": ["(News)SAF"],
-    #     "output_sheet": "(Summary)SAF",
-    #     "has_data_sentiment": True,
-    #     "role_prompt" : "analis bioenergi",
-    #     "spesific_prompt" : "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst. "
-    #                         "Batasan: 1 poin hanya 1 kalimat saja, serta exclude kasus-kasus hukum!"
-    # },
+    "SAF": {
+        "target_sheets": ["(News)SAF"],
+        "output_sheet": "(Summary)SAF",
+        "has_data_sentiment": True,
+        "role_prompt" : "analis bioenergi",
+        "spesific_prompt" : "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst. "
+                            "Batasan: 1 poin hanya 1 kalimat saja, serta exclude kasus-kasus hukum!"
+    },
 
-    # "RUPTL": {
-    #     "target_sheets": ["(News)RUPTL"],
-    #     "output_sheet": "(Summary)RUPTL",
-    #     "has_data_sentiment": False,
-    #     "role_prompt" : "analis ketenagalistrikan Indonesia",
-    #     "spesific_prompt" : "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst. "
-    #                         "Batasan: 1 poin hanya 1 kalimat saja, serta exclude kasus-kasus hukum!"
-    # },
-    
-    # "Harga EBT": {
-    #     "target_sheets": ["(News)EBT"],
-    #     "output_sheet": "(Summary)Harga EBT",
-    #     "has_data_sentiment": False,
-    #     "role_prompt": "analis ketenagalistrikan Indonesia",
-    #     "spesific_prompt": "ringkasan menggambarkan situasi yang mempengaruhi HARGA listrik EBT. "
-    #                        "Fokus pada pergerakan harga jual listrik EBT, kebijakan tarif, LCOE, "
-    #                        "dan keputusan PLN/pemerintah terkait harga pembelian listrik EBT. "
-    #                        "Berikan data kuantitatif bila ada (Rp/kWh, USD/kWh). "
-    #                        "Gunakan bahasa ringkas dan netral, 1 poin hanya 1 kalimat, "
-    #                        "exclude kasus hukum!"
-    # },
-    
-    # "Kapasitas EBT": {
-    #     "target_sheets": ["(News)EBT"],
-    #     "output_sheet": "(Summary)Kapasitas EBT",
-    #     "has_data_sentiment": False,
-    #     "role_prompt": "analis ketenagalistrikan Indonesia",
-    #     "spesific_prompt": "ringkasan menggambarkan situasi yang mempengaruhi KAPASITAS pembangkit EBT. "
-    #                        "Fokus pada penambahan kapasitas terpasang, target RUPTL, realisasi COD, "
-    #                        "pipeline proyek EBT, dan kebijakan pengembangan kapasitas EBT. "
-    #                        "Berikan data kuantitatif bila ada (MW, GW). "
-    #                        "Gunakan bahasa ringkas dan netral, 1 poin hanya 1 kalimat, "
-    #                        "exclude kasus hukum!"
-    # },
+    "RUPTL": {
+        "target_sheets": ["(News)RUPTL"],
+        "output_sheet": "(Summary)RUPTL",
+        "has_data_sentiment": False,
+        "role_prompt" : "analis ketenagalistrikan Indonesia",
+        "spesific_prompt" : "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst. "
+                            "Batasan: 1 poin hanya 1 kalimat saja, serta exclude kasus-kasus hukum!"
+    },
 
-    # "WTE": {
-    #     "target_sheets": ["(News)WTE"],
-    #     "output_sheet": "(Summary)WTE",
-    #     "has_data_sentiment": False,
-    #     "role_prompt": "analis ketenagalistrikan Indonesia",
-    #     "spesific_prompt": "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst. "
-    #                        "Batasan: 1 poin hanya 1 kalimat saja, serta exclude kasus-kasus hukum! "
-    #                        "Saat melakukan summary exclude berita-berita yang hanya terkait dengan masalah sampah yang tidak ada kaitannya dengan pembangkit listrik"
-    # },
+    "Harga EBT": {
+        "target_sheets": ["(News)EBT"],
+        "output_sheet": "(Summary)Harga EBT",
+        "has_data_sentiment": False,
+        "role_prompt": "analis ketenagalistrikan Indonesia",
+        "spesific_prompt": "ringkasan menggambarkan situasi yang mempengaruhi HARGA listrik EBT. "
+                           "Fokus pada pergerakan harga jual listrik EBT, kebijakan tarif, LCOE, "
+                           "dan keputusan PLN/pemerintah terkait harga pembelian listrik EBT. "
+                           "Berikan data kuantitatif bila ada (Rp/kWh, USD/kWh). "
+                           "Gunakan bahasa ringkas dan netral, 1 poin hanya 1 kalimat, "
+                           "exclude kasus hukum!"
+    },
 
-    # "Nuklir": {
-    #     "target_sheets": ["(News)Nuklir"],
-    #     "output_sheet": "(Summary)Nuklir",
-    #     "has_data_sentiment": False,
-    #     "role_prompt": "analis ketenagalistrikan Indonesia",
-    #     "spesific_prompt": "Gunakan bahasa ringkas dan netral tanpa kata hiperbolik seperti \"signifikan\", \"dahsyat\", dan sejenisnya. "
-    #                        "Setiap poin ringkasan hanya satu kalimat, serta kecualikan kasus hukum. "
-    #                        "Saat merangkum, abaikan berita tentang nuklir yang hanya terkait senjata dan tidak berkaitan dengan pembangkit listrik."
-    # },
+    "Kapasitas EBT": {
+        "target_sheets": ["(News)EBT"],
+        "output_sheet": "(Summary)Kapasitas EBT",
+        "has_data_sentiment": False,
+        "role_prompt": "analis ketenagalistrikan Indonesia",
+        "spesific_prompt": "ringkasan menggambarkan situasi yang mempengaruhi KAPASITAS pembangkit EBT. "
+                           "Fokus pada penambahan kapasitas terpasang, target RUPTL, realisasi COD, "
+                           "pipeline proyek EBT, dan kebijakan pengembangan kapasitas EBT. "
+                           "Berikan data kuantitatif bila ada (MW, GW). "
+                           "Gunakan bahasa ringkas dan netral, 1 poin hanya 1 kalimat, "
+                           "exclude kasus hukum!"
+    },
+
+    "WTE": {
+        "target_sheets": ["(News)WTE"],
+        "output_sheet": "(Summary)WTE",
+        "has_data_sentiment": False,
+        "role_prompt": "analis ketenagalistrikan Indonesia",
+        "spesific_prompt": "Pada hasil summary jangan menggunakan kalimat yang berlebihan seperti signifikan, dahsyat, dst. "
+                           "Batasan: 1 poin hanya 1 kalimat saja, serta exclude kasus-kasus hukum! "
+                           "Saat melakukan summary exclude berita-berita yang hanya terkait dengan masalah sampah yang tidak ada kaitannya dengan pembangkit listrik"
+    },
+
+    "Nuklir": {
+        "target_sheets": ["(News)Nuklir"],
+        "output_sheet": "(Summary)Nuklir",
+        "has_data_sentiment": False,
+        "role_prompt": "analis ketenagalistrikan Indonesia",
+        "spesific_prompt": "Gunakan bahasa ringkas dan netral tanpa kata hiperbolik seperti \"signifikan\", \"dahsyat\", dan sejenisnya. "
+                           "Setiap poin ringkasan hanya satu kalimat, serta kecualikan kasus hukum. "
+                           "Saat merangkum, abaikan berita tentang nuklir yang hanya terkait senjata dan tidak berkaitan dengan pembangkit listrik."
+    },
 
     # "Crackspread_BBM": {
     #     "target_sheets": ["(News)Crackspread BBM"],
@@ -253,7 +253,7 @@ TOPICS: dict[str, dict] = {
     #         "Kecualikan berita yang bersifat kasus hukum, kriminal, atau politik yang tidak berdampak langsung pada harga atau margin BBM."
     #     ),
     # },
-    
+
     "Crackspread Non-BBM": {
         "target_sheets": ["(News)Crackspread Non-BBM"],
         "output_sheet": "(Summary)Crackspread Non-BBM",
@@ -267,7 +267,7 @@ TOPICS: dict[str, dict] = {
             "Kecualikan berita yang bersifat kasus hukum, kriminal, atau politik yang tidak berdampak langsung pada harga atau margin produk non-BBM."
         ),
     },
-    
+
     "Harga Produk Petrokimia": {
         "target_sheets": ["(News)Crackspread Non-BBM"],
         "output_sheet": "(Summary)Harga Petrokimia",
@@ -631,7 +631,8 @@ def process_topic(
                     cpo_trend = "kenaikan" if comparison["cpo_change"] >= 0 else "penurunan"
                     bio_trend = "kenaikan" if comparison["bio_change"] >= 0 else "penurunan"
                     summary_data = (
-                        f"Pada periode {start_date.date()} sampai {end_date.date()}, "
+                        f"Pada periode {start_date.month}/{start_date.day}/{start_date.year} sampai "
+                        f"{end_date.month}/{end_date.day}/{end_date.year}, "
                         f"rata-rata CPO {comparison['cpo']:.2f} dan rata-rata Biodiesel {comparison['bio']:.2f}. "
                         f"Periode ini mengalami {cpo_trend} {abs(comparison['cpo_change']):.2f}% nilai CPO "
                         f"dan {bio_trend} {abs(comparison['bio_change']):.2f}% biodiesel dibanding bulan sebelumnya."
@@ -679,7 +680,8 @@ def process_topic(
                     summary_data = None
                 else:
                     summary_data = (
-                        f"Pada periode {start_date.date()} sampai {end_date.date()}, "
+                        f"Pada periode {start_date.month}/{start_date.day}/{start_date.year} sampai "
+                        f"{end_date.month}/{end_date.day}/{end_date.year}, "
                         f"rata-rata SAF tercatat {comparison['saf']:.2f} dan rata-rata UCO {comparison['uco']:.2f}. "
                         f"Secara periodik, SAF mengalami {_trend(comparison['saf_change'])} {_fmt_pct(comparison['saf_change'])} "
                         f"dan UCO mengalami {_trend(comparison['uco_change'])} {_fmt_pct(comparison['uco_change'])} dibanding periode sebelumnya."

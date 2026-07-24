@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS news_articles (
     content TEXT,
     source  VARCHAR(100),
     keyword TEXT,
+    matched_rule TEXT,
     UNIQUE (url, topic)
 );
 CREATE INDEX IF NOT EXISTS idx_news_articles_topic ON news_articles (topic);
