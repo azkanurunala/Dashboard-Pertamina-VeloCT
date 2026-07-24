@@ -1,0 +1,419 @@
+// =============================================================================
+// (Summary)* QUERIES ONLY — extracted from power_query_migrated.txt
+// Source: ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech / neondb
+// All 25 queries sorted newest-first (Table.Sort on "Tanggal akhir", Order.Descending).
+//
+// SLICER SORT FIX (do this once per table after refresh, in Power BI Desktop):
+//   Table.Sort above only affects query load order, NOT how the "Rentang_X"
+//   date-range slicer/table visuals sort. Those default to alphabetic sort of
+//   the M/d/yyyy text ("4/10" < "4/17" < "4/24" < "4/3"), which looks ngaco.
+//   Fix: Data view -> click each Rentang_X column -> Column tools ribbon ->
+//   Sort by Column -> pick "Tanggal akhir" (already date-typed, 1:1 with
+//   Rentang_X). Repeat for all 25 tables below.
+// =============================================================================
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Biodiesel
+
+(Summary)Biodiesel
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Biodiesel"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Bioenergi", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Harga Minyak
+
+(Summary)Harga Minyak
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Harga Minyak"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type any}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_HargaMinyak", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Harga Produk Kilang
+// NOTE: original used Int64 intermediate cast; PostgreSQL returns date directly — simplified.
+
+(Summary)Harga Produk Kilang
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Harga Produk Kilang"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type any}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_HargaKilang", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Volume Minyak
+
+(Summary)Volume Minyak
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Volume Minyak"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_VolumeMinyak", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Volume Produk Kilang
+// NOTE: original used Int64 intermediate cast; PostgreSQL returns date directly — simplified.
+
+(Summary)Volume Produk Kilang
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Volume Produk Kilang"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type any}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_VolumeKilang", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)BI-Rate
+// NOTE: original used Int64 intermediate cast; PostgreSQL returns date directly — simplified.
+
+(Summary)BI-Rate
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)BI-Rate"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_birate", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Idx Keyakinan Konsumen
+
+(Summary)Idx Keyakinan Konsumen
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Idx Kepercayaan Konsum"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_IdxKeyakinanKonsumen", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Idx Penjualan Retail
+
+(Summary)Idx Penjualan Retail
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Idx Penjualan Ritel"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_IdxPenjualanRetail", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Idx PMI
+
+(Summary)Idx PMI
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Idx PMI"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_PMI", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Idx Risiko Geopolitik
+
+(Summary)Idx Risiko Geopolitik
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Idx Risiko Geopolitik"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_IdxRisikoGeopolitik", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Idx Volatilitas
+
+(Summary)Idx Volatilitas
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Idx Volatilitas"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_IdxVolatilitas", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)IHSG
+
+(Summary)IHSG
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)IHSG"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_ihsg", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Inflasi
+
+(Summary)Inflasi
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Inflasi"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Inflasi", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Neraca Perdagangan
+
+(Summary)Neraca Perdagangan
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Neraca Perdagangan"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_NeracaPerdagangan", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Nilai Tukar Rupiah
+
+(Summary)Nilai Tukar Rupiah
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Nilai Tukar Rupiah"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_NilaiTukarRupiah", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)PDB
+
+(Summary)PDB
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)PDB"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_PDB", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)JIBOR
+// NOTE: topic is "(Summary)Indonia" — the Excel item name was "(Summary)Indonia"
+
+(Summary)JIBOR
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Indonia"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Jibor", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Bioetanol
+
+(Summary)Bioetanol
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Bioetanol"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Bioetanol", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)RUPTL
+// NOTE: original used Int64 intermediate cast; PostgreSQL returns date directly — simplified.
+
+(Summary)RUPTL
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)RUPTL"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_RUPTL", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)SAF
+
+(Summary)SAF
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)SAF"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_SAF", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Harga EBT
+
+(Summary)Harga EBT
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Harga EBT"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Harga_EBT", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Crackspread_NonBBM
+
+(Summary)Crackspread_NonBBM
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Crackspread Non-BBM"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_CrackspreadNonBBM", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Crackspread_BBM
+
+(Summary)Crackspread_BBM
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Crackspread BBM"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_CrackspreadBBM", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)WTE
+// NOTE: original used type any → type date two-step; PostgreSQL returns date — simplified to one step.
+
+(Summary)WTE
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)WTE"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_WTE", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (Summary)Nuklir
+
+(Summary)Nuklir
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_sentiment = Source{[Schema="public",Item="news_sentiment"]}[Data],
+    Filtered = Table.SelectRows(news_sentiment, each [topic] = "(Summary)Nuklir"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"Tanggal awal", type date}, {"Tanggal akhir", type date}, {"Summary", type text}, {"Summary Data", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Rentang_Nuklir", each Date.ToText([Tanggal awal], "M/d/yyyy") & " : " & Date.ToText([Tanggal akhir], "M/d/yyyy")),
+    #"Sorted Rows" = Table.Sort(#"Added Custom",{{"Tanggal akhir", Order.Descending}})
+in
+    #"Sorted Rows"
