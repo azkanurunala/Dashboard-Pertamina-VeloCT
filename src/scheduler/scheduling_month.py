@@ -30,6 +30,11 @@ DAY_EBT           = 28
 
 def run_monthly_tasks():
     """Jalankan pipeline scraping bulanan: EIA, ESDM, BBM, sampah, nuklir, dan EBT."""
+    # Setiap step tetap diisolasi (satu step gagal tidak menghentikan step lain),
+    # tapi kegagalan dikumpulkan di sini supaya proses exit non-zero dan CI
+    # (GitHub Actions) tampil merah, bukan diam-diam "sukses" padahal step gagal.
+    failed_steps: list[str] = []
+
     try:
         print("\n" + SEPARATOR_THICK)
         print("MONTHLY TASK SCHEDULER")
@@ -57,6 +62,7 @@ def run_monthly_tasks():
             except Exception as e:
                 print(f"[Main] ERROR pada EIA Data Scraping: {e}")
                 traceback.print_exc()
+                failed_steps.append("EIA Data Scraping")
 
             # ===== STEP 2: ESDM Price Data Scraping =====
             print("\n[Main] >>> STEP 2: Menjalankan ESDM Price Data Scraping")
@@ -67,6 +73,7 @@ def run_monthly_tasks():
             except Exception as e:
                 print(f"[Main] ERROR pada ESDM Price Data Scraping: {e}")
                 traceback.print_exc()
+                failed_steps.append("ESDM Price Data Scraping")
 
             # ===== STEP 3: Biodiesel ESDM Data Scraping =====
             print("\n[Main] >>> STEP 3: Menjalankan Biodiesel ESDM Data Scraping")
@@ -77,6 +84,7 @@ def run_monthly_tasks():
             except Exception as e:
                 print(f"[Main] ERROR pada Biodiesel ESDM Data Scraping: {e}")
                 traceback.print_exc()
+                failed_steps.append("Biodiesel ESDM Data Scraping")
 
             # ===== STEP 4: Bioetanol ESDM Data Scraping =====
             print("\n[Main] >>> STEP 4: Menjalankan Bioetanol ESDM Data Scraping")
@@ -87,6 +95,7 @@ def run_monthly_tasks():
             except Exception as e:
                 print(f"[Main] ERROR pada Bioetanol ESDM Data Scraping: {e}")
                 traceback.print_exc()
+                failed_steps.append("Bioetanol ESDM Data Scraping")
 
         # ===== STEP 5: Harga dan Crackspread BBM dan Non BBM (Hanya tanggal 12) =====
         if current_day == DAY_PETROCHEMICAL:
@@ -98,12 +107,14 @@ def run_monthly_tasks():
             except Exception as e:
                 print(f"[Main] ERROR pada Petrochemical Short Term: {e}")
                 traceback.print_exc()
+                failed_steps.append("Petrochemical Short Term")
             try:
                 main_price_forecast_short_term_bbm()
                 print("[Main] Price Forecast Short Term BBM selesai")
             except Exception as e:
                 print(f"[Main] ERROR pada Price Forecast Short Term BBM: {e}")
                 traceback.print_exc()
+                failed_steps.append("Price Forecast Short Term BBM")
         else:
             print("[Main] STEP 5: Harga dan Crackspread BBM dan Non BBM - DILEWATI")
 
@@ -118,12 +129,14 @@ def run_monthly_tasks():
             except Exception as e:
                 print(f"[Main] ERROR pada Scraping Data Sampah: {e}")
                 traceback.print_exc()
+                failed_steps.append("Scraping Data Sampah")
             try:
                 main_iaea_scraper()
                 print("[Main] Scraping Data Nuklir selesai")
             except Exception as e:
                 print(f"[Main] ERROR pada Scraping Data Nuklir: {e}")
                 traceback.print_exc()
+                failed_steps.append("Scraping Data Nuklir")
         else:
             print("\n[Main] STEP 6: Scraping Data Sampah dan Nuklir - DILEWATI")
             print(f"[Main] Tanggal {current_day}, bukan tanggal {DAY_NUCLEAR}. Scraping tidak dijalankan")
@@ -139,16 +152,24 @@ def run_monthly_tasks():
             except Exception as e:
                 print(f"[Main] ERROR pada Scraping Data Kapasitas EBT: {e}")
                 traceback.print_exc()
+                failed_steps.append("Scraping Data Kapasitas EBT")
         else:
             print("[Main] STEP 7: Scraping Data Kapasitas EBT - DILEWATI")
 
         print("\n" + SEPARATOR_THICK)
-        print("MONTHLY TASKS COMPLETED")
+        if failed_steps:
+            print(f"MONTHLY TASKS COMPLETED WITH {len(failed_steps)} FAILED STEP(S): {', '.join(failed_steps)}")
+        else:
+            print("MONTHLY TASKS COMPLETED")
         print(SEPARATOR_THICK + "\n")
 
     except Exception as e:
         print(f"[Main] ERROR FATAL SAAT MENJALANKAN MONTHLY TASKS: {e}")
         traceback.print_exc()
+        sys.exit(1)
+
+    if failed_steps:
+        sys.exit(1)
 
 
 # Script Entry Point

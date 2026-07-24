@@ -26,31 +26,31 @@ from news.the_guardian import scrape_the_guardian as scrape_theguardian
 
 SINONIM_DICT: dict[str, list[str]] = {
     ### Makroekonomi ###
-    # "geopolitical risk ": ["geopolitical pressure "],
-    # "volatility index ": [
-    #     "market volatility ", "financial volatility ", "trade volatility ",
-    # ],
-    # "dxy ": ["dollar index "],
-    # "purchasing manufaktur index ": [
-    #     "manufaktur index ", "purchasing manufacturing index", "manufacturing pmi ",
-    # ],
-    # "purchasing services index ": [
-    #     "services index ", "services pmi ",
-    # ],
+    "geopolitical risk ": ["geopolitical pressure "],
+    "volatility index ": [
+        "market volatility ", "financial volatility ", "trade volatility ",
+    ],
+    "dxy ": ["dollar index "],
+    "purchasing manufaktur index ": [
+        "manufaktur index ", "purchasing manufacturing index", "manufacturing pmi ",
+    ],
+    "purchasing services index ": [
+        "services index ", "services pmi ",
+    ],
 
     # # ### Hulu Migas ###
-    # "oil price ": ["crude oil "],
-    # "oil volume ": ["bbm volume "],
+    "oil price ": ["crude oil "],
+    "oil volume ": ["bbm volume "],
 
     # ## Produk Kilang Pertamina ###
-    # "pertamina oil price ": ["oil price "],
-    # "pertamina oil volume ": ["oil volume ", "bbm volume "],
-    # "RON 92 ": [
-    #     "pertamax ", "RON 95 ", "RON 97 ", "Residual FO ", "Fuel Oil", "Jet Fuel ", "Avtur ",
-    #     "Kerosene ", "refinery ", "refined products ", "refining ", "oil products ", "Gasoline ",
-    #     "Heavy Oil ", "Diesel ", "Gasoil ", "Naphtha ", "LPG ", "Biodiesel ", "Biogasoline ",
-    #     "Petroleum Coke ", "Oil price ", "fuel cost ", "fuel price ",
-    # ],
+    "pertamina oil price ": ["oil price "],
+    "pertamina oil volume ": ["oil volume ", "bbm volume "],
+    "RON 92 ": [
+        "pertamax ", "RON 95 ", "RON 97 ", "Residual FO ", "Fuel Oil", "Jet Fuel ", "Avtur ",
+        "Kerosene ", "refinery ", "refined products ", "refining ", "oil products ", "Gasoline ",
+        "Heavy Oil ", "Diesel ", "Gasoil ", "Naphtha ", "LPG ", "Biodiesel ", "Biogasoline ",
+        "Petroleum Coke ", "Oil price ", "fuel cost ", "fuel price ",
+    ],
 
     # # ### Petrokimia Hulu ###
     "Petrochemical ": [
@@ -63,11 +63,11 @@ SINONIM_DICT: dict[str, list[str]] = {
     ],
 
     # ### Bioenergi ###
-    # "SAF ": [
-    #     "UCO ", "sustainable aviation fuel ", "used cooking oil ",
-    #     "CORSIA ", "SAFCo ", "bioavtur ", "pome ", "SAF plant ", 
-    #     "HEFA facility ", "bio-SAF production ",
-    # ],
+    "SAF ": [
+        "UCO ", "sustainable aviation fuel ", "used cooking oil ",
+        "CORSIA ", "SAFCo ", "bioavtur ", "pome ", "SAF plant ",
+        "HEFA facility ", "bio-SAF production ",
+    ],
 }
 
 # EXCLUDE & FILTER RULES
@@ -151,26 +151,26 @@ POST_FILTER_RULES_INTL: dict[str, dict[str, list[str]]] = {
 
 SUMBER_DICT: dict[str, list] = {
     # ### Makroekonomi ###
-    # "geopolitical risk ": [main_google_news_cnn, main_google_news_cnbc, main_scmp, scrape_theguardian],
-    # "volatility index ": [main_google_news_cnn, main_google_news_cnbc, main_scmp, scrape_theguardian],
-    # "dxy ": [main_google_news_cnn, main_google_news_cnbc],
-    # "purchasing manufaktur index ": [scrape_news_sap],
-    # "purchasing services index ": [scrape_news_sap],
+    "geopolitical risk ": [main_google_news_cnn, main_google_news_cnbc, main_scmp, scrape_theguardian],
+    "volatility index ": [main_google_news_cnn, main_google_news_cnbc, main_scmp, scrape_theguardian],
+    "dxy ": [main_google_news_cnn, main_google_news_cnbc],
+    "purchasing manufaktur index ": [scrape_news_sap],
+    "purchasing services index ": [scrape_news_sap],
 
     # # ### Hulu Migas ###
-    # "oil price ": [scrape_oilprice],
-    # "oil volume ": [scrape_oilprice],
+    "oil price ": [scrape_oilprice],
+    "oil volume ": [scrape_oilprice],
 
     # ### Produk Kilang Pertamina ###
-    # "pertamina oil price ": [scrape_oilprice],
-    # "pertamina oil volume ": [scrape_oilprice],
-    # "RON 92 ": [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn, scrape_energiesmedia, scrape_bioenergytimes, scrape_theguardian],
+    "pertamina oil price ": [scrape_oilprice],
+    "pertamina oil volume ": [scrape_oilprice],
+    "RON 92 ": [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn, scrape_energiesmedia, scrape_bioenergytimes, scrape_theguardian],
 
     # # ### Petrokimia Hulu ###
     "Petrochemical ": [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn, scrape_energiesmedia, scrape_bioenergytimes],
 
     # ### Bioenergi ###
-    # "SAF ": [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn],
+    "SAF ": [scrape_news_sap, main_google_news_cnbc, main_google_news_cnn],
 }
 
 
@@ -178,50 +178,50 @@ SUMBER_DICT: dict[str, list] = {
 
 SHEET_TO_KEYWORD: dict[str, str] = {
     # ### Makroekonomi ###
-    # "(News)Indeks Risiko Geopolitik": "geopolitical risk ",
-    # "(News)Indeks Volatilitas": "volatility index ",
-    # "(News)Kurs": "dxy ",
-    # "(News)Indeks Kinerja Manufaktur": "purchasing manufaktur index ",
-    # "(News)Indeks Kinerja Jasa": "purchasing services index ",
+    "(News)Indeks Risiko Geopolitik": "geopolitical risk ",
+    "(News)Indeks Volatilitas": "volatility index ",
+    "(News)Kurs": "dxy ",
+    "(News)Indeks Kinerja Manufaktur": "purchasing manufaktur index ",
+    "(News)Indeks Kinerja Jasa": "purchasing services index ",
 
     # # ### Hulu Migas ###
-    # "(News)Harga Minyak": "oil price ",
-    # "(News)Volume Minyak": "oil volume ",
+    "(News)Harga Minyak": "oil price ",
+    "(News)Volume Minyak": "oil volume ",
 
     # ### Produk Kilang Pertamina ###
-    # "(News)Harga Produk Kilang": "pertamina oil price ",
-    # "(News)Volume Produk Kilang": "pertamina oil volume ",
-    # "(News)Crackspread BBM": "RON 92 ",
+    "(News)Harga Produk Kilang": "pertamina oil price ",
+    "(News)Volume Produk Kilang": "pertamina oil volume ",
+    "(News)Crackspread BBM": "RON 92 ",
 
     # # ### Petrokimia Hulu ###
     "(News)Crackspread Non-BBM": "Petrochemical ",
 
     # ### Bioenergi ###
-    # "(News)SAF": "SAF ",
+    "(News)SAF": "SAF ",
 }
 
 ACTIVE_SHEETS: list[str] = [
     # ### Makroekonomi ###
-    # "(News)Indeks Risiko Geopolitik",
-    # "(News)Indeks Volatilitas",
-    # "(News)Kurs",
-    # "(News)Indeks Kinerja Manufaktur",
-    # "(News)Indeks Kinerja Jasa",
+    "(News)Indeks Risiko Geopolitik",
+    "(News)Indeks Volatilitas",
+    "(News)Kurs",
+    "(News)Indeks Kinerja Manufaktur",
+    "(News)Indeks Kinerja Jasa",
 
     # # ### Hulu Migas ###
-    # "(News)Harga Minyak",
-    # "(News)Volume Minyak",
+    "(News)Harga Minyak",
+    "(News)Volume Minyak",
 
     # ### Produk Kilang Pertamina ###
-    # "(News)Harga Produk Kilang",
-    # "(News)Volume Produk Kilang",
-    # "(News)Crackspread BBM",
+    "(News)Harga Produk Kilang",
+    "(News)Volume Produk Kilang",
+    "(News)Crackspread BBM",
 
     # # ### Petrokimia Hulu ###
     "(News)Crackspread Non-BBM",
 
     # ### Bioenergi ###
-    # "(News)SAF",
+    "(News)SAF",
 ]
 
 

@@ -647,6 +647,24 @@ in
     #"Added Custom"
 
 // ─────────────────────────────────────────────────────────────────────────────
+// [NEON] (News)Volume Petrokimia
+// NOTE: reuses news_articles topic "(News)Crackspread Non-BBM" — same underlying
+// petrochemical news feed as (News)Crackspread_NonBBM, relabeled for the
+// Volume Produk Petrokimia page.
+
+(News)Volume Petrokimia
+
+let
+    Source = PostgreSQL.Database("ep-winter-cell-aoi4t802.c-2.ap-southeast-1.aws.neon.tech", "neondb"),
+    news_articles = Source{[Schema="public",Item="news_articles"]}[Data],
+    Filtered = Table.SelectRows(news_articles, each [topic] = "(News)Crackspread Non-BBM"),
+    Clean = Table.RemoveColumns(Filtered, {"id", "topic"}),
+    #"Changed Type" = Table.TransformColumnTypes(Clean,{{"title", type text}, {"date", type date}, {"url", type text}, {"content", type text}, {"source", type text}, {"keyword", type text}}),
+    #"Added Custom" = Table.AddColumn(#"Changed Type", "Berita Pilihan", each "[" & Date.ToText([date], "M/d/yyyy") & "] " & [title] & " - " & [source])
+in
+    #"Added Custom"
+
+// ─────────────────────────────────────────────────────────────────────────────
 // [NEON] (News)Crackspread_BBM
 
 (News)Crackspread_BBM
