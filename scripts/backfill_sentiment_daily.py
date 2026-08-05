@@ -36,6 +36,8 @@ os.environ["STORAGE_BACKEND"] = "neon"  # backfill selalu ke Neon, override .env
 
 import pandas as pd  # noqa: E402
 
+MAX_NEWS_PER_TOPIC = 200  # mirror main_sentiment_news_mingguan.py -- cegah 1 request >250k token
+
 ROLE_PROMPT = "Ekonom"
 SPESIFIC_PROMPT = (
     "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. "
@@ -87,15 +89,59 @@ TOPICS: dict[str, tuple[list[str], str]] = {
 DAILY_TOPICS = {"Nilai Tukar Rupiah", "IHSG", "Indonia", "Indeks Volatilitas"}
 
 
-def topic_windows(topic: str, start: date, end: date) -> list[tuple[str, date, date]]:
-    """Newest-first windows sized to match the topic's production cadence.
+def topic_windows(
+    topic: str, start: date, end: date, last_akhir: date | None = None
+) -> list[tuple[str, date, date]]:
+    """Windows sized to match the topic's production cadence.
 
-    Daily topics get 1-day windows; everything else gets 7-day windows
+    Daily topics get 1-day windows; everything else get 7-day windows
     (mirroring SUMMARY_WINDOW_DAYS in main_sentiment_news_mingguan.py).
+
+    If `last_akhir` (the topic's latest already-saved "Tanggal akhir") is
+    given, windows are walked FORWARD starting the day right after it --
+    same anchor production itself uses (`start_date = last_date + 1`).
+    Anchoring to the last *end* date (not last *start*) matters even though
+    every window saved here is now always full-length: a partial window's
+    start plus a full step would silently skip the days it didn't cover.
+
+    A window is only appended once it's FULLY within `[win_start, end]` --
+    if the remaining backlog is short of `length_days`, the loop stops
+    without saving anything for that stretch. A saved window's start lands
+    in `have_starts` and is treated as permanently closed (see caller), with
+    no mechanism to later revisit or extend it -- so a short window saved
+    early would freeze that period at partial content forever. Better to
+    leave it unclosed and let a later run (once the backlog is genuinely
+    `length_days` long) save the real thing.
+
+    Without `last_akhir` (topic has zero saved summaries yet), fall back to
+    walking backward from `end` -- a one-time bootstrap grid.
+
+    NOTE: `end` defaults to "today - 1" and moves every day the script is
+    run, so the backward-from-end grid must never be used once a topic has
+    data -- that grid shifts by 1 day on every later run and permanently
+    orphans everything already saved (looked like 647 fake "gaps" on
+    2026-08-05, all really 0 -- was walking backward from a moving `end`
+    for topics that already had a saved, differently-anchored grid).
     """
     length_days = 0 if topic in DAILY_TOPICS else 6
     windows = []
     n = 1
+
+    if last_akhir is not None:
+        win_start = last_akhir + timedelta(days=1)
+        while win_start <= end:
+            full_win_end = win_start + timedelta(days=length_days)
+            if full_win_end > end:
+                # Backlog doesn't cover a full window yet -- stop here instead
+                # of saving a short one. A short window would get marked
+                # "closed" (its start lands in `have_starts`) with no way to
+                # ever revisit/extend it once the real backlog exists.
+                break
+            windows.append((f"periode-{n}", win_start, full_win_end))
+            win_start = full_win_end + timedelta(days=1)
+            n += 1
+        return windows
+
     win_end = end
     while win_end >= start:
         win_start = max(start, win_end - timedelta(days=length_days))
@@ -103,6 +149,28 @@ def topic_windows(topic: str, start: date, end: date) -> list[tuple[str, date, d
         win_end = win_start - timedelta(days=1)
         n += 1
     return windows
+
+
+def _selftest() -> None:
+    """python scripts/backfill_sentiment_daily.py --selftest"""
+    weekly, daily = "RUPTL", "IHSG"  # RUPTL not in DAILY_TOPICS, IHSG is
+
+    # Backlog short of a full week: no window saved, so `last_akhir` (and thus
+    # `have_starts`) never advances -- the same period is retried in full once
+    # enough backlog exists, instead of being closed as a partial 1-day window.
+    assert topic_windows(weekly, date(2026, 1, 1), date(2026, 8, 4), last_akhir=date(2026, 8, 3)) == []
+
+    # Backlog exactly one full week: saved, spanning the whole 7 days.
+    assert topic_windows(weekly, date(2026, 1, 1), date(2026, 8, 10), last_akhir=date(2026, 8, 3)) == [
+        ("periode-1", date(2026, 8, 4), date(2026, 8, 10))
+    ]
+
+    # Daily topic: 1-day windows still saved even right at the `end` boundary.
+    assert topic_windows(daily, date(2026, 1, 1), date(2026, 8, 4), last_akhir=date(2026, 8, 3)) == [
+        ("periode-1", date(2026, 8, 4), date(2026, 8, 4))
+    ]
+
+    print("_selftest OK")
 
 
 def main() -> None:
@@ -162,19 +230,26 @@ def main() -> None:
         articles["date"] = pd.to_datetime(articles["date"])
 
         # Periode (hari atau minggu, tergantung cadence topik) yang sudah punya summary
-        have_starts = {r[0] for r in _query(
-            'SELECT "Tanggal awal" FROM news_sentiment WHERE topic = %s',
+        existing = _query(
+            'SELECT "Tanggal awal", "Tanggal akhir" FROM news_sentiment WHERE topic = %s',
             (summary_sheet,),
-        )}
+        )
+        have_starts = {r[0] for r in existing}
+        last_akhir = max(r[1] for r in existing) if existing else None
 
-        for win_name, win_start, win_end in topic_windows(topic, start, end):
+        for win_name, win_start, win_end in topic_windows(topic, start, end, last_akhir):
             if win_start in have_starts:
                 continue
             mask = (articles["date"] >= pd.Timestamp(win_start)) & (articles["date"] <= pd.Timestamp(win_end))
             window_articles = articles.loc[mask, "content"].astype(str).tolist()
             if not window_articles:
                 continue
-            print(f"  [{win_name}] {win_start} -> {win_end}: {len(window_articles)} artikel -> summarize", flush=True)
+            original_count = len(window_articles)
+            if original_count > MAX_NEWS_PER_TOPIC:
+                window_articles = window_articles[:MAX_NEWS_PER_TOPIC]
+                print(f"  [{win_name}] {win_start} -> {win_end}: {original_count} artikel -> truncated to {MAX_NEWS_PER_TOPIC} -> summarize", flush=True)
+            else:
+                print(f"  [{win_name}] {win_start} -> {win_end}: {len(window_articles)} artikel -> summarize", flush=True)
             if not args.dry_run:
                 try:
                     summary = summarize_all_news(
@@ -200,4 +275,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    if "--selftest" in sys.argv:
+        _selftest()
+    else:
+        main()

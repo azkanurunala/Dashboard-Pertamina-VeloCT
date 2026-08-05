@@ -2,7 +2,7 @@ name: Daily Morning (News Lokal + CPO + Sentiment Lokal)
 
 on:
   schedule:
-    - cron: "0 1 * * 1-5"   # Mon–Fri 08:00 WIB (UTC+7 = 01:00 UTC)
+    - cron: "0 20 * * 0-4"   # Mon–Fri 03:00 WIB (UTC+7 = 20:00 UTC prev day)
   workflow_dispatch:
 
 jobs:

@@ -2,7 +2,7 @@ name: Daily Afternoon (News Internasional + SAF + Sentiment Internasional)
 
 on:
   schedule:
-    - cron: "0 7 * * 1-5"   # Mon–Fri 14:00 WIB (UTC+7 = 07:00 UTC)
+    - cron: "0 2 * * 1-5"   # Mon–Fri 09:00 WIB (UTC+7 = 02:00 UTC)
   workflow_dispatch:
 
 jobs:
