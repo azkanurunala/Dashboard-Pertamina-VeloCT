@@ -283,14 +283,30 @@ def _get_prev_period(existing_df: pd.DataFrame) -> tuple["pd.Timestamp | None", 
     Returns (None, None) if the DataFrame is empty or the columns are unavailable.
     """
     try:
-        if existing_df.empty:
+        row = _latest_row(existing_df)
+        if row is None:
             return None, None
-        row = existing_df.iloc[-1]
         start_prev = pd.to_datetime(row["Tanggal awal"])
         end_prev = pd.to_datetime(row["Tanggal akhir"])
         return start_prev, end_prev
     except Exception:
         return None, None
+
+
+def _latest_row(existing_df: pd.DataFrame) -> "pd.Series | None":
+    """
+    Row with the latest "Tanggal akhir" in an existing DataFrame.
+
+    NOT existing_df.iloc[-1] -- rows come back ordered by DB id (insertion
+    order), which drifts from date order once backfills/reruns write out of
+    chronological sequence. iloc[-1] silently picked a stale row in that case
+    (confirmed on Biodiesel/Bioetanol), corrupting the same-month Summary Data
+    copy and the previous-period comparison below.
+    """
+    if existing_df.empty:
+        return None
+    akhir = pd.to_datetime(existing_df["Tanggal akhir"])
+    return existing_df.loc[akhir.idxmax()]
 
 
 def _compute_cpo_biodiesel(
@@ -595,7 +611,8 @@ def process_topic(
                 if comparison["same_month"]:
                     print("[Topic] Same month — copying Summary Data from previous period.")
                     try:
-                        summary_data = existing_df.iloc[-1]["Summary Data"] if "Summary Data" in existing_df.columns else None
+                        latest = _latest_row(existing_df)
+                        summary_data = latest["Summary Data"] if latest is not None and "Summary Data" in existing_df.columns else None
                     except Exception:
                         summary_data = None
 
@@ -621,7 +638,8 @@ def process_topic(
                 if comparison["same_month"]:
                     print("[Topic] Same month — copying Summary Data from previous period.")
                     try:
-                        summary_data = existing_df.iloc[-1]["Summary Data"] if "Summary Data" in existing_df.columns else None
+                        latest = _latest_row(existing_df)
+                        summary_data = latest["Summary Data"] if latest is not None and "Summary Data" in existing_df.columns else None
                     except Exception:
                         summary_data = None
 
