@@ -12,7 +12,11 @@ from structured_data.kapasitas_esdm import main_ebtke_scraper
 from structured_data.migas_esdm import main_price_esdm
 from structured_data.migas_eia import main_eia
 from structured_data.nuclear_iaea_pris import main_iaea_scraper
-from structured_data.spglobal_data import main_petrochemical_short_term, main_price_forecast_short_term_bbm
+from structured_data.spglobal_data import (
+    main_petrochemical_short_term,
+    main_price_forecast_short_term_bbm,
+    main_price_forecast_long_term_bbm,
+)
 from structured_data.wte_sipsn import main_sipsn_scraper
 
 
@@ -115,6 +119,13 @@ def run_monthly_tasks():
                 print(f"[Main] ERROR pada Price Forecast Short Term BBM: {e}")
                 traceback.print_exc()
                 failed_steps.append("Price Forecast Short Term BBM")
+            try:
+                main_price_forecast_long_term_bbm()
+                print("[Main] Price Forecast Long Term BBM selesai")
+            except Exception as e:
+                print(f"[Main] ERROR pada Price Forecast Long Term BBM: {e}")
+                traceback.print_exc()
+                failed_steps.append("Price Forecast Long Term BBM")
         else:
             print("[Main] STEP 5: Harga dan Crackspread BBM dan Non BBM - DILEWATI")
 

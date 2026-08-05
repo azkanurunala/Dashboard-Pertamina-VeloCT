@@ -4,4 +4,5 @@ __pycache__/
 *.pyc
 .claude/*
 scripts/*.json
+scripts/backups/
 migration-docs.pdf

@@ -962,6 +962,20 @@ def merge_with_existing_data_petrochemical(df_old, df_new):
 
 # Storage Read / Write
 
+def _last_saved_date(sheet_name, date_col="assessDate"):
+    """Return the latest date_col value already in storage, or None if empty/missing.
+
+    Used to self-heal: resume from the day after the last saved row instead of
+    a fixed trailing window, so a missed scheduled run doesn't create a
+    permanent gap.
+    """
+    df = storage.read_structured_sheet(sheet_name)
+    if df.empty or date_col not in df.columns:
+        return None
+    dates = pd.to_datetime(df[date_col], errors="coerce").dropna()
+    return dates.max().date() if not dates.empty else None
+
+
 def _write_sheet_to_storage(sheet_name, df_new, merge_key="assessDate"):
     """
     Merge df_new with the existing storage sheet and write the result.
@@ -1017,14 +1031,23 @@ def main_saf_daily():
 def main_saf_weekly(start_date: str | None = None, end_date: str | None = None):
     """Scrape and save historical SAF and UCO prices from S&P Global.
 
-    Without arguments, fetches the last 7 days. Pass start_date/end_date for backfill.
+    Without arguments, self-heals: resumes from the day after the last saved
+    assessDate (falling back to a 7-day window if the sheet is empty), so a
+    missed scheduled run gets caught up automatically. Pass start_date/end_date
+    for an explicit backfill range.
     """
     print(f"\n{'='*60}")
     print("SCRAPER SAF — HISTORICAL (WEEKLY)")
     print(f"{'='*60}")
 
-    end_date   = end_date   or datetime.today().strftime("%Y-%m-%d")
-    start_date = start_date or (datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")
+    end_date = end_date or datetime.today().strftime("%Y-%m-%d")
+    if start_date is None:
+        last_date  = _last_saved_date(SHEET_NAME_SAF)
+        start_date = ((last_date + timedelta(days=1)) if last_date
+                      else (datetime.today() - timedelta(days=7)).date()).strftime("%Y-%m-%d")
+    if start_date > end_date:
+        print(f"[Main] Sudah up-to-date (data terakhir: {start_date}) — skip.")
+        return
 
     sp_token = login_spglobal()
     if not sp_token:
@@ -1047,27 +1070,64 @@ def main_saf_weekly(start_date: str | None = None, end_date: str | None = None):
     print(f"[Main] Rows  : {len(df_pivoted)}")
     print(f"\n{'='*60}\n[Main] SELESAI\n{'='*60}")
 
-def main_petrochemical_short_term():
-    """Scrape and save short-term petrochemical prices with crackspreads."""
-    print(f"\n{'='*60}")
-    print("SCRAPER PETROCHEMICAL — SHORT TERM")
-    print(f"{'='*60}")
+def _prev_month(today=None):
+    """Return (year, month) of the calendar month before today."""
+    today = today or datetime.today()
+    return (today.year - 1, 12) if today.month == 1 else (today.year, today.month - 1)
 
-    today = datetime.today()
-    if today.month == 1:
-        current_year, current_month = today.year - 1, 12
-    else:
-        current_year, current_month = today.year, today.month - 1
 
-    sp_token = login_spglobal()
-    if not sp_token:
-        print("[Main] Gagal login ke S&P Global API.")
-        return
+def _month_range(start_year, start_month, end_year, end_month):
+    """Inclusive list of (year, month) tuples from start to end."""
+    months = []
+    y, m = start_year, start_month
+    while (y, m) <= (end_year, end_month):
+        months.append((y, m))
+        m += 1
+        if m > 12:
+            m = 1
+            y += 1
+    return months
 
+
+def _missing_months(sheet_name, year_col, month_col):
+    """Months from (last saved +1) through last calendar month.
+
+    Returns None if the sheet has no usable data yet (caller should default
+    to just the last calendar month, matching the original single-month
+    behavior). Returns [] if already up-to-date.
+    """
+    end_year, end_month = _prev_month()
+
+    df = storage.read_structured_sheet(sheet_name)
+    if df.empty or year_col not in df.columns or month_col not in df.columns:
+        return None
+    df = df.dropna(subset=[year_col, month_col])
+    if df.empty:
+        return None
+
+    last_year  = int(df[year_col].max())
+    last_month = int(df.loc[df[year_col] == last_year, month_col].max())
+
+    start_month = last_month + 1
+    start_year  = last_year
+    if start_month > 12:
+        start_month = 1
+        start_year += 1
+
+    if (start_year, start_month) > (end_year, end_month):
+        return []
+    return _month_range(start_year, start_month, end_year, end_month)
+
+
+def _fetch_petrochemical_month(sp_token, year, month):
+    """Fetch and pivot one month of short-term petrochemical + crackspread data.
+
+    Returns a 1-row DataFrame, or None if nothing could be fetched.
+    """
     all_data = []
     for product in PETCHEM_PRODUCTS:
         data = get_historical_price_petrochemical_short_term(
-            sp_token, product["name"], product["basis"], current_year, current_month
+            sp_token, product["name"], product["basis"], year, month
         )
         if data:
             print(f"[Main] Berhasil: {len(data)} records untuk {product['name']}.")
@@ -1077,11 +1137,10 @@ def main_petrochemical_short_term():
 
     if not all_data:
         print("\n[Main] Tidak ada data yang berhasil diambil.")
-        # exit(1)
-        return
+        return None
 
     df_pivoted = pivot_data_petrochemical(all_data)
-    prices     = get_non_bbm_price_from_bbm_forecast(sp_token, current_year, current_month)
+    prices     = get_non_bbm_price_from_bbm_forecast(sp_token, year, month)
 
     df_pivoted["Price_Brent"]   = prices["Brent"]
     df_pivoted["Price_Butane"]  = prices["Butane"]
@@ -1119,6 +1178,51 @@ def main_petrochemical_short_term():
         df_pivoted["Price_LPG_crackspread"] = None
         print("[Main] Crackspread LPG tidak dapat dihitung.")
 
+    return df_pivoted
+
+
+def main_petrochemical_short_term(start_year=None, start_month=None, end_year=None, end_month=None):
+    """Scrape and save short-term petrochemical prices with crackspreads.
+
+    Without arguments, self-heals: catches up every month between the last
+    saved row and last calendar month, so a missed day-12 scheduled run
+    doesn't create a permanent gap. Pass start_year/start_month (and
+    optionally end_year/end_month) for an explicit backfill range.
+    """
+    print(f"\n{'='*60}")
+    print("SCRAPER PETROCHEMICAL — SHORT TERM")
+    print(f"{'='*60}")
+
+    if start_year is None:
+        missing = _missing_months(SHEET_NAME_PETROCHEMICAL, "Year", "Month")
+        months  = missing if missing is not None else [_prev_month()]
+    else:
+        end_year, end_month = end_year or start_year, end_month or start_month
+        months = _month_range(start_year, start_month, end_year, end_month)
+
+    if not months:
+        print("[Main] Sudah up-to-date — skip.")
+        return
+
+    sp_token = login_spglobal()
+    if not sp_token:
+        print("[Main] Gagal login ke S&P Global API.")
+        return
+
+    frames = []
+    for year, month in months:
+        print(f"\n[Main] Period : {year}-{month:02d}")
+        df_month = _fetch_petrochemical_month(sp_token, year, month)
+        if df_month is not None:
+            frames.append(df_month)
+
+    if not frames:
+        print("\n[Main] Tidak ada data yang berhasil diambil.")
+        # exit(1)
+        return
+
+    df_pivoted = pd.concat(frames, ignore_index=True)
+
     column_order = ["Year", "Month"]
     for product in PETCHEM_PRODUCTS:
         col = f'Price_{product["name"]}'
@@ -1138,36 +1242,54 @@ def main_petrochemical_short_term():
     _write_sheet_to_storage(SHEET_NAME_PETROCHEMICAL, df_pivoted, merge_key=["Year", "Month"])
     print(f"\n{'='*60}\n[Main] SELESAI\n{'='*60}")
 
-def main_price_forecast_short_term_bbm():
-    """Scrape and save short-term BBM price forecast with crackspreads."""
+def main_price_forecast_short_term_bbm(start_year=None, start_month=None, end_year=None, end_month=None):
+    """Scrape and save short-term BBM price forecast with crackspreads.
+
+    Without arguments, self-heals: catches up every month between the last
+    saved row and last calendar month, so a missed day-12 scheduled run
+    doesn't create a permanent gap. Pass start_year/start_month (and
+    optionally end_year/end_month) for an explicit backfill range.
+    """
     print(f"\n{'='*60}")
     print("SCRAPER PRICE FORECAST BBM — SHORT TERM")
     print(f"{'='*60}")
 
-    today = datetime.today()
-    if today.month == 1:
-        current_year, current_month = today.year - 1, 12
+    if start_year is None:
+        missing = _missing_months(SHEET_NAME_FORECAST_BBM_SHORT, "year", "month")
+        months  = missing if missing is not None else [_prev_month()]
     else:
-        current_year, current_month = today.year, today.month - 1
+        end_year, end_month = end_year or start_year, end_month or start_month
+        months = _month_range(start_year, start_month, end_year, end_month)
+
+    if not months:
+        print("[Main] Sudah up-to-date — skip.")
+        return
 
     sp_token = login_spglobal()
     if not sp_token:
         print("[Main] Gagal login ke S&P Global API.")
         return
 
-    print(f"\n[Main] Period  : {current_year}-{current_month:02d}")
-    print(f"[Main] Symbols : {', '.join(BBM_SYMBOLS_ST)}")
+    frames = []
+    for year, month in months:
+        print(f"\n[Main] Period  : {year}-{month:02d}")
+        print(f"[Main] Symbols : {', '.join(BBM_SYMBOLS_ST)}")
+        df_month = get_historical_price_energy_forecast_short_term(
+            sp_token, BBM_SYMBOLS_ST, year, month, unitName="BBL",
+            fields=["year", "month", "price", "priceSymbol"]
+        )
+        if df_month is not None and not df_month.empty:
+            frames.append(df_month)
+        else:
+            print(f"[Main] Gagal mengambil data forecast untuk {year}-{month:02d}.")
 
-    df_forecast = get_historical_price_energy_forecast_short_term(
-        sp_token, BBM_SYMBOLS_ST, current_year, current_month, unitName="BBL",
-        fields=["year", "month", "price", "priceSymbol"]
-    )
-    if df_forecast is None or df_forecast.empty:
-        print("\n[Main] Gagal mengambil data forecast.")
+    if not frames:
+        print("\n[Main] Tidak ada data yang berhasil diambil.")
         # exit(1)
         return
 
-    df_pivoted = pivot_data_to_columns_price_forecast_bbm_short_term(df_forecast)
+    df_forecast = pd.concat(frames, ignore_index=True)
+    df_pivoted  = pivot_data_to_columns_price_forecast_bbm_short_term(df_forecast)
     _write_sheet_to_storage(SHEET_NAME_FORECAST_BBM_SHORT, df_pivoted, merge_key=["year", "month"])
 
     print(f"\n{'='*60}")
@@ -1177,24 +1299,30 @@ def main_price_forecast_short_term_bbm():
     print(f"[Main] Rows  : {len(df_pivoted)}")
     print(f"\n{'='*60}\n[Main] SELESAI\n{'='*60}")
 
-def main_price_forecast_long_term_bbm():
-    """Scrape and save long-term BBM price forecast with crackspreads."""
+def main_price_forecast_long_term_bbm(start_year=None, end_year=None):
+    """Scrape and save long-term BBM price forecast with crackspreads.
+
+    Without arguments, refreshes the current year's forecast (idempotent
+    upsert keyed on year). Pass start_year/end_year for an explicit backfill
+    range of past forecast years.
+    """
     print(f"\n{'='*60}")
     print("SCRAPER PRICE FORECAST BBM — LONG TERM")
     print(f"{'='*60}")
 
-    current_year = datetime.today().year
+    start_year = start_year or datetime.today().year
+    end_year   = end_year or start_year
 
     sp_token = login_spglobal()
     if not sp_token:
         print("[Main] Gagal login ke S&P Global API.")
         return
 
-    print(f"\n[Main] Period  : {current_year}")
+    print(f"\n[Main] Period  : {start_year}-{end_year}")
     print(f"[Main] Symbols : {', '.join(BBM_SYMBOLS_LT)}")
 
     df_forecast = get_historical_price_energy_forecast_long_term(
-        sp_token, BBM_SYMBOLS_LT, current_year, current_year, unitName="BBL",
+        sp_token, BBM_SYMBOLS_LT, start_year, end_year, unitName="BBL",
         fields=["year", "price", "priceSymbol"]
     )
     if df_forecast is None or df_forecast.empty:
@@ -1216,14 +1344,23 @@ def main_price_forecast_long_term_bbm():
 def main_crackspeed_bbm_weekly(start_date: str | None = None, end_date: str | None = None):
     """Scrape and save historical BBM crackspeed prices from S&P Global.
 
-    Without arguments, fetches the last 7 days. Pass start_date/end_date for backfill.
+    Without arguments, self-heals: resumes from the day after the last saved
+    assessDate (falling back to a 7-day window if the sheet is empty), so a
+    missed scheduled run gets caught up automatically. Pass start_date/end_date
+    for an explicit backfill range.
     """
     print(f"\n{'='*60}")
     print("SCRAPER CRACKSPEED BBM — HISTORICAL (WEEKLY)")
     print(f"{'='*60}")
 
-    end_date   = end_date   or datetime.today().strftime("%Y-%m-%d")
-    start_date = start_date or (datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")
+    end_date = end_date or datetime.today().strftime("%Y-%m-%d")
+    if start_date is None:
+        last_date  = _last_saved_date(SHEET_NAME_CRACKSPEED_BBM)
+        start_date = ((last_date + timedelta(days=1)) if last_date
+                      else (datetime.today() - timedelta(days=7)).date()).strftime("%Y-%m-%d")
+    if start_date > end_date:
+        print(f"[Main] Sudah up-to-date (data terakhir: {start_date}) — skip.")
+        return
 
     sp_token = login_spglobal()
     if not sp_token:
@@ -1253,14 +1390,23 @@ def main_crackspeed_bbm_weekly(start_date: str | None = None, end_date: str | No
 def main_crackspeed_non_bbm_weekly(start_date: str | None = None, end_date: str | None = None):
     """Scrape and save historical non-BBM crackspeed prices from S&P Global.
 
-    Without arguments, fetches the last 7 days. Pass start_date/end_date for backfill.
+    Without arguments, self-heals: resumes from the day after the last saved
+    assessDate (falling back to a 7-day window if the sheet is empty), so a
+    missed scheduled run gets caught up automatically. Pass start_date/end_date
+    for an explicit backfill range.
     """
     print(f"\n{'='*60}")
     print("SCRAPER CRACKSPEED NON BBM — HISTORICAL (WEEKLY)")
     print(f"{'='*60}")
 
-    end_date   = end_date   or datetime.today().strftime("%Y-%m-%d")
-    start_date = start_date or (datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")
+    end_date = end_date or datetime.today().strftime("%Y-%m-%d")
+    if start_date is None:
+        last_date  = _last_saved_date(SHEET_NAME_CRACKSPEED_NON_BBM)
+        start_date = ((last_date + timedelta(days=1)) if last_date
+                      else (datetime.today() - timedelta(days=7)).date()).strftime("%Y-%m-%d")
+    if start_date > end_date:
+        print(f"[Main] Sudah up-to-date (data terakhir: {start_date}) — skip.")
+        return
 
     sp_token = login_spglobal()
     if not sp_token:
