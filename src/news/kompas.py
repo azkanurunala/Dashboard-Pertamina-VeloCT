@@ -120,9 +120,15 @@ def _collect_article_sitemaps(root: ET.Element, depth: int = 0) -> list[str]:
                 nested = _collect_article_sitemaps(subroot, depth + 1)
                 article_sitemaps.extend(nested)
             else:
-                url_count = len(subroot.findall(".//sm:url", NS_SITEMAP))
-                print(f"{indent}  └─ Article sitemap — {url_count} URLs found.")
+                url_tags = subroot.findall(".//sm:url", NS_SITEMAP)
+                print(f"{indent}  └─ Article sitemap — {len(url_tags)} URLs found.")
                 article_sitemaps.append(href)
+                # Already parsed here — seed the entries cache so
+                # _get_sitemap_entries doesn't fetch this URL again.
+                _SITEMAP_ENTRIES_CACHE[href] = [
+                    info for url_tag in url_tags
+                    if (info := extract_news_sitemap_entry(url_tag))
+                ]
 
             time.sleep(SITEMAP_FETCH_DELAY)
 
@@ -134,24 +140,66 @@ def _collect_article_sitemaps(root: ET.Element, depth: int = 0) -> list[str]:
 
 # Keyword Searc
 
-def find_articles_by_keyword(keyword: str) -> list[dict]:
-    """
-    Crawl Kompas sitemap tree to find and return articles whose title or keywords match the given keyword using case-insensitive whole-word matching.
-    """
+# Per-process cache: the sitemap tree + entries are re-crawled on every
+# keyword call otherwise, and a single run searches ~25 keywords against the
+# same live sitemap. Caching turns O(keywords x sitemaps) network fetches
+# into O(sitemaps) — keyword filtering afterward is in-memory.
+_ARTICLE_SITEMAPS_CACHE: list[str] | None = None
+_SITEMAP_ENTRIES_CACHE: dict[str, list[dict]] = {}
+
+
+def _get_article_sitemaps() -> list[str]:
+    """Return the list of relevant article sitemap URLs, crawling once per process."""
+    global _ARTICLE_SITEMAPS_CACHE
+    if _ARTICLE_SITEMAPS_CACHE is not None:
+        return _ARTICLE_SITEMAPS_CACHE
+
     try:
         root = ET.fromstring(fetch_xml(KOMPAS_SITEMAP_URL))
     except Exception as exc:
         print(f"[Sitemap] Failed to fetch main sitemap: {exc}")
-        return []
+        _ARTICLE_SITEMAPS_CACHE = []
+        return _ARTICLE_SITEMAPS_CACHE
 
     print("[Sitemap] Crawling sitemap tree to find article sitemaps...")
-    article_sitemaps = _collect_article_sitemaps(root)
+    _ARTICLE_SITEMAPS_CACHE = _collect_article_sitemaps(root)
+    return _ARTICLE_SITEMAPS_CACHE
+
+
+def _get_sitemap_entries(sitemap_url: str) -> list[dict]:
+    """Return parsed entries for one article sitemap, fetching once per process."""
+    if sitemap_url in _SITEMAP_ENTRIES_CACHE:
+        return _SITEMAP_ENTRIES_CACHE[sitemap_url]
+
+    entries: list[dict] = []
+    try:
+        content = fetch_xml(sitemap_url)
+        subroot = ET.fromstring(content)
+        url_tags = subroot.findall(".//sm:url", NS_SITEMAP)
+        print(f"   URLs in this sitemap: {len(url_tags)}")
+        for url_tag in url_tags:
+            info = extract_news_sitemap_entry(url_tag)
+            if info:
+                entries.append(info)
+    except Exception as exc:
+        print(f"[Search] Error processing {sitemap_url}: {exc}")
+
+    time.sleep(SITEMAP_FETCH_DELAY)
+    _SITEMAP_ENTRIES_CACHE[sitemap_url] = entries
+    return entries
+
+
+def find_articles_by_keyword(keyword: str) -> list[dict]:
+    """
+    Crawl Kompas sitemap tree to find and return articles whose title or keywords match the given keyword using case-insensitive whole-word matching.
+    """
+    article_sitemaps = _get_article_sitemaps()
 
     if not article_sitemaps:
         print("[Sitemap] No article sitemaps found.")
         return []
 
-    print(f"\n[Search] Found {len(article_sitemaps)} article sitemap(s). Starting keyword search...\n")
+    print(f"\n[Search] {len(article_sitemaps)} article sitemap(s) cached. Searching for '{keyword}'...\n")
 
     # Compile a whole-word, case-insensitive pattern for the keyword
     keyword_pattern = re.compile(
@@ -161,38 +209,18 @@ def find_articles_by_keyword(keyword: str) -> list[dict]:
     results: list[dict] = []
 
     for idx, sitemap_url in enumerate(article_sitemaps, start=1):
-        print(f"[Search] ({idx}/{len(article_sitemaps)}) Processing: {sitemap_url}")
+        for info in _get_sitemap_entries(sitemap_url):
+            title    = (info.get("title")    or "").lower()
+            keywords = (info.get("keywords") or "").lower()
 
-        try:
-            content = fetch_xml(sitemap_url)
-            subroot = ET.fromstring(content)
-            url_tags = subroot.findall(".//sm:url", NS_SITEMAP)
-            print(f"   URLs in this sitemap: {len(url_tags)}")
+            if keyword_pattern.search(title) or keyword_pattern.search(keywords):
+                results.append({
+                    "Judul":   info["title"] or info["link"],
+                    "Link":    info["link"],
+                    "Tanggal": info["date"] or "-",
+                })
 
-            for url_tag in url_tags:
-                info = extract_news_sitemap_entry(url_tag)
-                if not info:
-                    continue
-
-                title    = (info.get("title")    or "").lower()
-                keywords = (info.get("keywords") or "").lower()
-
-                if keyword_pattern.search(title) or keyword_pattern.search(keywords):
-                    results.append({
-                        "Judul":   info["title"] or info["link"],
-                        "Link":    info["link"],
-                        "Tanggal": info["date"] or "-",
-                    })
-
-            print(f"   Matching articles so far: {len(results)}")
-
-        except Exception as exc:
-            print(f"[Search] Error processing {sitemap_url}: {exc}")
-            continue
-
-        time.sleep(SITEMAP_FETCH_DELAY)
-
-    print(f"\n[Search] Total articles matching '{keyword}': {len(results)}")
+    print(f"[Search] Total articles matching '{keyword}': {len(results)}")
     return results
 
 

@@ -23,9 +23,10 @@ Usage examples:
 
 Available --sources values:
     Tier 1 (self-healing, run once):
-        eia, biodiesel_esdm, bioetanol_esdm, migas_esdm, iaea, wte, cpo
+        eia, biodiesel_esdm, bioetanol_esdm, migas_esdm, iaea, wte, cpo, kapasitas_ebt
     Tier 2 (S&P Global with explicit date range):
-        spglobal_saf, spglobal_crackspeed_bbm, spglobal_crackspeed_nonbbm
+        spglobal_saf, spglobal_crackspeed_bbm, spglobal_crackspeed_nonbbm,
+        spglobal_petrochemical, spglobal_forecast_bbm_short, spglobal_forecast_bbm_long
     Tier 3 (news, daily loop):
         news_lokal, news_intl
     Tier 4 (Kompas historical sitemaps, month loop):
@@ -42,13 +43,12 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+os.environ["STORAGE_BACKEND"] = "neon"  # backfill selalu ke Neon, override .env
 load_dotenv()
 
 SCRIPT_DIR = Path(__file__).parent
 SRC_DIR    = SCRIPT_DIR.parent / "src"
 sys.path.insert(0, str(SRC_DIR))
-
-os.environ.setdefault("STORAGE_BACKEND", "neon")
 
 PROGRESS_FILE = SCRIPT_DIR / "backfill_progress.json"
 
@@ -60,12 +60,16 @@ TIER1_SOURCES = {
     "iaea",
     "wte",
     "cpo",
+    "kapasitas_ebt",
 }
 
 TIER2_SOURCES = {
     "spglobal_saf",
     "spglobal_crackspeed_bbm",
     "spglobal_crackspeed_nonbbm",
+    "spglobal_petrochemical",
+    "spglobal_forecast_bbm_short",
+    "spglobal_forecast_bbm_long",
 }
 
 ALL_SOURCES = TIER1_SOURCES | TIER2_SOURCES | {
@@ -91,6 +95,35 @@ def load_progress() -> dict:
 
 
 def save_progress(progress: dict) -> None:
+    """Merge with on-disk state before writing.
+
+    Multiple backfill.py invocations (different --sources/date ranges) can
+    run concurrently and share this one progress file. A blind overwrite
+    lets whichever process saves last clobber further-along progress from
+    another process. Union-merging keeps progress moving forward only,
+    regardless of write order or how many instances run at once.
+    """
+    disk = {}
+    if PROGRESS_FILE.exists():
+        try:
+            disk = json.loads(PROGRESS_FILE.read_text())
+        except Exception:
+            pass
+
+    # Mutate in place -- callers hold references to these lists (e.g.
+    # `completed = progress["completed_sources"]`) and keep appending to them.
+    progress["completed_sources"][:] = sorted(
+        set(progress.get("completed_sources", [])) | set(disk.get("completed_sources", []))
+    )
+    progress["completed_kompas_months"][:] = sorted(
+        set(progress.get("completed_kompas_months", [])) | set(disk.get("completed_kompas_months", []))
+    )
+    for key in ("last_completed_date_lokal", "last_completed_date_intl"):
+        candidates = [v for v in (progress.get(key), disk.get(key)) if v]
+        progress[key] = max(candidates) if candidates else None
+    if disk.get("started_at") and (not progress.get("started_at") or disk["started_at"] < progress["started_at"]):
+        progress["started_at"] = disk["started_at"]
+
     PROGRESS_FILE.write_text(json.dumps(progress, indent=2))
 
 
@@ -132,6 +165,10 @@ TIER1_IMPORTS = {
     "iaea":           ("structured_data.nuclear_iaea_pris", "main_iaea_scraper"),
     "wte":            ("structured_data.wte_sipsn",        "main_sipsn_scraper"),
     "cpo":            ("structured_data.cpo_gapki",        "main_scraper_cpo"),
+    # NOTE: EBTKE API only exposes the current latest month, no historical
+    # range -- this only captures whatever is "latest" right now, it cannot
+    # backfill past missing months.
+    "kapasitas_ebt":  ("structured_data.kapasitas_esdm",   "main_ebtke_scraper"),
 }
 
 
@@ -168,12 +205,21 @@ def run_tier2(args, progress: dict) -> None:
         main_saf_weekly,
         main_crackspeed_bbm_weekly,
         main_crackspeed_non_bbm_weekly,
+        main_petrochemical_short_term,
+        main_price_forecast_short_term_bbm,
+        main_price_forecast_long_term_bbm,
     )
+
+    months = month_range(args.start, args.end)
+    (start_year, start_month), (end_year, end_month) = months[0], months[-1]
 
     tier2_funcs = {
         "spglobal_saf":              lambda: main_saf_weekly(args.start, args.end),
         "spglobal_crackspeed_bbm":   lambda: main_crackspeed_bbm_weekly(args.start, args.end),
         "spglobal_crackspeed_nonbbm": lambda: main_crackspeed_non_bbm_weekly(args.start, args.end),
+        "spglobal_petrochemical":    lambda: main_petrochemical_short_term(start_year, start_month, end_year, end_month),
+        "spglobal_forecast_bbm_short": lambda: main_price_forecast_short_term_bbm(start_year, start_month, end_year, end_month),
+        "spglobal_forecast_bbm_long": lambda: main_price_forecast_long_term_bbm(start_year, end_year),
     }
 
     completed = progress["completed_sources"]

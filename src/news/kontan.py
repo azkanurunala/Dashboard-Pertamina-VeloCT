@@ -129,55 +129,79 @@ def _fetch_article_content(url: str) -> str:
 
 # Keyword Search
 
-def _find_articles_by_keyword(keyword: str) -> list[dict]:
-    """
-    Crawl Kontan sitemaps to find and return articles whose title or URL matches the given keyword using case-insensitive pattern matching.
-    """
+# Per-process cache: the sitemap tree + entries are re-crawled on every
+# keyword call otherwise, and a single run searches ~25 keywords against the
+# same live sitemap. Caching turns O(keywords x sub-sitemaps) network fetches
+# into O(sub-sitemaps) — keyword filtering afterward is in-memory.
+_SUB_SITEMAPS_CACHE: list[str] | None = None
+_SITEMAP_ENTRIES_CACHE: dict[str, list[dict]] = {}
+
+
+def _get_sub_sitemaps() -> list[str]:
+    """Return the list of relevant sub-sitemap URLs, crawling once per process."""
+    global _SUB_SITEMAPS_CACHE
+    if _SUB_SITEMAPS_CACHE is not None:
+        return _SUB_SITEMAPS_CACHE
+
     try:
         root = ET.fromstring(fetch_xml(KONTAN_SITEMAP_URL))
     except Exception as exc:
         print(f"[Sitemap] Failed to fetch main sitemap: {exc}")
-        return []
+        _SUB_SITEMAPS_CACHE = []
+        return _SUB_SITEMAPS_CACHE
 
-    sub_sitemaps = _collect_sub_sitemaps(root)
-    print(f"[Sitemap] Found {len(sub_sitemaps)} sub-sitemap(s). Starting keyword search...")
+    _SUB_SITEMAPS_CACHE = _collect_sub_sitemaps(root)
+    print(f"[Sitemap] Found {len(_SUB_SITEMAPS_CACHE)} sub-sitemap(s).")
+    return _SUB_SITEMAPS_CACHE
+
+
+def _get_sitemap_entries(sub_url: str) -> list[dict]:
+    """Return parsed entries for one sub-sitemap, fetching once per process."""
+    if sub_url in _SITEMAP_ENTRIES_CACHE:
+        return _SITEMAP_ENTRIES_CACHE[sub_url]
+
+    entries: list[dict] = []
+    try:
+        content = fetch_xml(sub_url)
+        subroot = ET.fromstring(content)
+        for url_tag in subroot.findall(".//sm:url", NS_SITEMAP):
+            info = extract_news_sitemap_entry(url_tag)
+            if info and info.get("link"):
+                entries.append(info)
+    except Exception:
+        # Skip unreachable or malformed sub-sitemaps silently
+        pass
+
+    time.sleep(SITEMAP_FETCH_DELAY)
+    _SITEMAP_ENTRIES_CACHE[sub_url] = entries
+    return entries
+
+
+def _find_articles_by_keyword(keyword: str) -> list[dict]:
+    """
+    Crawl Kontan sitemaps to find and return articles whose title or URL matches the given keyword using case-insensitive pattern matching.
+    """
+    sub_sitemaps = _get_sub_sitemaps()
+    print(f"[Search] Searching {len(sub_sitemaps)} cached sub-sitemap(s) for '{keyword}'...")
 
     keyword_lower = keyword.lower()
-    results: list[dict] = []
-    
     keyword_pattern = re.compile(r"\b" + re.escape(keyword_lower) + r"\b")
+    results: list[dict] = []
 
-    for idx, sub_url in enumerate(sub_sitemaps, start=1):
-        try:
-            content = fetch_xml(sub_url)
-            subroot = ET.fromstring(content)
+    for sub_url in sub_sitemaps:
+        for info in _get_sitemap_entries(sub_url):
+            title = (info.get("title") or "").lower()
+            link  = (info.get("link")  or "").lower()
 
-            for url_tag in subroot.findall(".//sm:url", NS_SITEMAP):
-                info = extract_news_sitemap_entry(url_tag)
-                if not info or not info.get("link"):
-                    continue
-
-                title    = (info.get("title")    or "").lower()
-                keywords = (info.get("keywords") or "").lower()
-                link     = (info.get("link")     or "").lower()
-
-                # Kontan uses substring match (not whole-word) to also catch
-                # keyword appearances in URL slugs
-                # if keyword_lower in title or keyword_lower in keywords or keyword_lower in link:
-                
-                if keyword_pattern.search(title) or keyword_pattern.search(link):
-                    results.append({
-                        "judul":    info["title"] or info["link"],
-                        "link":     info["link"],
-                        "tanggal":  info["date"] or "-",
-                        "keywords": info["keywords"],
-                    })
-
-        except Exception:
-            # Skip unreachable or malformed sub-sitemaps silently
-            continue
-
-        time.sleep(SITEMAP_FETCH_DELAY)
+            # Kontan uses substring match (not whole-word) to also catch
+            # keyword appearances in URL slugs
+            if keyword_pattern.search(title) or keyword_pattern.search(link):
+                results.append({
+                    "judul":    info["title"] or info["link"],
+                    "link":     info["link"],
+                    "tanggal":  info["date"] or "-",
+                    "keywords": info["keywords"],
+                })
 
     print(f"[Search] Total articles matching '{keyword}': {len(results)}")
     return results

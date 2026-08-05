@@ -139,6 +139,57 @@ def _fetch_article_content(url: str) -> str:
 
 # Keyword Search
 
+# Per-process cache: shared by kontan_bbm and kontan_biodiesel (the latter
+# imports _find_articles_by_keyword directly). Together they cover ~14
+# sheets, some with 20+ synonyms each — without caching, the main sitemap
+# index and every section sub-sitemap get re-fetched on every single
+# keyword call. Caching turns that into one fetch per unique
+# URL/section-combo for the whole run; keyword filtering stays in-memory.
+_MAIN_INDEX_CACHE: ET.Element | None = None
+_SECTION_SITEMAPS_CACHE: dict[tuple[str, ...], list[str]] = {}
+_SITEMAP_ENTRIES_CACHE: dict[str, list[dict]] = {}
+
+
+def _get_main_index_root() -> ET.Element:
+    """Return the parsed main sitemap index, fetching once per process."""
+    global _MAIN_INDEX_CACHE
+    if _MAIN_INDEX_CACHE is None:
+        _MAIN_INDEX_CACHE = ET.fromstring(fetch_xml(KONTAN_SITEMAP_URL))
+    return _MAIN_INDEX_CACHE
+
+
+def _get_section_sitemaps(sections: list[str] | None) -> list[str]:
+    """Return sub-sitemap URLs for a section set, computed once per unique section combo."""
+    key = tuple(sections or ALLOWED_SITEMAP_SECTIONS)
+    if key not in _SECTION_SITEMAPS_CACHE:
+        root = _get_main_index_root()
+        _SECTION_SITEMAPS_CACHE[key] = _collect_section_sitemaps(root, sections=list(key))
+    return _SECTION_SITEMAPS_CACHE[key]
+
+
+def _get_sitemap_entries(sub_url: str) -> list[dict]:
+    """Return parsed entries for one sub-sitemap, fetching once per process."""
+    if sub_url in _SITEMAP_ENTRIES_CACHE:
+        return _SITEMAP_ENTRIES_CACHE[sub_url]
+
+    entries: list[dict] = []
+    try:
+        content = fetch_xml(sub_url)
+        subroot = ET.fromstring(content)
+        urls    = subroot.findall(".//sm:url", NS_SITEMAP)
+        print(f"   URLs in this sitemap: {len(urls)}")
+        for url_tag in urls:
+            info = extract_news_sitemap_entry(url_tag)
+            if info and info.get("link"):
+                entries.append(info)
+    except Exception as exc:
+        print(f"[Search] Failed to process {sub_url}: {exc}")
+
+    time.sleep(SITEMAP_FETCH_DELAY)
+    _SITEMAP_ENTRIES_CACHE[sub_url] = entries
+    return entries
+
+
 def _find_articles_by_keyword(
     keyword: str,
     sections: list[str] | None = None,
@@ -147,45 +198,25 @@ def _find_articles_by_keyword(
     Crawl Kontan section-specific sitemaps to find and return articles whose title or keywords match the given keyword.
     """
     try:
-        root = ET.fromstring(fetch_xml(KONTAN_SITEMAP_URL))
+        sub_sitemaps = _get_section_sitemaps(sections)
     except Exception as exc:
         print(f"[Sitemap] Failed to fetch main sitemap: {exc}")
         return []
 
-    sub_sitemaps  = _collect_section_sitemaps(root, sections=sections)
     keyword_lower = keyword.lower()
     results: list[dict] = []
 
-    for idx, sub_url in enumerate(sub_sitemaps, start=1):
-        print(f"[Search] ({idx}/{len(sub_sitemaps)}) Processing: {sub_url}")
-        try:
-            content = fetch_xml(sub_url)
-            subroot = ET.fromstring(content)
-            urls    = subroot.findall(".//sm:url", NS_SITEMAP)
-            print(f"   URLs in this sitemap: {len(urls)}")
+    for sub_url in sub_sitemaps:
+        for info in _get_sitemap_entries(sub_url):
+            title    = (info.get("title")    or "").lower()
+            keywords = (info.get("keywords") or "").lower()
 
-            for url_tag in urls:
-                info = extract_news_sitemap_entry(url_tag)
-                if not info or not info.get("link"):
-                    continue
-
-                title    = (info.get("title")    or "").lower()
-                keywords = (info.get("keywords") or "").lower()
-
-                if keyword_lower in title or keyword_lower in keywords:
-                    results.append({
-                        "Judul":   info["title"] or info["link"],
-                        "Link":    info["link"],
-                        "Tanggal": info["date"] or "-",
-                    })
-
-            print(f"   Matching articles so far: {len(results)}")
-
-        except Exception as exc:
-            print(f"[Search] Failed to process {sub_url}: {exc}")
-            continue
-
-        time.sleep(SITEMAP_FETCH_DELAY)
+            if keyword_lower in title or keyword_lower in keywords:
+                results.append({
+                    "Judul":   info["title"] or info["link"],
+                    "Link":    info["link"],
+                    "Tanggal": info["date"] or "-",
+                })
 
     print(f"[Search] Total articles matching '{keyword}': {len(results)}")
     return results
