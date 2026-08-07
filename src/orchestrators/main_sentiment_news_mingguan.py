@@ -295,6 +295,26 @@ TOPICS: dict[str, dict] = {
             "Kecualikan berita yang bersifat kasus hukum, kriminal, atau politik yang tidak berdampak langsung pada volume produk petrokimia."
         ),
     },
+
+    # Shares its news source with Crackspread_Non_BBM above (no dedicated
+    # "Volume Petrokimia" scraper exists) -- kept as a separate topic/output_sheet
+    # with a VOLUME-focused prompt (production/kapasitas, not harga/margin) so its
+    # Summary text doesn't just duplicate Crackspread_Non_BBM's for the same week
+    # (the original complaint, QA Revisi II, when this reused the same prompt).
+    "Volume_Petrokimia": {
+        "target_sheets": ["(News)Crackspread Non-BBM"],
+        "output_sheet": "(Summary)Volume Petrokimia",
+        "has_data_sentiment": False,
+        "role_prompt": "analis pasar energi dan produk kilang non-BBM di Indonesia",
+        "spesific_prompt": (
+            "Gunakan bahasa yang ringkas, faktual, dan netral tanpa kata hiperbolik seperti \"signifikan\", \"dahsyat\", atau sejenisnya. "
+            "Setiap poin ringkasan harus terdiri dari satu kalimat. "
+            "Fokus HANYA pada VOLUME/PRODUKSI produk petrokimia (LPG, nafta, propilena, butilena, sulfur, dan produk samping kilang lainnya): "
+            "kapasitas produksi, realisasi produksi, ekspor-impor, permintaan industri, dan distribusi. "
+            "JANGAN bahas harga, margin, atau crack spread -- itu di luar scope, sudah dicakup topik lain. "
+            "Kecualikan berita yang bersifat kasus hukum, kriminal, atau politik yang tidak berdampak langsung pada volume produk non-BBM."
+        ),
+    },
 }
 
 
@@ -307,14 +327,30 @@ def _get_prev_period(existing_df: pd.DataFrame) -> tuple["pd.Timestamp | None", 
     Returns (None, None) if the DataFrame is empty or the columns are unavailable.
     """
     try:
-        if existing_df.empty:
+        row = _latest_row(existing_df)
+        if row is None:
             return None, None
-        row = existing_df.iloc[-1]
         start_prev = pd.to_datetime(row["Tanggal awal"])
         end_prev = pd.to_datetime(row["Tanggal akhir"])
         return start_prev, end_prev
     except Exception:
         return None, None
+
+
+def _latest_row(existing_df: pd.DataFrame) -> "pd.Series | None":
+    """
+    Row with the latest "Tanggal akhir" in an existing DataFrame.
+
+    NOT existing_df.iloc[-1] -- rows come back ordered by DB id (insertion
+    order), which drifts from date order once backfills/reruns write out of
+    chronological sequence. iloc[-1] silently picked a stale row in that case
+    (confirmed on Biodiesel/Bioetanol), corrupting the same-month Summary Data
+    copy and the previous-period comparison below.
+    """
+    if existing_df.empty:
+        return None
+    akhir = pd.to_datetime(existing_df["Tanggal akhir"])
+    return existing_df.loc[akhir.idxmax()]
 
 
 def _compute_cpo_biodiesel(
@@ -619,7 +655,8 @@ def process_topic(
                 if comparison["same_month"]:
                     print("[Topic] Same month — copying Summary Data from previous period.")
                     try:
-                        summary_data = existing_df.iloc[-1]["Summary Data"] if "Summary Data" in existing_df.columns else None
+                        latest = _latest_row(existing_df)
+                        summary_data = latest["Summary Data"] if latest is not None and "Summary Data" in existing_df.columns else None
                     except Exception:
                         summary_data = None
 
@@ -645,7 +682,8 @@ def process_topic(
                 if comparison["same_month"]:
                     print("[Topic] Same month — copying Summary Data from previous period.")
                     try:
-                        summary_data = existing_df.iloc[-1]["Summary Data"] if "Summary Data" in existing_df.columns else None
+                        latest = _latest_row(existing_df)
+                        summary_data = latest["Summary Data"] if latest is not None and "Summary Data" in existing_df.columns else None
                     except Exception:
                         summary_data = None
 
