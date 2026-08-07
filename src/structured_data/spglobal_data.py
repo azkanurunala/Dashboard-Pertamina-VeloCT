@@ -26,8 +26,6 @@ SHEET_NAME_SAF               = "(Data)SAF"
 SHEET_NAME_FORECAST_BBM_LONG  = "(Data)Crackspread_BBM_YEAR"
 SHEET_NAME_FORECAST_BBM_SHORT = "(Data)Crackspread_BBM"
 SHEET_NAME_PETROCHEMICAL      = "(Data)Crackspread_NON_BBM"
-SHEET_NAME_CRACKSPEED_BBM     = "(Data)Crackspeed_BBM"
-SHEET_NAME_CRACKSPEED_NON_BBM = "(Data)Crackspeed_NonBBM"
 
 SP_AUTH_URL          = "https://api.ci.spglobal.com/auth/api"
 SP_HISTORY_URL       = "https://api.ci.spglobal.com/market-data/v3/value/history/symbol"
@@ -1341,98 +1339,6 @@ def main_price_forecast_long_term_bbm(start_year=None, end_year=None):
     print(f"\n{'='*60}\n[Main] SELESAI\n{'='*60}")
 
 
-def main_crackspeed_bbm_weekly(start_date: str | None = None, end_date: str | None = None):
-    """Scrape and save historical BBM crackspeed prices from S&P Global.
-
-    Without arguments, self-heals: resumes from the day after the last saved
-    assessDate (falling back to a 7-day window if the sheet is empty), so a
-    missed scheduled run gets caught up automatically. Pass start_date/end_date
-    for an explicit backfill range.
-    """
-    print(f"\n{'='*60}")
-    print("SCRAPER CRACKSPEED BBM — HISTORICAL (WEEKLY)")
-    print(f"{'='*60}")
-
-    end_date = end_date or datetime.today().strftime("%Y-%m-%d")
-    if start_date is None:
-        last_date  = _last_saved_date(SHEET_NAME_CRACKSPEED_BBM)
-        start_date = ((last_date + timedelta(days=1)) if last_date
-                      else (datetime.today() - timedelta(days=7)).date()).strftime("%Y-%m-%d")
-    if start_date > end_date:
-        print(f"[Main] Sudah up-to-date (data terakhir: {start_date}) — skip.")
-        return
-
-    sp_token = login_spglobal()
-    if not sp_token:
-        print("[Main] Gagal login ke S&P Global API.")
-        return
-
-    bbm_symbols = ["PGAEY00", "PGAEZ00", "PGAMS00", "AMFSA00", "PJABF00", "AAPPF00", "AACUE00", "PCAAS00"]
-    print(f"\n[Main] Period : {start_date} to {end_date}")
-    print(f"[Main] Symbols: {', '.join(bbm_symbols)}")
-
-    df_historical = get_historical_data(sp_token, bbm_symbols, start_date, end_date)
-    if df_historical is None:
-        print("\n[Main] Gagal mengambil data historical.")
-        return
-
-    df_pivoted = pivot_data_to_columns_bbm(df_historical)
-    _write_sheet_to_storage(SHEET_NAME_CRACKSPEED_BBM, df_pivoted)
-
-    print(f"\n{'='*60}")
-    print("[Main] DATA BERHASIL DISIMPAN")
-    print(f"{'='*60}")
-    print(f"[Main] Sheet : {SHEET_NAME_CRACKSPEED_BBM}")
-    print(f"[Main] Rows  : {len(df_pivoted)}")
-    print(f"\n{'='*60}\n[Main] SELESAI\n{'='*60}")
-
-
-def main_crackspeed_non_bbm_weekly(start_date: str | None = None, end_date: str | None = None):
-    """Scrape and save historical non-BBM crackspeed prices from S&P Global.
-
-    Without arguments, self-heals: resumes from the day after the last saved
-    assessDate (falling back to a 7-day window if the sheet is empty), so a
-    missed scheduled run gets caught up automatically. Pass start_date/end_date
-    for an explicit backfill range.
-    """
-    print(f"\n{'='*60}")
-    print("SCRAPER CRACKSPEED NON BBM — HISTORICAL (WEEKLY)")
-    print(f"{'='*60}")
-
-    end_date = end_date or datetime.today().strftime("%Y-%m-%d")
-    if start_date is None:
-        last_date  = _last_saved_date(SHEET_NAME_CRACKSPEED_NON_BBM)
-        start_date = ((last_date + timedelta(days=1)) if last_date
-                      else (datetime.today() - timedelta(days=7)).date()).strftime("%Y-%m-%d")
-    if start_date > end_date:
-        print(f"[Main] Sudah up-to-date (data terakhir: {start_date}) — skip.")
-        return
-
-    sp_token = login_spglobal()
-    if not sp_token:
-        print("[Main] Gagal login ke S&P Global API.")
-        return
-
-    non_bbm_symbols = ["PTAAF10", "PTAAM10", "PHABV00", "PHAKR00", "PHASM05", "PCAAS00"]
-    print(f"\n[Main] Period : {start_date} to {end_date}")
-    print(f"[Main] Symbols: {', '.join(non_bbm_symbols)}")
-
-    df_historical = get_historical_data(sp_token, non_bbm_symbols, start_date, end_date)
-    if df_historical is None:
-        print("\n[Main] Gagal mengambil data historical.")
-        return
-
-    df_pivoted = pivot_data_to_columns_non_bbm(df_historical)
-    _write_sheet_to_storage(SHEET_NAME_CRACKSPEED_NON_BBM, df_pivoted)
-
-    print(f"\n{'='*60}")
-    print("[Main] DATA BERHASIL DISIMPAN")
-    print(f"{'='*60}")
-    print(f"[Main] Sheet : {SHEET_NAME_CRACKSPEED_NON_BBM}")
-    print(f"[Main] Rows  : {len(df_pivoted)}")
-    print(f"\n{'='*60}\n[Main] SELESAI\n{'='*60}")
-
-
 # # Script Entry Point
 
 if __name__ == "__main__":
@@ -1443,8 +1349,6 @@ if __name__ == "__main__":
     functions = [
         ("SAF Daily",                     main_saf_daily),
         ("SAF Weekly",                    main_saf_weekly),
-        ("Crackspeed BBM Weekly",         main_crackspeed_bbm_weekly),
-        ("Crackspeed Non-BBM Weekly",     main_crackspeed_non_bbm_weekly),
         ("Petrochemical Short Term",      main_petrochemical_short_term),
         ("Price Forecast BBM Short Term", main_price_forecast_short_term_bbm),
         ("Price Forecast BBM Long Term",  main_price_forecast_long_term_bbm),
