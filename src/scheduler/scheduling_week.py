@@ -5,7 +5,7 @@ import traceback
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from orchestrators.main_sentiment_news_mingguan import main as main_sentiment_news_mingguan
-from structured_data.spglobal_data import main_saf_weekly, main_crackspeed_bbm_weekly, main_crackspeed_non_bbm_weekly
+from structured_data.spglobal_data import main_saf_weekly
 
 
 # Constants
@@ -38,8 +38,6 @@ def run_weekly_tasks():
         print(SEPARATOR_THIN)
         try:
             main_saf_weekly()
-            main_crackspeed_bbm_weekly()
-            main_crackspeed_non_bbm_weekly()
             print("[Main] S&P Weekly Data Scraping selesai")
         except Exception as e:
             print(f"[Main] ERROR pada S&P Weekly Data Scraping: {e}")
