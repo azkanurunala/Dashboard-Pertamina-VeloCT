@@ -249,59 +249,18 @@ def scrape_google_news(
     print(f"  [RSS URL] {rss_url}")
 
     try:
-        feed = feedparser.parse(rss_url)
+        response = requests.get(rss_url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        feed = feedparser.parse(response.content)
         if not feed.entries:
             print("[Google News] No articles found.")
             return []
+    except requests.exceptions.RequestException as exc:
+        print(f"[Google News] Error fetching RSS: {exc}")
+        return []
     except Exception as exc:
         print(f"[Google News] Error parsing RSS: {exc}")
         return []
-
-    # Normalise filter_date to a date object
-    if filter_date:
-        if isinstance(filter_date, str):
-            try:
-                filter_date = datetime.strptime(filter_date, "%Y-%m-%d").date()
-            except ValueError:
-                print(f"  [WARNING] Invalid filter_date format: {filter_date} — expected YYYY-MM-DD.")
-                filter_date = None
-        elif isinstance(filter_date, datetime):
-            filter_date = filter_date.date()
-
-    articles: list[dict] = []
-
-    for entry in feed.entries:
-        published_raw = entry.get("published", "")
-        try:
-            pub_date = datetime.strptime(published_raw, "%a, %d %b %Y %H:%M:%S %Z").date()
-        except ValueError:
-            pub_date = None
-
-        source = (
-            entry.get("source", {}).get("title", "Unknown")
-            if hasattr(entry.get("source", {}), "get")
-            else "Unknown"
-        )
-
-        if filter_date and pub_date != filter_date:
-            continue
-
-        if filter_platform and filter_platform.upper() not in source.upper():
-            continue
-
-        url = entry.get("link", "")
-        print(f"  [Google News URL] {url}")
-
-        articles.append({
-            "title":  entry.get("title", ""),
-            "date":   pub_date,
-            "url":    url,
-            "source": source,
-        })
-
-    print(f"[Google News] {len(articles)} article(s) found after filtering.")
-    return articles
-
 
 # Selenium URL Resolver
 
