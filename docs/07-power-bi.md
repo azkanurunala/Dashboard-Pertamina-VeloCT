@@ -62,7 +62,7 @@ Konsekuensi: refresh dashboard tetap butuh kredensial SharePoint **dan** Neon. S
 
 | Gejala | Kemungkinan penyebab |
 |---|---|
-| Kolom tidak ditemukan setelah refresh | Skema tabel berubah tanpa update view/M-code; atau ejaan crackspread vs crackspeed tertukar ([03-database.md](03-database.md)) |
+| Kolom tidak ditemukan setelah refresh | Skema tabel berubah tanpa update view/M-code ([03-database.md](03-database.md)) |
 | Refresh lambat sekali di awal | Neon compute baru resume dari suspend — normal, coba lagi |
 | Data kosong untuk topik tertentu | Pipeline scraping topik itu gagal/nonaktif — cek `SELECT MAX(date) FROM news_articles WHERE topic='(News)X'` dan log Actions ([08-maintenance.md](08-maintenance.md)) |
 | Error kredensial PostgreSQL | Password Neon dirotasi — perbarui di Data source settings |
