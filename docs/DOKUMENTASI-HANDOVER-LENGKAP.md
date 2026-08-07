@@ -215,7 +215,7 @@ python scripts/backfill.py --delay 5.0                            # rate-limit l
 
 Tier sumber (lihat docstring file untuk daftar penuh):
 - **Tier 1** (self-healing, cukup sekali): `eia`, `biodiesel_esdm`, `bioetanol_esdm`, `migas_esdm`, `iaea`, `wte`, `cpo`
-- **Tier 2** (S&P dengan rentang tanggal): `spglobal_saf`, `spglobal_crackspeed_bbm`, `spglobal_crackspeed_nonbbm`
+- **Tier 2** (S&P dengan rentang tanggal): `spglobal_saf`
 - **Tier 3** (berita, loop harian): `news_lokal`, `news_intl`
 - **Tier 4** (sitemap historis Kompas, loop bulanan): `kompas_monthly`
 
@@ -288,8 +288,6 @@ Kolom `news_articles`: `title, date, url, content, source, keyword` + `topic` (n
 | (Data)Crackspread_BBM | `data_crackspread_bbm` | `year, month` | `spglobal_data.py` | monthly tgl 12 |
 | (Data)Crackspread_NON_BBM | `data_crackspread_non_bbm` | `"Year","Month"` | `spglobal_data.py` | monthly tgl 12 |
 | (Data)Crackspread_BBM_YEAR | `data_crackspread_bbm_year` | `year` | `spglobal_data.py` | monthly tgl 12 |
-| (Data)Crackspeed_BBM | `data_crackspeed_bbm` | `"assessDate"` | `spglobal_data.py` | weekly |
-| (Data)Crackspeed_NonBBM | `data_crackspeed_non_bbm` | `"assessDate"` | `spglobal_data.py` | weekly |
 
 ###### Tabel statis (diisi sekali dari Excel, tanpa scraper)
 
@@ -297,15 +295,6 @@ Kolom `news_articles`: `title, date, url, content, source, keyword` + `topic` (n
 |---|---|---|
 | `data_ruptl` | `"ID"` | Data RUPTL |
 | `data_harga_ebt` | **tidak ada UNIQUE** | ⚠️ Tidak bisa di-upsert — load ulang akan menduplikasi baris. Bila perlu reload: `TRUNCATE data_harga_ebt;` dulu, atau tambahkan UNIQUE constraint. |
-
-###### ⚠️ Crackspread vs Crackspeed
-
-Dua keluarga tabel yang mirip namanya tapi **berbeda isi** (perbedaan berasal dari typo historis yang kini jadi konvensi, dipertahankan di SQL + kode + Power Query):
-
-- `data_crackspread_*` = **forecast** harga/crackspread (bulanan tgl 12; per bulan dan per tahun).
-- `data_crackspeed_*` = data **historis mingguan** aktual (weekly, per `assessDate`).
-
-Jangan "memperbaiki" ejaan ini — akan memutus Power Query dan `SHEET_TO_TABLE`.
 
 ##### Kasus Khusus
 
@@ -323,7 +312,7 @@ Untuk melihat kolom aktual dari API: `python scripts/sample_wte_columns.py`.
 
 Didefinisikan di [scripts/create_views.sql](../scripts/create_views.sql). Konvensi: view mengecualikan kolom `id`, mempertahankan urutan dan kapitalisasi kolom Excel (alias `price_ron92 AS "price_RON92"` dsb.), dan menangani pembersihan tipe (WTE).
 
-`vw_biodiesel, vw_bioetanol, vw_harga_minyak, vw_eia, vw_cpo, vw_saf, vw_kapasitas_ebt, vw_iaea_country_stats, vw_iaea_nuclear_capacity_long, vw_iaea_electrical_long, vw_crackspread_bbm, vw_crackspread_non_bbm, vw_crackspread_bbm_year, vw_crackspeed_bbm, vw_crackspeed_non_bbm, vw_wte_komposisi, vw_wte_sumber, vw_wte_timbulan, vw_ruptl, vw_harga_ebt`
+`vw_biodiesel, vw_bioetanol, vw_harga_minyak, vw_eia, vw_cpo, vw_saf, vw_kapasitas_ebt, vw_iaea_country_stats, vw_iaea_nuclear_capacity_long, vw_iaea_electrical_long, vw_crackspread_bbm, vw_crackspread_non_bbm, vw_crackspread_bbm_year, vw_wte_komposisi, vw_wte_sumber, vw_wte_timbulan, vw_ruptl, vw_harga_ebt`
 
 `news_articles` dan `news_sentiment` dibaca Power BI langsung dari tabel (filter per `topic`), bukan lewat view.
 
@@ -365,7 +354,7 @@ Setiap step dibungkus `try/except` — kegagalan satu step tidak menghentikan st
 
 ###### Weekly
 1. **Sentiment mingguan** — `orchestrators.main_sentiment_news_mingguan` (jendela 6 hari, gabungan sentimen berita + tren data terstruktur) → `news_sentiment`
-2. **S&P weekly** — `main_saf_weekly`, `main_crackspeed_bbm_weekly`, `main_crackspeed_non_bbm_weekly` → `data_saf`, `data_crackspeed_bbm`, `data_crackspeed_non_bbm`
+2. **S&P weekly** — `main_saf_weekly` → `data_saf`
 
 ###### Monthly — gating per tanggal
 
@@ -436,7 +425,7 @@ Dua kelompok: **data terstruktur** (`src/structured_data/`, output tabel `data_*
 | Sumber | File | Endpoint / situs | Auth (env) | Output tabel | Jadwal |
 |---|---|---|---|---|---|
 | CPO (GAPKI) | `cpo_gapki.py` | `gapki.id/posisi-harga-komoditas/` (HTML) | — | `data_cpo` | daily morning |
-| SAF + crackspeed + forecast (S&P Global Platts) | `spglobal_data.py` | `api.ci.spglobal.com` (auth `/auth/api`, market-data v3, odata petchem, energy-price-forecast) | `SPGLOBAL_USERNAME`, `SPGLOBAL_PASSWORD` | `data_saf`, `data_crackspeed_bbm`, `data_crackspeed_non_bbm`, `data_crackspread_bbm`, `data_crackspread_non_bbm`, `data_crackspread_bbm_year` | daily PM / weekly / monthly tgl 12 |
+| SAF + forecast (S&P Global Platts) | `spglobal_data.py` | `api.ci.spglobal.com` (auth `/auth/api`, market-data v3, odata petchem, energy-price-forecast) | `SPGLOBAL_USERNAME`, `SPGLOBAL_PASSWORD` | `data_saf`, `data_crackspread_bbm`, `data_crackspread_non_bbm`, `data_crackspread_bbm_year` | daily PM / weekly / monthly tgl 12 |
 | EIA STEO | `migas_eia.py` | `api.eia.gov/v2/steo/data/` + scrape release date | `EIA_API_KEY` (gratis dari eia.gov/opendata) | `data_eia` | monthly tgl 1 |
 | Harga minyak mentah ESDM (OCR) | `migas_esdm.py` | `migas.esdm.go.id/post/read/harga-minyak-mentah` → PDF → easyocr + PyMuPDF | — | `data_harga_minyak` | monthly tgl 1 |
 | Biodiesel HIP (EBTKE ESDM) | `biodiesel_esdm.py` | `ebtke.esdm.go.id/api/api/artikel` + pdfplumber | — | `data_biodiesel` | monthly tgl 1 |
@@ -447,7 +436,7 @@ Dua kelompok: **data terstruktur** (`src/structured_data/`, output tabel `data_*
 
 Catatan:
 - **SIPSN:** domain lama `sipsn.kemenlh.go.id` mati sejak Okt 2024 — sudah dipindah ke `sampahnasional.kemenlh.go.id`. Bila mati lagi, cari domain penerus dan update konstanta URL di `wte_sipsn.py`.
-- **S&P Global** satu-satunya sumber terstruktur berbayar/berkredensial; kegagalan auth mematikan SAF + semua crackspeed/crackspread sekaligus.
+- **S&P Global** satu-satunya sumber terstruktur berbayar/berkredensial; kegagalan auth mematikan SAF + semua crackspread sekaligus.
 - **ESDM OCR** paling rapuh: bergantung format PDF pengumuman + akurasi OCR. Perubahan layout PDF = perlu penyesuaian parsing di `migas_esdm.py`.
 
 ##### Berita
@@ -632,7 +621,7 @@ Konsekuensi: refresh dashboard tetap butuh kredensial SharePoint **dan** Neon. S
 
 | Gejala | Kemungkinan penyebab |
 |---|---|
-| Kolom tidak ditemukan setelah refresh | Skema tabel berubah tanpa update view/M-code; atau ejaan crackspread vs crackspeed tertukar ([bagian “03 — Database Neon PostgreSQL”](#sec-03-database-md)) |
+| Kolom tidak ditemukan setelah refresh | Skema tabel berubah tanpa update view/M-code ([bagian “03 — Database Neon PostgreSQL”](#sec-03-database-md)) |
 | Refresh lambat sekali di awal | Neon compute baru resume dari suspend — normal, coba lagi |
 | Data kosong untuk topik tertentu | Pipeline scraping topik itu gagal/nonaktif — cek `SELECT MAX(date) FROM news_articles WHERE topic='(News)X'` dan log Actions ([bagian “08 — Runbook Maintenance”](#sec-08-maintenance-md)) |
 | Error kredensial PostgreSQL | Password Neon dirotasi — perbarui di Data source settings |
@@ -835,7 +824,6 @@ Lihat [bagian “06 — AI & Analisis Sentimen Berita”](#sec-06-ai-sentiment-m
 - **Error handling:** `try/except Exception` per step/scraper + `traceback.print_exc()`; jangan biarkan satu sumber mematikan pipeline. Exit code ≠ 0 hanya untuk kegagalan fatal seluruh pipeline.
 - **Idempoten:** semua tulis harus upsert-safe. Jangan pernah `INSERT` polos ke tabel ber-UNIQUE; selalu lewat `storage.write_*` yang memakai `upsert_df`.
 - **Nama kolom = kontrak dengan Power BI.** Mengubah nama/kapitalisasi kolom akan memutus Power Query dan view. Bila terpaksa, ubah serempak: scraper → DDL → view → M-code.
-- **Ejaan `crackspread` vs `crackspeed` disengaja** ([bagian “03 — Database Neon PostgreSQL”](#sec-03-database-md)) — jangan diseragamkan.
 - **Import path:** scheduler menambah `src/` ke `sys.path`; modul saling import tanpa prefix `src.` (`from helpers.storage_backend import storage`). Jalankan script dari root repo.
 - **Branch:** kerja di `dev`, merge ke `main` untuk produksi (cron hanya membaca `main`). PR ke `main`.
 
@@ -1466,7 +1454,6 @@ Diserahkan **apa adanya** dengan isu berikut sudah diketahui kedua pihak (detail
 2. **Limit storage Neon 512 MB** (free tier) — pertumbuhan terbesar `news_articles.content`; cek bulanan.
 3. **Auto-disable workflow** setelah 60 hari repo tanpa aktivitas — perlu commit/aktivitas berkala.
 4. **Anomali data WTE tahun 2018** — nilai timbulan jauh lebih kecil dari tahun lain (kemungkinan cakupan provinsi sumber lebih sedikit); perlu validasi ke sumber SIPSN bila dashboard terlihat janggal.
-5. **Penamaan ganda `crackspread` vs `crackspeed`** — keduanya tabel/view berbeda yang memang valid, bukan typo.
 6. **`BPS_API_KEY`** direferensikan kode (`src/news/bps.py`) tapi tidak ada di `.env.example` maupun workflow — konfirmasi apakah scraper BPS masih aktif: `[ISI: aktif/tidak]`.
 7. **Secrets MS/OneDrive masih di-inject ke semua workflow** padahal backend produksi sudah Neon — permukaan kredensial lebih luas dari yang diperlukan (legacy/fallback).
 8. **Tanggal backfill hardcoded `2026-04-17`** di orchestrator sentimen — aman di CI, perlu disesuaikan bila run manual lokal.
