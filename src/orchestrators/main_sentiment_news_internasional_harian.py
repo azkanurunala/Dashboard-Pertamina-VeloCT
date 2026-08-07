@@ -6,6 +6,8 @@ from datetime import datetime
 import pandas as pd
 from dotenv import load_dotenv
 
+load_dotenv()
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from helpers.storage_backend import storage
@@ -15,7 +17,7 @@ from helpers.summary_helper import setup_gemini, summarize_all_news
 # Constants
 
 # Default start date used when no prior summary exists
-DEFAULT_START_DATE = datetime(2026, 4, 26)
+DEFAULT_START_DATE = datetime(2026, 4, 17)
 
 
 # Topic Configuration
@@ -210,5 +212,4 @@ def main() -> None:
 # Script Entry Point
 
 if __name__ == "__main__":
-    load_dotenv()
     main()
