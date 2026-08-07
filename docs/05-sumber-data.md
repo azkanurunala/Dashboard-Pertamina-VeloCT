@@ -7,7 +7,7 @@ Dua kelompok: **data terstruktur** (`src/structured_data/`, output tabel `data_*
 | Sumber | File | Endpoint / situs | Auth (env) | Output tabel | Jadwal |
 |---|---|---|---|---|---|
 | CPO (GAPKI) | `cpo_gapki.py` | `gapki.id/posisi-harga-komoditas/` (HTML) | — | `data_cpo` | daily morning |
-| SAF + crackspeed + forecast (S&P Global Platts) | `spglobal_data.py` | `api.ci.spglobal.com` (auth `/auth/api`, market-data v3, odata petchem, energy-price-forecast) | `SPGLOBAL_USERNAME`, `SPGLOBAL_PASSWORD` | `data_saf`, `data_crackspeed_bbm`, `data_crackspeed_non_bbm`, `data_crackspread_bbm`, `data_crackspread_non_bbm`, `data_crackspread_bbm_year` | daily PM / weekly / monthly tgl 12 |
+| SAF + forecast (S&P Global Platts) | `spglobal_data.py` | `api.ci.spglobal.com` (auth `/auth/api`, market-data v3, odata petchem, energy-price-forecast) | `SPGLOBAL_USERNAME`, `SPGLOBAL_PASSWORD` | `data_saf`, `data_crackspread_bbm`, `data_crackspread_non_bbm`, `data_crackspread_bbm_year` | daily PM / weekly / monthly tgl 12 |
 | EIA STEO | `migas_eia.py` | `api.eia.gov/v2/steo/data/` + scrape release date | `EIA_API_KEY` (gratis dari eia.gov/opendata) | `data_eia` | monthly tgl 1 |
 | Harga minyak mentah ESDM (OCR) | `migas_esdm.py` | `migas.esdm.go.id/post/read/harga-minyak-mentah` → PDF → easyocr + PyMuPDF | — | `data_harga_minyak` | monthly tgl 1 |
 | Biodiesel HIP (EBTKE ESDM) | `biodiesel_esdm.py` | `ebtke.esdm.go.id/api/api/artikel` + pdfplumber | — | `data_biodiesel` | monthly tgl 1 |
@@ -18,7 +18,7 @@ Dua kelompok: **data terstruktur** (`src/structured_data/`, output tabel `data_*
 
 Catatan:
 - **SIPSN:** domain lama `sipsn.kemenlh.go.id` mati sejak Okt 2024 — sudah dipindah ke `sampahnasional.kemenlh.go.id`. Bila mati lagi, cari domain penerus dan update konstanta URL di `wte_sipsn.py`.
-- **S&P Global** satu-satunya sumber terstruktur berbayar/berkredensial; kegagalan auth mematikan SAF + semua crackspeed/crackspread sekaligus.
+- **S&P Global** satu-satunya sumber terstruktur berbayar/berkredensial; kegagalan auth mematikan SAF + semua crackspread sekaligus.
 - **ESDM OCR** paling rapuh: bergantung format PDF pengumuman + akurasi OCR. Perubahan layout PDF = perlu penyesuaian parsing di `migas_esdm.py`.
 
 ##### Berita

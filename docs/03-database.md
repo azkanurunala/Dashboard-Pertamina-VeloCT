@@ -54,8 +54,6 @@ Kolom `news_articles`: `title, date, url, content, source, keyword` + `topic` (n
 | (Data)Crackspread_BBM | `data_crackspread_bbm` | `year, month` | `spglobal_data.py` | monthly tgl 12 |
 | (Data)Crackspread_NON_BBM | `data_crackspread_non_bbm` | `"Year","Month"` | `spglobal_data.py` | monthly tgl 12 |
 | (Data)Crackspread_BBM_YEAR | `data_crackspread_bbm_year` | `year` | `spglobal_data.py` | monthly tgl 12 |
-| (Data)Crackspeed_BBM | `data_crackspeed_bbm` | `"assessDate"` | `spglobal_data.py` | weekly |
-| (Data)Crackspeed_NonBBM | `data_crackspeed_non_bbm` | `"assessDate"` | `spglobal_data.py` | weekly |
 
 ###### Tabel statis (diisi sekali dari Excel, tanpa scraper)
 
@@ -63,15 +61,6 @@ Kolom `news_articles`: `title, date, url, content, source, keyword` + `topic` (n
 |---|---|---|
 | `data_ruptl` | `"ID"` | Data RUPTL |
 | `data_harga_ebt` | **tidak ada UNIQUE** | ⚠️ Tidak bisa di-upsert — load ulang akan menduplikasi baris. Bila perlu reload: `TRUNCATE data_harga_ebt;` dulu, atau tambahkan UNIQUE constraint. |
-
-###### ⚠️ Crackspread vs Crackspeed
-
-Dua keluarga tabel yang mirip namanya tapi **berbeda isi** (perbedaan berasal dari typo historis yang kini jadi konvensi, dipertahankan di SQL + kode + Power Query):
-
-- `data_crackspread_*` = **forecast** harga/crackspread (bulanan tgl 12; per bulan dan per tahun).
-- `data_crackspeed_*` = data **historis mingguan** aktual (weekly, per `assessDate`).
-
-Jangan "memperbaiki" ejaan ini — akan memutus Power Query dan `SHEET_TO_TABLE`.
 
 ##### Kasus Khusus
 
@@ -89,7 +78,7 @@ Untuk melihat kolom aktual dari API: `python scripts/sample_wte_columns.py`.
 
 Didefinisikan di [scripts/create_views.sql](../scripts/create_views.sql). Konvensi: view mengecualikan kolom `id`, mempertahankan urutan dan kapitalisasi kolom Excel (alias `price_ron92 AS "price_RON92"` dsb.), dan menangani pembersihan tipe (WTE).
 
-`vw_biodiesel, vw_bioetanol, vw_harga_minyak, vw_eia, vw_cpo, vw_saf, vw_kapasitas_ebt, vw_iaea_country_stats, vw_iaea_nuclear_capacity_long, vw_iaea_electrical_long, vw_crackspread_bbm, vw_crackspread_non_bbm, vw_crackspread_bbm_year, vw_crackspeed_bbm, vw_crackspeed_non_bbm, vw_wte_komposisi, vw_wte_sumber, vw_wte_timbulan, vw_ruptl, vw_harga_ebt`
+`vw_biodiesel, vw_bioetanol, vw_harga_minyak, vw_eia, vw_cpo, vw_saf, vw_kapasitas_ebt, vw_iaea_country_stats, vw_iaea_nuclear_capacity_long, vw_iaea_electrical_long, vw_crackspread_bbm, vw_crackspread_non_bbm, vw_crackspread_bbm_year, vw_wte_komposisi, vw_wte_sumber, vw_wte_timbulan, vw_ruptl, vw_harga_ebt`
 
 `news_articles` dan `news_sentiment` dibaca Power BI langsung dari tabel (filter per `topic`), bukan lewat view.
 

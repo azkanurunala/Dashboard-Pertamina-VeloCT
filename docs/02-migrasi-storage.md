@@ -103,7 +103,7 @@ python scripts/backfill.py --delay 5.0                            # rate-limit l
 
 Tier sumber (lihat docstring file untuk daftar penuh):
 - **Tier 1** (self-healing, cukup sekali): `eia`, `biodiesel_esdm`, `bioetanol_esdm`, `migas_esdm`, `iaea`, `wte`, `cpo`
-- **Tier 2** (S&P dengan rentang tanggal): `spglobal_saf`, `spglobal_crackspeed_bbm`, `spglobal_crackspeed_nonbbm`
+- **Tier 2** (S&P dengan rentang tanggal): `spglobal_saf`
 - **Tier 3** (berita, loop harian): `news_lokal`, `news_intl`
 - **Tier 4** (sitemap historis Kompas, loop bulanan): `kompas_monthly`
 

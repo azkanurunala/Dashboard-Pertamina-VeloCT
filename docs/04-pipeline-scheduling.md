@@ -27,7 +27,7 @@ Setiap step dibungkus `try/except` — kegagalan satu step tidak menghentikan st
 
 ###### Weekly
 1. **Sentiment mingguan** — `orchestrators.main_sentiment_news_mingguan` (jendela 6 hari, gabungan sentimen berita + tren data terstruktur) → `news_sentiment`
-2. **S&P weekly** — `main_saf_weekly`, `main_crackspeed_bbm_weekly`, `main_crackspeed_non_bbm_weekly` → `data_saf`, `data_crackspeed_bbm`, `data_crackspeed_non_bbm`
+2. **S&P weekly** — `main_saf_weekly` → `data_saf`
 
 ###### Monthly — gating per tanggal
 

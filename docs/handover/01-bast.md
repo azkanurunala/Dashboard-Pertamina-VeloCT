@@ -45,12 +45,10 @@ Diserahkan **apa adanya** dengan isu berikut sudah diketahui kedua pihak (detail
 2. **Limit storage Neon 512 MB** (free tier) — pertumbuhan terbesar `news_articles.content`; cek bulanan.
 3. **Auto-disable workflow** setelah 60 hari repo tanpa aktivitas — perlu commit/aktivitas berkala.
 4. **Anomali data WTE tahun 2018** — nilai timbulan jauh lebih kecil dari tahun lain (kemungkinan cakupan provinsi sumber lebih sedikit); perlu validasi ke sumber SIPSN bila dashboard terlihat janggal.
-5. **Penamaan ganda `crackspread` vs `crackspeed`** — keduanya tabel/view berbeda yang memang valid, bukan typo.
-6. **`BPS_API_KEY`** direferensikan kode (`src/news/bps.py`) tapi tidak ada di `.env.example` maupun workflow — konfirmasi apakah scraper BPS masih aktif: `[ISI: aktif/tidak]`.
-7. **Secrets MS/OneDrive masih di-inject ke semua workflow** padahal backend produksi sudah Neon — permukaan kredensial lebih luas dari yang diperlukan (legacy/fallback).
-8. **Tanggal backfill hardcoded `2026-04-17`** di orchestrator sentimen — aman di CI, perlu disesuaikan bila run manual lokal.
-9. **Refresh Power BI butuh dua kredensial** (Neon + SharePoint) karena macro series belum dimigrasi.
-10. **Step monthly tanggal 12/15/28 baru aktif Juli 2026** — verifikasi fire pertama; gap data lama diisi via dispatch manual/backfill.
+5. **Secrets MS/OneDrive masih di-inject ke semua workflow** padahal backend produksi sudah Neon — permukaan kredensial lebih luas dari yang diperlukan (legacy/fallback).
+6. **Tanggal backfill hardcoded `2026-04-17`** di orchestrator sentimen — aman di CI, perlu disesuaikan bila run manual lokal.
+7. **Refresh Power BI butuh dua kredensial** (Neon + SharePoint) karena macro series belum dimigrasi.
+8. **Step monthly tanggal 12/15/28 baru aktif Juli 2026** — verifikasi fire pertama; gap data lama diisi via dispatch manual/backfill.
 
 ##### 4. Pekerjaan Pending / Di Luar Scope
 
