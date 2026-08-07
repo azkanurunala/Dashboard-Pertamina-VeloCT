@@ -267,11 +267,27 @@ TOPICS: dict[str, dict] = {
             "Kecualikan berita yang bersifat kasus hukum, kriminal, atau politik yang tidak berdampak langsung pada harga atau margin produk non-BBM."
         ),
     },
+
+    # Shares its news source with Crackspread_Non_BBM above (no dedicated
+    # "Volume Petrokimia" scraper exists) -- kept as a separate topic/output_sheet
+    # with a VOLUME-focused prompt (production/kapasitas, not harga/margin) so its
+    # Summary text doesn't just duplicate Crackspread_Non_BBM's for the same week
+    # (the original complaint, QA Revisi II, when this reused the same prompt).
+    "Volume_Petrokimia": {
+        "target_sheets": ["(News)Crackspread Non-BBM"],
+        "output_sheet": "(Summary)Volume Petrokimia",
+        "has_data_sentiment": False,
+        "role_prompt": "analis pasar energi dan produk kilang non-BBM di Indonesia",
+        "spesific_prompt": (
+            "Gunakan bahasa yang ringkas, faktual, dan netral tanpa kata hiperbolik seperti \"signifikan\", \"dahsyat\", atau sejenisnya. "
+            "Setiap poin ringkasan harus terdiri dari satu kalimat. "
+            "Fokus HANYA pada VOLUME/PRODUKSI produk petrokimia (LPG, nafta, propilena, butilena, sulfur, dan produk samping kilang lainnya): "
+            "kapasitas produksi, realisasi produksi, ekspor-impor, permintaan industri, dan distribusi. "
+            "JANGAN bahas harga, margin, atau crack spread -- itu di luar scope, sudah dicakup topik lain. "
+            "Kecualikan berita yang bersifat kasus hukum, kriminal, atau politik yang tidak berdampak langsung pada volume produk non-BBM."
+        ),
+    },
 }
-# NOTE: no separate "Volume Petrokimia" topic — it reused the same "(News)Crackspread Non-BBM"
-# source as Crackspread_Non_BBM above, producing 2 summary rows per date (QA Revisi II complaint).
-# There is no real Volume Petrokimia data/news source yet; the frontend page still needs a manual
-# PBI fix (chart currently locked to Harga Produk Petrokimia's chart, no Volume data to bind).
 
 
 # Data Comparison Utilities
