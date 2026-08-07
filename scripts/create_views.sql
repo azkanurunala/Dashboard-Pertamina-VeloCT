@@ -61,7 +61,7 @@ CREATE OR REPLACE VIEW vw_iaea_electrical_long AS
 SELECT year, country, value_twh
 FROM data_iaea_electrical;
 
--- ── CRACKSPREAD / CRACKSPEED VIEWS ───────────────────────────────────────────
+-- ── CRACKSPREAD VIEWS ───────────────────────────────────────────
 
 -- NOTE: data_crackspread_bbm/_year have TWO sets of price columns — an
 -- unquoted-DDL lowercase set (price_ron92...) that is always NULL (dead/ghost,
@@ -112,32 +112,6 @@ SELECT year,
        "price_GO50_crackspread",
        "price_GO2500_crackspread"
 FROM data_crackspread_bbm_year;
-
-CREATE OR REPLACE VIEW vw_crackspeed_bbm AS
-SELECT "assessDate",
-       "value_RON92", "value_RON95", "value_RON97", "value_FO05",
-       "value_JetKero", "value_GO50", "value_GO2500", "value_Brent",
-       "value_RON92_MT", "value_RON95_MT", "value_RON97_MT", "value_FO05_MT",
-       "value_JetKero_MT", "value_GO50_MT", "value_GO2500_MT", "value_Brent_MT",
-       "value_RON92_final", "value_RON95_final", "value_RON97_final",
-       "value_FO05_final", "value_JetKero_final", "value_GO50_final",
-       "value_GO2500_final",
-       "value_RON92_MT_final", "value_RON95_MT_final", "value_RON97_MT_final",
-       "value_FO05_MT_final", "value_JetKero_MT_final",
-       "value_GO50_MT_final", "value_GO2500_MT_final",
-       "modDate_RON92", "modDate_RON95", "modDate_RON97", "modDate_FO05",
-       "modDate_JetKero", "modDate_GO50", "modDate_GO2500", "modDate_Brent"
-FROM data_crackspeed_bbm;
-
-CREATE OR REPLACE VIEW vw_crackspeed_non_bbm AS
-SELECT "assessDate",
-       "value_Butane", "value_Propane", "value_LPG",
-       "value_Paraxylene", "value_Propylene", "value_Benzene", "value_Brent",
-       "value_LPG_final", "value_Paraxylene_final",
-       "value_Propylene_final", "value_Benzene_final",
-       "modDate_Butane", "modDate_Propane", "modDate_Paraxylene",
-       "modDate_Propylene", "modDate_Benzene"
-FROM data_crackspeed_non_bbm;
 
 -- ── WTE VIEWS (aggregate by tahun — Power Query has no province columns) ──────
 -- NOTE: The extra columns (sisa_makanan, ss_*, timbulan_*) are created at

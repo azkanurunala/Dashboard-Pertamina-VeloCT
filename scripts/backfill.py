@@ -25,7 +25,7 @@ Available --sources values:
     Tier 1 (self-healing, run once):
         eia, biodiesel_esdm, bioetanol_esdm, migas_esdm, iaea, wte, cpo, kapasitas_ebt
     Tier 2 (S&P Global with explicit date range):
-        spglobal_saf, spglobal_crackspeed_bbm, spglobal_crackspeed_nonbbm,
+        spglobal_saf,
         spglobal_petrochemical, spglobal_forecast_bbm_short, spglobal_forecast_bbm_long
     Tier 3 (news, daily loop):
         news_lokal, news_intl
@@ -65,8 +65,6 @@ TIER1_SOURCES = {
 
 TIER2_SOURCES = {
     "spglobal_saf",
-    "spglobal_crackspeed_bbm",
-    "spglobal_crackspeed_nonbbm",
     "spglobal_petrochemical",
     "spglobal_forecast_bbm_short",
     "spglobal_forecast_bbm_long",
@@ -203,8 +201,6 @@ def run_tier1(args, progress: dict) -> None:
 def run_tier2(args, progress: dict) -> None:
     from structured_data.spglobal_data import (
         main_saf_weekly,
-        main_crackspeed_bbm_weekly,
-        main_crackspeed_non_bbm_weekly,
         main_petrochemical_short_term,
         main_price_forecast_short_term_bbm,
         main_price_forecast_long_term_bbm,
@@ -215,8 +211,6 @@ def run_tier2(args, progress: dict) -> None:
 
     tier2_funcs = {
         "spglobal_saf":              lambda: main_saf_weekly(args.start, args.end),
-        "spglobal_crackspeed_bbm":   lambda: main_crackspeed_bbm_weekly(args.start, args.end),
-        "spglobal_crackspeed_nonbbm": lambda: main_crackspeed_non_bbm_weekly(args.start, args.end),
         "spglobal_petrochemical":    lambda: main_petrochemical_short_term(start_year, start_month, end_year, end_month),
         "spglobal_forecast_bbm_short": lambda: main_price_forecast_short_term_bbm(start_year, start_month, end_year, end_month),
         "spglobal_forecast_bbm_long": lambda: main_price_forecast_long_term_bbm(start_year, end_year),
