@@ -185,6 +185,23 @@ _SOLAR_KILANG_REQUIRED: list[str] = [
     "lifting", "barel", "impor", "harga solar",
     "biosolar", "dexlite", "gasoil", "spbu", "pertamina",
 ]
+_NERACA_TERMS: list[str] = [
+    # Frasa inti neraca
+    "neraca perdagangan", "trade balance", "neraca dagang",
+    "surplus perdagangan", "defisit perdagangan",
+    "surplus neraca", "defisit neraca",
+    # Statistik agregat ekspor/impor Indonesia
+    "ekspor nonmigas", "impor nonmigas",
+    "ekspor migas", "impor migas",
+    "neraca migas", "neraca nonmigas",
+    # Konteks laporan BPS spesifik perdagangan
+    "bps catat ekspor", "bps catat impor",
+    "bps rilis ekspor", "bps rilis impor",
+    "data perdagangan indonesia",
+    # Ekspor/impor Indonesia sebagai topik utama
+    "ekspor ri", "impor ri",
+    "ekspor indonesia", "impor indonesia",
+]
 
 # --- Post-filter: artikel harus mengandung salah satu term (include filter) ---
 POST_FILTER_RULES: dict[str, dict[str, list[str]]] = {
@@ -338,6 +355,204 @@ POST_FILTER_RULES: dict[str, dict[str, list[str]]] = {
     },
 }
 
+CNBC_RELEVANCE_RULES: dict[str, list[str]] = {
+    # --- Kurs ---
+    # "rupiah", "dolar", "usd", "idr" terlalu umum — muncul di hampir semua artikel ekonomi
+    "kurs ": [
+        "kurs", "nilai tukar",
+        "rupiah melemah", "rupiah menguat", "rupiah anjlok", "rupiah terbang",
+        "dolar as", "usd/idr", "idr/usd", "devisa", "forex",
+    ],
+    "nilai tukar rupiah ": [
+        "kurs", "nilai tukar",
+        "rupiah melemah", "rupiah menguat", "rupiah anjlok",
+        "dolar as", "usd/idr", "devisa",
+    ],
+    "dolar ": [
+        "kurs", "nilai tukar",
+        "rupiah melemah", "rupiah menguat",
+        "dolar as", "usd/idr", "devisa", "forex",
+    ],
+    "kurs rupiah ": [
+        "kurs", "nilai tukar", "usd/idr",
+        "rupiah melemah", "rupiah menguat",
+    ],
+    "kurs dolar ": [
+        "kurs", "nilai tukar", "usd/idr",
+        "rupiah melemah", "rupiah menguat",
+    ],
+
+    # --- IHSG ---
+    # "saham" terlalu umum — ganti dengan konteks pergerakan indeks
+    "ihsg ": [
+        "ihsg", "indeks harga saham gabungan", "bursa efek indonesia", "bei",
+        "composite index", "jci",
+        "ihsg menguat", "ihsg melemah", "ihsg naik", "ihsg turun",
+        "ihsg ditutup", "ihsg dibuka", "ihsg anjlok", "ihsg terbang",
+    ],
+    "pasar saham ": [
+        "ihsg", "indeks harga saham gabungan", "bursa efek indonesia", "bei",
+        "composite index", "pasar modal",
+        "ihsg menguat", "ihsg melemah", "ihsg naik", "ihsg turun",
+    ],
+
+    # --- Inflasi ---
+    # "bps", "kenaikan harga" terlalu umum
+    "inflasi ": [
+        "inflasi", "deflasi",
+        "indeks harga konsumen", "ihk",
+        "cpi indonesia", "tingkat inflasi", "laju inflasi",
+        "inflasi bulanan", "inflasi tahunan",
+        "inflasi year on year", "inflasi month to month",
+        "bps catat inflasi", "bps rilis inflasi",
+    ],
+
+    # --- BI Rate ---
+    # "suku bunga", "bank indonesia" terlalu umum — muncul di banyak konteks
+    "bi rate ": [
+        "bi rate", "suku bunga acuan", "bunga acuan bank indonesia",
+        "rapat dewan gubernur", "rdg bank indonesia",
+        "kebijakan moneter bank indonesia",
+        "bi 7-day", "bi7drrr", "repo rate bi",
+    ],
+    "suku bunga ": [
+        "bi rate", "suku bunga acuan", "bunga acuan bank indonesia",
+        "rapat dewan gubernur", "rdg bank indonesia",
+        "kebijakan moneter bank indonesia", "bi 7-day",
+    ],
+    "bunga bi ": [
+        "bi rate", "suku bunga acuan", "bunga acuan bank indonesia",
+        "rapat dewan gubernur", "kebijakan moneter bank indonesia",
+    ],
+
+    # --- IndONIA --- tidak perlu filter, keyword sangat spesifik
+    "indonia ": [
+        "indonia", "overnight index average", "pasar uang antar bank",
+        "puab", "suku bunga semalam",
+    ],
+
+    # --- Indeks Penjualan Ritel ---
+    # "konsumsi", "ritel", "spe" terlalu umum
+    "indeks sales retail ": [
+        "survei penjualan eceran", "spe bank indonesia",
+        "indeks penjualan ritel", "retail sales index",
+        "penjualan ritel indonesia",
+    ],
+    "indeks penjualan ritel ": [
+        "survei penjualan eceran", "spe bank indonesia",
+        "indeks penjualan ritel", "penjualan ritel indonesia",
+    ],
+    "indeks ritel ": [
+        "survei penjualan eceran", "spe bank indonesia",
+        "indeks penjualan ritel", "penjualan ritel indonesia",
+    ],
+    "indeks penjualan retail ": [
+        "survei penjualan eceran", "spe bank indonesia",
+        "indeks penjualan ritel", "retail sales index",
+    ],
+    "indeks retail ": [
+        "survei penjualan eceran", "spe bank indonesia",
+        "indeks penjualan ritel", "retail sales index",
+    ],
+    "survei penjualan eceran ": [
+        "survei penjualan eceran", "spe bank indonesia",
+        "indeks penjualan ritel", "penjualan ritel indonesia",
+    ],
+
+    # --- Indeks Kepercayaan Konsumen --- tidak perlu perubahan, sudah spesifik
+    "indeks kepercayaan konsumen ": [
+        "indeks keyakinan konsumen", "ikk", "indeks kepercayaan konsumen",
+        "survei konsumen bank indonesia", "consumer confidence index",
+        "keyakinan konsumen meningkat", "keyakinan konsumen turun",
+    ],
+    "indeks kepercayaan pelanggan ": [
+        "indeks keyakinan konsumen", "ikk",
+        "survei konsumen bank indonesia", "consumer confidence index",
+    ],
+    "ekspektasi konsumen ": [
+        "indeks keyakinan konsumen", "ikk", "ekspektasi konsumen",
+        "survei konsumen bank indonesia",
+    ],
+    "indeks keyakinan konsumen ": [
+        "indeks keyakinan konsumen", "ikk",
+        "survei konsumen bank indonesia", "consumer confidence index",
+    ],
+    "survei konsumen bi ": [
+        "survei konsumen bank indonesia", "indeks keyakinan konsumen",
+        "ikk", "consumer confidence",
+    ],
+    "keyakinan konsumen ": [
+        "indeks keyakinan konsumen", "ikk",
+        "survei konsumen bank indonesia",
+    ],
+
+    # --- Indeks Kinerja Manufaktur --- tidak perlu perubahan
+    "indeks kinerja manufaktur ": [
+        "pmi manufaktur", "purchasing managers index manufaktur",
+        "indeks kinerja manufaktur", "s&p global pmi",
+        "pmi indonesia manufaktur", "aktivitas manufaktur",
+    ],
+    "kinerja manufaktur ": [
+        "pmi manufaktur", "indeks kinerja manufaktur",
+        "s&p global pmi", "aktivitas manufaktur indonesia",
+    ],
+    "pmi manufaktur ": [
+        "pmi manufaktur", "purchasing managers index",
+        "s&p global pmi", "indeks kinerja manufaktur",
+    ],
+    "pmi indonesia ": [
+        "pmi manufaktur indonesia", "pmi jasa indonesia",
+        "purchasing managers index indonesia", "s&p global pmi indonesia",
+    ],
+
+    # --- Indeks Kinerja Jasa --- tidak perlu perubahan
+    "indeks kinerja jasa ": [
+        "pmi jasa", "purchasing managers index jasa",
+        "indeks kinerja jasa", "s&p global pmi jasa",
+        "aktivitas jasa",
+    ],
+    "kinerja jasa ": [
+        "pmi jasa", "indeks kinerja jasa",
+        "s&p global pmi", "aktivitas jasa indonesia",
+    ],
+    "pmi jasa ": [
+        "pmi jasa", "purchasing managers index jasa",
+        "s&p global pmi jasa", "indeks kinerja jasa",
+    ],
+    "pmi sektor jasa ": [
+        "pmi jasa", "pmi sektor jasa",
+        "purchasing managers index jasa", "s&p global pmi",
+    ],
+
+    # --- Neraca Perdagangan ---
+    "neraca perdagangan ": _NERACA_TERMS,
+    "trade balance ":      _NERACA_TERMS,
+    "neraca dagang ":      _NERACA_TERMS,
+
+    # --- Pertumbuhan Ekonomi / PDB ---
+    # "bps", "kuartal", "triwulan" terlalu umum
+    "pertumbuhan domestik bruto ": [
+        "produk domestik bruto", "pdb indonesia", "gdp indonesia",
+        "pertumbuhan ekonomi indonesia", "pertumbuhan pdb",
+        "ekonomi indonesia tumbuh", "kontraksi ekonomi",
+        "bps catat pertumbuhan", "pdb kuartal", "gdp kuartal",
+    ],
+    "pdb ": [
+        "produk domestik bruto", "pdb indonesia", "gdp indonesia",
+        "pertumbuhan pdb", "pdb kuartal", "gdp kuartal",
+        "bps catat pertumbuhan",
+    ],
+    "pertumbuhan ekonomi ": [
+        "pertumbuhan ekonomi indonesia", "pdb indonesia", "gdp indonesia",
+        "ekonomi indonesia tumbuh", "kontraksi ekonomi",
+        "pertumbuhan pdb", "bps catat pertumbuhan",
+    ],
+    "produk domestik bruto ": [
+        "produk domestik bruto", "pdb indonesia", "gdp indonesia",
+        "pertumbuhan pdb", "pdb kuartal", "gdp kuartal",
+    ],
+}
+
 # --- Post-sinonim-exclude: exclude per kombinasi keyword utama + sinonim ---
 POST_SINONIM_EXCLUDE_RULES: dict[str, dict[str, list[str]]] = {
     "Pembangkit listrik nuklir ": {
@@ -396,7 +611,13 @@ SUMBER_DICT: dict[str, list] = {
     "indeks volatilitas ": [main_bloomberg_technoz],
     "kurs ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
     "ihsg ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc],
-    "inflasi ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bps],
+    # WIP (asyifashfr, 2026-07-13): CNBC-only + CNBC_RELEVANCE_RULES relevance filter,
+    # kept as-is rather than reverted to the old multi-source list below.
+    "inflasi ": [
+        # scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo,
+        main_cnbc,
+        # main_bps
+        ],
     "bi rate ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
     "indonia ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
     "indeks sales retail ": [scrape_kontan, main_bisnis_indonesia, main_kompas, scrape_tempo, main_cnbc, main_bank_indonesia],
@@ -412,7 +633,8 @@ SUMBER_DICT: dict[str, list] = {
 
     # ### Produk Kilang Pertamina ###
     "harga produk kilang pertamina ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
-    "volume produk kilang pertamina ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
+    # "volume produk kilang pertamina ": left disabled (asyifashfr, main) — no reason on record, not re-enabling.
+    # "volume produk kilang pertamina ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
     "RON 92 ": [scrape_kontan_biodiesel, main_bisnis_indonesia, main_bloomberg_technoz],
 
     # ## Petrokimia Hulu ###
@@ -455,7 +677,8 @@ SHEET_TO_KEYWORD: dict[str, str] = {
 
     # ### Produk Kilang Pertamina ###
     "(News)Harga Produk Kilang": "harga produk kilang pertamina ",
-    "(News)Volume Produk Kilang": "volume produk kilang pertamina ",
+    # "(News)Volume Produk Kilang": left disabled (asyifashfr, main), not re-enabling.
+    # "(News)Volume Produk Kilang": "volume produk kilang pertamina ",
     "(News)Crackspread BBM": "RON 92 ",
 
     # ### Petrokimia Hulu ###
@@ -495,7 +718,7 @@ ACTIVE_SHEETS: list[str] = [
 
     # ### Produk Kilang Pertamina ###
     "(News)Harga Produk Kilang",
-    "(News)Volume Produk Kilang",
+    # "(News)Volume Produk Kilang": left disabled (asyifashfr, main), not re-enabling.
     "(News)Crackspread BBM",
 
     # ### Petrokimia Hulu ###
@@ -540,7 +763,7 @@ COLUMN_RENAME_MAP: dict[str, str] = {
 }
 
 REQUIRED_COLUMNS: list[str] = ["title", "date", "url", "content"]
-COLUMN_ORDER:     list[str] = ["title", "date", "url", "content", "source", "keyword"]
+COLUMN_ORDER:     list[str] = ["title", "date", "url", "content", "source", "keyword", "matched_rule"]
 EMPTY_DF = pd.DataFrame(columns=COLUMN_ORDER)
 
 
@@ -672,6 +895,17 @@ def filter_nuklir_from_ruptl(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # CORE SCRAPING LOGIC
+def _find_matched_rule(row: pd.Series, terms: list[str]) -> str | None:
+    """
+    Cari term pertama yang cocok di judul atau konten artikel.
+    Return format: 'title: {term}' atau 'content: {term}', atau None jika tidak ada.
+    """
+    for term in terms:
+        if re.search(re.escape(term), str(row.get("title", "")), re.IGNORECASE):
+            return f"title: {term}"
+        if re.search(re.escape(term), str(row.get("content", "")), re.IGNORECASE):
+            return f"content: {term}"
+    return None
 
 def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
     """
@@ -703,8 +937,22 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
 
                 if not df_temp.empty:
                     df_temp["source"] = nama_sumber
+                    df_temp["matched_rule"] = "N/A"
+                    
                     df_temp = standardize_format(df_temp)
                     df_temp = remove_empty_content(df_temp)
+                    
+                    if nama_sumber == "CNBC" and kata in CNBC_RELEVANCE_RULES:
+                        before        = len(df_temp)
+                        terms         = CNBC_RELEVANCE_RULES[kata]
+                        matched_rules = df_temp.apply(lambda row: _find_matched_rule(row, terms), axis=1)
+                        mask          = matched_rules.notna()
+                        df_temp       = df_temp[mask].copy()
+                        df_temp["matched_rule"] = matched_rules[mask].values
+                        after = len(df_temp)
+                        if before - after > 0:
+                            print(f"    CNBC relevance filter '{kata}': {before} → {after} ({before - after} removed)")
+                            
                     hasil_list.append(df_temp)
                     print(f"    {len(df_temp)} article(s) from {nama_sumber}.")
                 else:
@@ -756,7 +1004,7 @@ def main() -> None:
     else:
         # Mode 2: Range tanggal
         START_DATE   = "2026-04-24"
-        END_DATE     = "2026-04-30"
+        END_DATE     = "2026-04-24"
         tanggal_list = generate_date_range(START_DATE, END_DATE)
 
     # Mode 3: Kemarin

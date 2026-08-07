@@ -1,7 +1,6 @@
 import sys
 import os
 import time
-from datetime import datetime
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -15,54 +14,55 @@ from structured_data.spglobal_data import main_saf_daily
 STEP_SLEEP_SECONDS = 60
 SEPARATOR          = "-" * 70
 
+def run_step(step_name, func):
+    """Jalankan satu fungsi step dengan logging waktu mulai/selesai/durasi."""
+    start = time.time()
+    print(SEPARATOR)
+    print(f"[Main] >>> START {step_name} @ {time.strftime('%H:%M:%S')}")
+    print(SEPARATOR)
+    try:
+        func()
+        elapsed = time.time() - start
+        print(f"[Main] ✓ {step_name} SELESAI dalam {elapsed:.1f}s ({elapsed/60:.1f} menit)")
+        return True
+    except Exception as e:
+        elapsed = time.time() - start
+        print(f"[Main] ✗ ERROR pada {step_name} setelah {elapsed:.1f}s: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 # Public Entry Point
 
 def run_daily_scraping():
     """Jalankan pipeline scraping harian: news, sentiment, dan SAF secara berurutan."""
+    pipeline_start = time.time()
     try:
         # ===== STEP 1: News Scraping =====
-        print("[Main] >>> STEP 1: Menjalankan News Scraping")
-        print(SEPARATOR)
-        try:
-            main_news_scraping()
-            print("[Main] News Scraping selesai")
-        except Exception as e:
-            print(f"[Main] ✗ ERROR pada News Scraping: {e}")
-            import traceback
-            traceback.print_exc()
+        run_step("STEP 1: News Scraping", main_news_scraping)
 
         print(f"[Main] Istirahat {STEP_SLEEP_SECONDS} detik sebelum melanjutkan ke Sentiment...")
         time.sleep(STEP_SLEEP_SECONDS)
 
         # ===== STEP 2: News Sentiment Summarization =====
-        print("[Main] >>> STEP 2: Menjalankan News Sentiment Summarization")
-        print(SEPARATOR)
-        try:
-            main_sentiment_news()
-            print("[Main] News Sentiment Summarization selesai")
-        except Exception as e:
-            print(f"[Main] ✗ ERROR pada News Sentiment Summarization: {e}")
-            import traceback
-            traceback.print_exc()
+        run_step("STEP 2: News Sentiment Summarization", main_sentiment_news)
 
+        print(f"[Main] Istirahat {STEP_SLEEP_SECONDS} detik sebelum melanjutkan ke SAF...")
         time.sleep(STEP_SLEEP_SECONDS)
 
-        # ===== STEP 3: SAF & Crackspeed Scraping =====
-        print("[Main] >>> STEP 3: Menjalankan SAF & Crackspeed Scraping")
-        try:
-            main_saf_daily()
-            print("[Main] SAF Daily scraping selesai")
-        except Exception as e:
-            print(f"[Main] ✗ ERROR pada SAF & Crackspeed Scraping: {e}")
-            import traceback
-            traceback.print_exc()
+        # ===== STEP 3: SAF & Crackspread Scraping =====
+        run_step("STEP 3: SAF & Crackspread Scraping", main_saf_daily)
 
     except Exception as e:
         print(f"[Main] ERROR FATAL SAAT SCRAPING: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
+    finally:
+        total_elapsed = time.time() - pipeline_start
+        print(SEPARATOR)
+        print(f"[Main] TOTAL WAKTU PIPELINE: {total_elapsed:.1f}s ({total_elapsed/60:.1f} menit)")
+        print(SEPARATOR)
 
 
 # Script Entry Point
