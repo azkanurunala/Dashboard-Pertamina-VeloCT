@@ -6,3 +6,6 @@ __pycache__/
 scripts/*.json
 scripts/backups/
 migration-docs.pdf
+token.json
+token_cache.json
+*.token.json
