@@ -7,6 +7,7 @@ from datetime import datetime
 
 import pandas as pd
 from bs4 import BeautifulSoup
+from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -67,6 +68,36 @@ CNBC_ALLOWED_CATEGORIES: list[str] = [
     "research",
     "opinion",
 ]
+
+
+# Shared Driver (reused across keywords within a run)
+#
+# A fresh Chrome instance was launched and quit on every single keyword call
+# -- across ~24 sheets x several keyword synonyms, that's a real cost. The
+# driver is now created once and reused; only torn down on a WebDriverException
+# (session actually dead) so a crash doesn't cascade into every remaining
+# keyword, or explicitly via close_driver() at the end of a run.
+
+_driver_instance = None
+
+
+def _get_driver(headless: bool = True):
+    global _driver_instance
+    if _driver_instance is None:
+        _driver_instance = setup_driver(headless=headless)
+    return _driver_instance
+
+
+def close_driver() -> None:
+    """Quit the shared driver, if one was created. Call once at end of run."""
+    global _driver_instance
+    if _driver_instance is not None:
+        try:
+            _driver_instance.quit()
+        except Exception:
+            pass
+        _driver_instance = None
+
 
 # Date Utilities (CNBC-specific)
 
@@ -241,9 +272,14 @@ def parse_search_results_page(driver, url: str) -> tuple[list[dict], BeautifulSo
 
     try:
         driver.get(url)
-    except Exception as exc:
-        # TimeoutException dari Selenium: halaman belum selesai load tapi DOM mungkin sudah ada
+    except TimeoutException as exc:
+        # Halaman belum selesai load tapi DOM mungkin sudah ada -- lanjut baca as-is.
         print(f"[Parse] Page load timeout (lanjut baca DOM): {type(exc).__name__}")
+    except WebDriverException:
+        # Session actually dead (crash, disconnect) -- let it propagate so
+        # the caller can reset the shared driver instead of silently reusing
+        # a broken one for every remaining keyword.
+        raise
 
     # Tunggu JS selesai render konten artikel.
     # Konten CNBC di-inject oleh JS setelah page load — perlu tunggu
@@ -326,7 +362,7 @@ def scrape_article_content(driver, url: str) -> str:
         driver.set_page_load_timeout(60)
         try:
             driver.get(url)
-        except Exception as exc:
+        except TimeoutException as exc:
             print(f"[Content] Page load timeout (lanjut baca DOM): {type(exc).__name__}")
 
         try:
@@ -375,6 +411,10 @@ def scrape_article_content(driver, url: str) -> str:
         print(f"[Content] {len(result)} characters collected.")
         return result
 
+    except WebDriverException:
+        # Session actually dead -- propagate so the caller resets the shared driver.
+        raise
+
     except Exception as exc:
         print(f"[Content] Error: {exc}")
         traceback.print_exc()
@@ -402,7 +442,7 @@ def scrape_cnbc_news(
         else:
             print(f"[Main] Warning: could not parse filter_date='{filter_date}' — collecting all dates.")
 
-    driver = setup_driver(headless=headless)
+    driver = _get_driver(headless=headless)
     seen_urls: set[str] = set()
 
     try:
@@ -478,13 +518,22 @@ def scrape_cnbc_news(
         print(f"\n[Main] Done.")
         return all_results
 
+    except TimeoutException as exc:
+        # Page/element just didn't load in time -- not a dead session, keep
+        # the driver alive for the next keyword.
+        print(f"[Main] Timeout waiting for page/element: {exc}")
+        return []
+
+    except WebDriverException as exc:
+        # Session actually dead (crash, disconnect) -- drop it so the next
+        # call gets a fresh browser instead of repeatedly failing on it.
+        print(f"[Main] Driver error, resetting session: {exc}")
+        close_driver()
+        return []
+
     except Exception as exc:
         traceback.print_exc()
         return []
-
-    finally:
-        driver.quit()
-        print("[Main] Browser closed.")
 
 
 def _dedup_articles(articles: list[dict], seen_urls: set[str]) -> list[dict]:

@@ -11,13 +11,16 @@ load_dotenv()
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+from helpers.scraping_helper import call_with_hard_timeout
 from helpers.storage_backend import storage
 from news.bisnis_indonesia import main_bisnis_indonesia
 from news.bloomberg_technoz import main_bloomberg_technoz
 from news.bank_indonesia import main_bank_indonesia
+from news.bank_indonesia import close_driver as close_bank_indonesia_driver
 from news.bps import main_bps
 from news.cnbc import main_google_news_cnbc
 from news.cnbc_id import main_cnbc
+from news.cnbc_id import close_driver as close_cnbc_driver
 from news.cnn import main_google_news_cnn
 from news.kompas import main_kompas
 from news.kontan import scrape_kontan
@@ -914,6 +917,13 @@ CIRCUIT_BREAKER_THRESHOLD = 3
 _source_fail_streak: dict[str, int] = {}
 _source_disabled: set[str] = set()
 
+# Hard wall-clock deadline per source call. A source's own request timeout
+# doesn't cover a stuck DNS lookup (see call_with_hard_timeout) -- generous
+# enough for a legitimate multi-request scrape (sitemap crawl + several
+# article content fetches, or a Selenium page load), far below the scale
+# of a hang that can eat hours.
+SCRAPE_FUNC_TIMEOUT_SECONDS = 120
+
 
 def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
     """
@@ -940,7 +950,10 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
             print(f"    Scraping from {nama_sumber}...")
 
             try:
-                data = scrape_func(kata, tanggal_filter)
+                data = call_with_hard_timeout(
+                    scrape_func, kata, tanggal_filter,
+                    timeout=SCRAPE_FUNC_TIMEOUT_SECONDS,
+                )
                 if isinstance(data, pd.DataFrame):
                     df_temp = data
                 elif data:
@@ -1009,6 +1022,17 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
 # MAIN
 
 def main() -> None:
+    try:
+        _main_impl()
+    finally:
+        # Shared Selenium drivers (CNBC, Bank Indonesia) are reused across
+        # keywords for the whole run -- close them here so no Chrome process
+        # lingers after the script exits, success or failure either way.
+        close_cnbc_driver()
+        close_bank_indonesia_driver()
+
+
+def _main_impl() -> None:
     print("\n" + "=" * 60)
     print("NEWS SCRAPING")
     print("=" * 60)

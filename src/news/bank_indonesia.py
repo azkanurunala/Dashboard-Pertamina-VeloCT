@@ -6,7 +6,7 @@ from datetime import datetime
 
 import pandas as pd
 from bs4 import BeautifulSoup
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
@@ -42,6 +42,34 @@ MIN_PARAGRAPH_LENGTH = 30
 
 # Paragraphs below this threshold are discarded without logging
 MIN_PARAGRAPH_THRESHOLD = 5
+
+
+# Shared Driver (reused across keywords within a run)
+#
+# A fresh Chrome instance was launched and quit on every single keyword call.
+# The driver is now created once and reused; only torn down on a
+# WebDriverException (session actually dead) so a crash doesn't cascade into
+# every remaining keyword, or explicitly via close_driver() at end of run.
+
+_driver_instance = None
+
+
+def _get_driver(headless: bool = True):
+    global _driver_instance
+    if _driver_instance is None:
+        _driver_instance = setup_driver(headless=headless)
+    return _driver_instance
+
+
+def close_driver() -> None:
+    """Quit the shared driver, if one was created. Call once at end of run."""
+    global _driver_instance
+    if _driver_instance is not None:
+        try:
+            _driver_instance.quit()
+        except Exception:
+            pass
+        _driver_instance = None
 
 
 # Search / Navigation
@@ -237,6 +265,14 @@ def fetch_article_content(driver, url: str) -> str:
         print(f"[Content] Total: {len(result)} characters collected.")
         return result
 
+    except TimeoutException as exc:
+        print(f"[Content] Timeout waiting for content: {exc}")
+        return "N/A"
+
+    except WebDriverException:
+        # Session actually dead -- propagate so the caller resets the shared driver.
+        raise
+
     except Exception as exc:
         print(f"[Content] Error: {exc}")
         import traceback
@@ -251,10 +287,9 @@ def scrape_bi_news(url: str, keyword: str, target_date: str | None = None, headl
     Scrape BI news articles matching the target date and fetch their content.
     """
     all_articles: list[dict] = []
-    driver = None
 
     try:
-        driver = setup_driver(headless=headless)
+        driver = _get_driver(headless=headless)
 
         print(f"\n{'='*80}")
         print(f"[Main] URL      : {url}")
@@ -303,13 +338,19 @@ def scrape_bi_news(url: str, keyword: str, target_date: str | None = None, headl
         print(f"\n{'='*80}")
         print(f"[Main] Done. {len(all_articles)} article(s) with full content.")
 
+    except TimeoutException as exc:
+        # Page/element just didn't load in time for this keyword -- not a
+        # dead session, keep the driver alive for the next keyword.
+        print(f"\n[Main] Timeout waiting for page/element: {exc}")
+
+    except WebDriverException as exc:
+        # Session actually dead (crash, disconnect) -- drop it so the next
+        # call gets a fresh browser instead of repeatedly failing on it.
+        print(f"\n[Main] Driver error, resetting session: {exc}")
+        close_driver()
+
     except Exception as exc:
         print(f"\n[Main] Fatal error: {exc}")
-
-    finally:
-        if driver:
-            driver.quit()
-            print("[Main] Browser closed.")
 
     return all_articles
 
