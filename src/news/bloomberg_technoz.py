@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import time
+import xml.etree.ElementTree as ET
 from datetime import datetime
 
 import pandas as pd
@@ -10,13 +11,19 @@ from bs4 import BeautifulSoup
 
 # Allow importing shared utilities from the sibling 'helpers' directory
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from helpers.scraping_utils import normalize_to_iso_date, parse_month_name_date, resolve_relative_date
+from helpers.scraping_helper import fetch_xml
+from helpers.scraping_utils import extract_news_sitemap_entry, normalize_to_iso_date
 
 
 # Constants
 
-BLOOMBERG_TECHNOZ_BASE_URL   = "https://www.bloombergtechnoz.com"
-BLOOMBERG_TECHNOZ_SEARCH_URL = f"{BLOOMBERG_TECHNOZ_BASE_URL}/search"
+BLOOMBERG_TECHNOZ_BASE_URL    = "https://www.bloombergtechnoz.com"
+BLOOMBERG_TECHNOZ_SITEMAP_URL = f"{BLOOMBERG_TECHNOZ_BASE_URL}/sitemap-news.xml"
+
+NS_SITEMAP = {
+    "sm":   "http://www.sitemaps.org/schemas/sitemap/0.9",
+    "news": "http://www.google.com/schemas/sitemap-news/0.9",
+}
 
 # HTTP headers sent with every request to avoid bot-detection blocks
 REQUEST_HEADERS = {
@@ -27,7 +34,7 @@ REQUEST_HEADERS = {
     )
 }
 
-# Delay in seconds between paginated list requests (rate-limit courtesy)
+# Delay in seconds between article sub-page requests (rate-limit courtesy)
 REQUEST_DELAY_SECONDS = 1.0
 
 # HTTP request timeout in seconds
@@ -49,47 +56,78 @@ BLOOMBERG_ALLOWED_KANALS: list[str] = [
     "green",
 ]
 
-# Date Utilities (Bloomberg Technoz-specific)
 
-def parse_bloomberg_date(raw_date: str) -> str:
+# Sitemap Search
+#
+# bloombergtechnoz.com/search was rate-limited/down (429/502) on effectively
+# every request in production, wasting a full network round-trip per
+# keyword x sheet with zero results. sitemap-news.xml is a standard Google
+# News sitemap covering roughly the last day of articles — same window this
+# pipeline actually scrapes (yesterday's date) — so it's fetched once per
+# process and searched in-memory per keyword instead.
+
+_SITEMAP_ENTRIES_CACHE: list[dict] | None = None
+
+
+def _get_sitemap_entries() -> list[dict]:
+    """Return parsed sitemap entries, fetching sitemap-news.xml once per process."""
+    global _SITEMAP_ENTRIES_CACHE
+    if _SITEMAP_ENTRIES_CACHE is not None:
+        return _SITEMAP_ENTRIES_CACHE
+
+    print(f"[Sitemap] Fetching {BLOOMBERG_TECHNOZ_SITEMAP_URL}...")
+    try:
+        content = fetch_xml(BLOOMBERG_TECHNOZ_SITEMAP_URL)
+        root = ET.fromstring(content)
+        url_tags = root.findall(".//sm:url", NS_SITEMAP)
+        _SITEMAP_ENTRIES_CACHE = [
+            info for url_tag in url_tags
+            if (info := extract_news_sitemap_entry(url_tag))
+        ]
+        print(f"[Sitemap] {len(_SITEMAP_ENTRIES_CACHE)} article(s) in sitemap.")
+    except Exception as exc:
+        print(f"[Sitemap] Failed to fetch sitemap: {exc}")
+        _SITEMAP_ENTRIES_CACHE = []
+
+    return _SITEMAP_ENTRIES_CACHE
+
+
+def find_articles_by_keyword(keyword: str, filter_date: str | None = None) -> list[dict]:
     """
-    Parse a Bloomberg Technoz date string into a normalized display format.
+    Search the cached Bloomberg Technoz news sitemap for articles whose
+    title or keywords match, optionally restricted to a single ISO date.
     """
-    cleaned = raw_date.replace("|", "").strip().lower()
+    entries = _get_sitemap_entries()
+    keyword_pattern = re.compile(r"\b" + re.escape(keyword.strip().lower()) + r"\b")
 
-    # --- Relative date (e.g. "3 jam yang lalu", "2 hari lalu") ---
-    iso = resolve_relative_date(cleaned)
-    if iso:
-        return datetime.strptime(iso, "%Y-%m-%d").strftime(DISPLAY_DATE_FORMAT)
+    results: list[dict] = []
+    for info in entries:
+        if filter_date and info.get("date") != filter_date:
+            continue
 
-    # --- Absolute date with Indonesian or English month name ---
-    iso = parse_month_name_date(cleaned)
-    if iso:
-        return datetime.strptime(iso, "%Y-%m-%d").strftime(DISPLAY_DATE_FORMAT)
+        title    = (info.get("title")    or "").lower()
+        keywords = (info.get("keywords") or "").lower()
+        if not (keyword_pattern.search(title) or keyword_pattern.search(keywords)):
+            continue
 
-    return cleaned  # Fallback: return sanitised string unchanged
+        iso_date = info.get("date")
+        display_date = (
+            datetime.strptime(iso_date, "%Y-%m-%d").strftime(DISPLAY_DATE_FORMAT)
+            if iso_date else "-"
+        )
+        results.append({
+            "title": info["title"] or info["link"],
+            "link":  info["link"],
+            "date":  display_date,
+        })
 
-
-# Pagination
-
-def get_total_pages(soup: BeautifulSoup) -> int:
-    """
-    Return total pages from a Bloomberg Technoz results page.
-    """
-    pagination = soup.find("ul", class_="pagging") if soup else None
-    if not pagination:
-        return 1
-
-    page_numbers = [
-        int(m.group(1))
-        for a in pagination.find_all("a", href=True)
-        if (m := re.search(r"pagenum=(\d+)", a["href"]))
-    ]
-
-    return max(page_numbers) if page_numbers else 1
+    suffix = f" on {filter_date}" if filter_date else ""
+    print(f"[Search] {len(results)} article(s) matched keyword '{keyword}'{suffix}.")
+    return results
 
 
 # Article Content Fetching
+
 def _extract_kanal(soup: BeautifulSoup) -> str:
     """Extract kanal utama dari JSON-LD BreadcrumbList."""
     import json
@@ -110,7 +148,7 @@ def fetch_article_content(url: str) -> tuple[str, str]:
     """
     all_text_lines: list[str] = []
     kanal = ""
-    
+
     try:
         for page in range(1, MAX_ARTICLE_PAGES + 1):
             # Page 1 uses the canonical URL; subsequent pages append /N
@@ -123,7 +161,7 @@ def fetch_article_content(url: str) -> tuple[str, str]:
             if page == 1:
                 kanal = _extract_kanal(soup)
                 print(f"  [Content] Kanal: '{kanal}'")
-            
+
             # Locate article body containers on this sub-page
             articles = soup.find_all("div", class_="article")
             if not articles:
@@ -175,48 +213,6 @@ def fetch_article_content(url: str) -> tuple[str, str]:
         return ""
 
 
-# Search Results Page Parsing
-
-def fetch_search_results_page(url: str) -> tuple[list[dict], BeautifulSoup | None]:
-    """
-    Fetch a Bloomberg Technoz search results page, extract valid article data (title, date, link), and return it along with the parsed HTML for optional pagination handling.
-    """
-    try:
-        response = requests.get(url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
-        response.raise_for_status()
-    except Exception as exc:
-        print(f"[Fetch] Failed to access {url}: {exc}")
-        return [], None
-
-    soup  = BeautifulSoup(response.text, "html.parser")
-    cards = soup.find_all("div", class_="card-box")
-    articles: list[dict] = []
-
-    for card in cards:
-        a_tag      = card.find("a", href=True)
-        title_tag  = card.find("h2", class_="title")
-        date_tag   = card.find("span", class_="cl-gray")
-
-        title    = title_tag.get_text(strip=True) if title_tag else ""
-        raw_date = date_tag.get_text(strip=True)  if date_tag  else ""
-        link     = a_tag["href"]                  if a_tag     else ""
-
-        # Ensure URL is absolute
-        if link and not link.startswith("http"):
-            link = BLOOMBERG_TECHNOZ_BASE_URL + link
-
-        if not title or not link:
-            continue  # Skip incomplete cards
-
-        articles.append({
-            "title": title,
-            "date":  parse_bloomberg_date(raw_date),
-            "link":  link,
-        })
-
-    return articles, soup
-
-
 # Orchestration
 
 def scrape_bloomberg_technoz_news(
@@ -224,58 +220,31 @@ def scrape_bloomberg_technoz_news(
     filter_date: str | None = None,
 ) -> list[dict]:
     """
-    Scrape Bloomberg Technoz articles by query with optional date filtering, paginate results with early stopping, and enrich each article with full content.
+    Find Bloomberg Technoz articles by query via the cached news sitemap,
+    optionally restricted to a single date, and enrich each match with
+    full article content.
     """
-    search_url = f"{BLOOMBERG_TECHNOZ_SEARCH_URL}?query={query}&type=berita"
-
-    # Parse filter_date into a datetime for comparison
-    filter_dt: datetime | None = None
+    iso_date = None
     if filter_date:
         try:
-            filter_dt = datetime.strptime(filter_date, DISPLAY_DATE_FORMAT)
-            print(f"[Scrape] Target date: {filter_dt.strftime(DISPLAY_DATE_FORMAT)}")
+            iso_date = datetime.strptime(filter_date, DISPLAY_DATE_FORMAT).strftime("%Y-%m-%d")
+            print(f"[Scrape] Target date: {filter_date}")
         except ValueError as exc:
             print(f"[Scrape] Warning: could not parse filter_date='{filter_date}': {exc}")
 
-    # --- Page 1: fetch results and detect total page count ---
-    print(f"[Scrape] Fetching page 1...")
-    all_results, first_page_soup = fetch_search_results_page(search_url)
-    total_pages = get_total_pages(first_page_soup)
-    print(f"[Scrape] Total pages: {total_pages}")
+    all_results = find_articles_by_keyword(query, filter_date=iso_date)
 
-    # Apply date filter to page 1 results
-    all_results, stop_early = _filter_by_date(all_results, filter_dt, page_num=1)
-
-    # --- Paginate through remaining pages ---
-    if not stop_early:
-        for page_num in range(2, total_pages + 1):
-            print(f"\n[Scrape] Fetching page {page_num}/{total_pages}...")
-            page_url     = f"{search_url}&pagenum={page_num}"
-            page_results, _ = fetch_search_results_page(page_url)
-
-            if not page_results:
-                print(f"[Scrape] Page {page_num} returned no results — stopping.")
-                break
-
-            matched, stop_early = _filter_by_date(page_results, filter_dt, page_num)
-            all_results.extend(matched)
-
-            if stop_early:
-                break
-
-            time.sleep(REQUEST_DELAY_SECONDS)
-
-    print(f"\n[Scrape] List scraping complete. {len(all_results)} article(s) passed the filter.")
+    print(f"\n[Scrape] Sitemap search complete. {len(all_results)} article(s) passed the filter.")
 
     if not all_results:
         return []
 
     # --- Fetch full article content for each matched article ---
     print(f"\n[Scrape] Fetching full content for {len(all_results)} article(s)...")
-    
+
     keyword_pattern = re.compile(r"\b" + re.escape(query.strip()) + r"\b", re.IGNORECASE)
     filtered_results: list[dict] = []
-    
+
     for i, article in enumerate(all_results, start=1):
         print(f"[Scrape] [{i}/{len(all_results)}] {article['title']}")
         article["konten"], kanal = fetch_article_content(article["link"])
@@ -283,47 +252,15 @@ def scrape_bloomberg_technoz_news(
         if kanal and kanal not in BLOOMBERG_ALLOWED_KANALS:
             print(f"  [Filter] Kanal '{kanal}' tidak diizinkan — dilewati.")
             continue
-        
+
         # Filter keyword
         if not keyword_pattern.search(article["title"]) and not keyword_pattern.search(article["konten"]):
             print(f"[Skip] '{query.strip()}' tidak ditemukan: {article['title']!r}")
             continue
         filtered_results.append(article)
-        
+
     print("[Scrape] Content fetching complete.")
-    # return all_results
     return filtered_results
-
-
-def _filter_by_date(
-    articles: list[dict],
-    filter_dt: datetime | None,
-    page_num: int,
-) -> tuple[list[dict], bool]:
-    """
-    Filter articles by target date, returning matches and a stop flag when older articles are encountered to halt further pagination.
-    """
-    if not filter_dt:
-        return articles, False
-
-    matched: list[dict] = []
-    stop_early = False
-
-    for article in articles:
-        try:
-            article_dt = datetime.strptime(article["date"], DISPLAY_DATE_FORMAT)
-        except ValueError:
-            print(f"[Filter] Could not parse date '{article['date']}' — skipped.")
-            continue
-
-        if article_dt < filter_dt:
-            print(f"[Filter] Page {page_num}: article dated {article['date']} is older than target — stopping.")
-            stop_early = True
-            break
-        elif article_dt == filter_dt:
-            matched.append(article)
-
-    return matched, stop_early
 
 
 # Public Entry Point
@@ -373,7 +310,7 @@ if __name__ == "__main__":
         query="nuklir",
         filter_tanggal="2026-03-26",
     )
-    
+
     if result is not None:
         print(result)
 
