@@ -7,6 +7,7 @@ from urllib.parse import quote
 
 import pandas as pd
 from bs4 import BeautifulSoup
+from selenium.common.exceptions import TimeoutException, WebDriverException
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from helpers.scraping_helper import setup_driver
@@ -35,6 +36,35 @@ SCMP_ALLOWED_SECTIONS: set[str] = {
     "explained",
     "topics",
 }
+
+
+# Shared Driver (reused across keywords within a run)
+#
+# A fresh Chrome instance was launched and quit on every single keyword call.
+# The driver is now created once and reused; only torn down on a
+# WebDriverException (session actually dead) so a crash doesn't cascade into
+# every remaining keyword, or explicitly via close_driver() at end of run.
+
+_driver_instance = None
+
+
+def _get_driver():
+    global _driver_instance
+    if _driver_instance is None:
+        _driver_instance = setup_driver()
+    return _driver_instance
+
+
+def close_driver() -> None:
+    """Quit the shared driver, if one was created. Call once at end of run."""
+    global _driver_instance
+    if _driver_instance is not None:
+        try:
+            _driver_instance.quit()
+        except Exception:
+            pass
+        _driver_instance = None
+
 
 # Scroll Helpers
 
@@ -172,7 +202,7 @@ def scrape_scmp(keyword: str, tanggal: str | None = None) -> pd.DataFrame | None
     print(f"URL     : {search_url}")
     print("=" * 60)
 
-    driver = setup_driver()
+    driver = _get_driver()
     try:
         print("[Scrape] Loading search page...")
         driver.get(search_url)
@@ -202,14 +232,23 @@ def scrape_scmp(keyword: str, tanggal: str | None = None) -> pd.DataFrame | None
         print(f"[Scrape] {len(df)} article(s) after date filter ({iso_date}).")
         return df if not df.empty else None
 
+    except TimeoutException as exc:
+        # Page/element just didn't load in time -- not a dead session, keep
+        # the driver alive for the next keyword.
+        print(f"[Scrape] Timeout waiting for page/element: {exc}")
+        return None
+
+    except WebDriverException as exc:
+        # Session actually dead (crash, disconnect) -- drop it so the next
+        # call gets a fresh browser instead of repeatedly failing on it.
+        print(f"[Scrape] Driver error, resetting session: {exc}")
+        close_driver()
+        return None
+
     except Exception as exc:
         print(f"[Scrape] Error: {exc}")
         traceback.print_exc()
         return None
-
-    finally:
-        print("[Scrape] Closing driver...")
-        driver.quit()
 
 
 # Public Entry Point

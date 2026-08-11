@@ -11,6 +11,7 @@ load_dotenv()
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+from helpers.scraping_helper import call_with_hard_timeout
 from helpers.storage_backend import storage
 from news.bioenergytimes import scrape_bioenergytimes
 from news.cnbc import main_google_news_cnbc
@@ -19,6 +20,7 @@ from news.energiesmedia import scrape_energiesmedia
 from news.oilprice import scrape_oilprice
 from news.spglobal_news import scrape_spglobal as scrape_news_sap
 from news.scmp import main_scmp
+from news.scmp import close_driver as close_scmp_driver
 from news.the_guardian import scrape_the_guardian as scrape_theguardian
 
 
@@ -334,6 +336,19 @@ def apply_global_exclude(df: pd.DataFrame) -> pd.DataFrame:
 
 # CORE SCRAPING LOGIC
 
+# Circuit breaker: skip a source for the rest of the run after this many
+# consecutive empty/failed attempts (rate-limited/down sources otherwise get
+# retried on every remaining keyword across all sheets for no benefit).
+CIRCUIT_BREAKER_THRESHOLD = 3
+_source_fail_streak: dict[str, int] = {}
+_source_disabled: set[str] = set()
+
+# Hard wall-clock deadline per source call. A source's own request timeout
+# doesn't cover a stuck DNS lookup -- generous enough for a legitimate
+# multi-request scrape, far below the scale of a hang that can eat hours.
+SCRAPE_FUNC_TIMEOUT_SECONDS = 120
+
+
 def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
     """
     Scrape all synonyms of a keyword from all configured sources and return
@@ -351,10 +366,18 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
         for scrape_func in sumber:
             raw_name    = scrape_func.__name__.replace("scrape_", "").replace("main_", "").upper()
             nama_sumber = SOURCE_NAME_MAP.get(raw_name, raw_name)
+
+            if nama_sumber in _source_disabled:
+                print(f"    Skip {nama_sumber} (circuit breaker: {CIRCUIT_BREAKER_THRESHOLD}x gagal/kosong beruntun).")
+                continue
+
             print(f"    Scraping from {nama_sumber}...")
 
             try:
-                data = scrape_func(kata, tanggal_filter)
+                data = call_with_hard_timeout(
+                    scrape_func, kata, tanggal_filter,
+                    timeout=SCRAPE_FUNC_TIMEOUT_SECONDS,
+                )
                 if isinstance(data, pd.DataFrame):
                     df_temp = data
                 elif data:
@@ -363,6 +386,7 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
                     df_temp = pd.DataFrame()
 
                 if not df_temp.empty:
+                    _source_fail_streak[nama_sumber] = 0
                     df_temp["source"] = nama_sumber
                     df_temp = standardize_format(df_temp)
                     df_temp = remove_empty_content(df_temp)
@@ -370,9 +394,15 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
                     print(f"    {len(df_temp)} article(s) from {nama_sumber}.")
                 else:
                     print(f"    No articles from {nama_sumber}.")
+                    _source_fail_streak[nama_sumber] = _source_fail_streak.get(nama_sumber, 0) + 1
 
             except Exception as exc:
                 print(f"    Failed to scrape {nama_sumber}: {exc}")
+                _source_fail_streak[nama_sumber] = _source_fail_streak.get(nama_sumber, 0) + 1
+
+            if _source_fail_streak.get(nama_sumber, 0) >= CIRCUIT_BREAKER_THRESHOLD:
+                _source_disabled.add(nama_sumber)
+                print(f"    {nama_sumber} dinonaktifkan buat sisa run ini ({CIRCUIT_BREAKER_THRESHOLD}x gagal/kosong beruntun).")
 
         if hasil_list:
             df_kata            = pd.concat(hasil_list, ignore_index=True)
@@ -399,6 +429,16 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
 # MAIN
 
 def main() -> None:
+    try:
+        _main_impl()
+    finally:
+        # Shared SCMP Selenium driver is reused across keywords for the
+        # whole run -- close it here so no Chrome process lingers after the
+        # script exits, success or failure either way.
+        close_scmp_driver()
+
+
+def _main_impl() -> None:
     """
     Run the full global news scraping workflow: authenticate, load existing
     OneDrive data, scrape each active sheet's keyword, merge results, and

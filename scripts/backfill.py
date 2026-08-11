@@ -258,12 +258,14 @@ def _run_news_loop(
     scrape_keyword  = mod.scrape_keyword
 
     from helpers.storage_backend import storage
-    # scrape_keyword (lokal orchestrator) reuses one Selenium driver per
+    # scrape_keyword (both orchestrators) reuses one Selenium driver per
     # source across the whole loop instead of relaunching per keyword --
     # close_driver() is a no-op if that source was never used, so calling
-    # both unconditionally is safe for the internasional orchestrator too.
+    # all three unconditionally is safe regardless of which orchestrator
+    # module this loop is processing.
     from news.bank_indonesia import close_driver as close_bank_indonesia_driver
     from news.cnbc_id import close_driver as close_cnbc_driver
+    from news.scmp import close_driver as close_scmp_driver
 
     dates       = date_range(args.start, args.end)
     last_done   = args.resume_from or progress.get(progress_key)
@@ -306,6 +308,7 @@ def _run_news_loop(
     finally:
         close_cnbc_driver()
         close_bank_indonesia_driver()
+        close_scmp_driver()
 
 
 def run_news_lokal(args, progress: dict) -> None:

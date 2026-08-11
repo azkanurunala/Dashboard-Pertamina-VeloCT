@@ -225,14 +225,16 @@ def main() -> None:
     try:
         _main_impl()
     finally:
-        # scrape_keyword (lokal orchestrator) reuses one Selenium driver per
+        # scrape_keyword (both orchestrators) reuses one Selenium driver per
         # source across the whole run instead of relaunching per keyword --
         # close here so no Chrome process lingers after the script exits.
         # close_driver() is a no-op if that source was never used.
         from news.bank_indonesia import close_driver as close_bank_indonesia_driver
         from news.cnbc_id import close_driver as close_cnbc_driver
+        from news.scmp import close_driver as close_scmp_driver
         close_cnbc_driver()
         close_bank_indonesia_driver()
+        close_scmp_driver()
 
 
 def _main_impl() -> None:
