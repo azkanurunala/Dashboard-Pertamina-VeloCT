@@ -258,6 +258,12 @@ def _run_news_loop(
     scrape_keyword  = mod.scrape_keyword
 
     from helpers.storage_backend import storage
+    # scrape_keyword (lokal orchestrator) reuses one Selenium driver per
+    # source across the whole loop instead of relaunching per keyword --
+    # close_driver() is a no-op if that source was never used, so calling
+    # both unconditionally is safe for the internasional orchestrator too.
+    from news.bank_indonesia import close_driver as close_bank_indonesia_driver
+    from news.cnbc_id import close_driver as close_cnbc_driver
 
     dates       = date_range(args.start, args.end)
     last_done   = args.resume_from or progress.get(progress_key)
@@ -268,34 +274,38 @@ def _run_news_loop(
         print(f"[{label}] Resuming from after: {last_done}")
     print(f"{'='*60}")
 
-    for date_idx, tanggal in enumerate(dates, 1):
-        if last_done and tanggal <= last_done:
-            continue
-
-        print(f"\n{'='*60}")
-        print(f"[{label}] {date_idx}/{len(dates)}: {tanggal}")
-        print(f"{'='*60}")
-
-        for sheet_name in ACTIVE_SHEETS:
-            keyword = SHEET_TO_KEYWORD.get(sheet_name)
-            if not keyword:
+    try:
+        for date_idx, tanggal in enumerate(dates, 1):
+            if last_done and tanggal <= last_done:
                 continue
 
-            print(f"  [{sheet_name}] keyword={keyword}")
-            try:
-                hasil = scrape_keyword(keyword, tanggal)
-                if hasil is not None and not getattr(hasil, "empty", True):
-                    storage.write_news_file({sheet_name: hasil})
-                    print(f"  -> saved {len(hasil)} rows")
-            except Exception as exc:
-                print(f"  -> ERROR: {exc}")
+            print(f"\n{'='*60}")
+            print(f"[{label}] {date_idx}/{len(dates)}: {tanggal}")
+            print(f"{'='*60}")
 
+            for sheet_name in ACTIVE_SHEETS:
+                keyword = SHEET_TO_KEYWORD.get(sheet_name)
+                if not keyword:
+                    continue
+
+                print(f"  [{sheet_name}] keyword={keyword}")
+                try:
+                    hasil = scrape_keyword(keyword, tanggal)
+                    if hasil is not None and not getattr(hasil, "empty", True):
+                        storage.write_news_file({sheet_name: hasil})
+                        print(f"  -> saved {len(hasil)} rows")
+                except Exception as exc:
+                    print(f"  -> ERROR: {exc}")
+
+                time.sleep(args.delay)
+
+            progress[progress_key] = tanggal
+            save_progress(progress)
+            print(f"[{label}] saved progress: {tanggal}")
             time.sleep(args.delay)
-
-        progress[progress_key] = tanggal
-        save_progress(progress)
-        print(f"[{label}] saved progress: {tanggal}")
-        time.sleep(args.delay)
+    finally:
+        close_cnbc_driver()
+        close_bank_indonesia_driver()
 
 
 def run_news_lokal(args, progress: dict) -> None:
