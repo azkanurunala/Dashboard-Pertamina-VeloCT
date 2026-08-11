@@ -41,7 +41,7 @@ Template: `.env.example`. Var aktif:
 | `EIA_API_KEY` | API EIA | `src/structured_data/migas_eia.py` |
 | `MS_CLIENT_ID`, `MS_CLIENT_SECRET`, `MS_TENANT_ID`, `MS_USER_EMAIL` | MS Graph OAuth | `src/helpers/onedrive_helper.py` |
 | `ONEDRIVE_FILE_PATH`, `ONEDRIVE_SENTIMENT_PATH`, `ONEDRIVE_DATA_PATH` | Path Excel OneDrive | `src/helpers/storage_backend.py`, `src/structured_data/*` |
-| `BPS_API_KEY` | API BPS — ⚠️ dipakai `src/news/bps.py` tapi **tidak ada** di `.env.example`/workflow; konfirmasi status scraper | `src/news/bps.py` |
+| `BPS_API_KEY` | API BPS | `src/news/bps.py` |
 | `GITHUB_TOKEN` / `GH_TOKEN` | Monitoring workflow (opsional, naikkan rate limit) | `scripts/check_workflow_schedules.py` |
 
 Var **tidak terpakai** (scaffold/legacy, boleh dibersihkan): `AI_TYPE`, `OPENAI_API_KEY`, `OPENAI_MODEL_NAME`, `GOOGLE_CREDENTIALS`, `SPREADSHEET_ID`, `SPREADSHEET_ID_STRUCTURE`.

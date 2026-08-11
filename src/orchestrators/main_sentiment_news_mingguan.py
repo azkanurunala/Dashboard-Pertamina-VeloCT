@@ -6,6 +6,8 @@ from datetime import datetime
 import pandas as pd
 from dotenv import load_dotenv
 
+load_dotenv()
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from helpers.storage_backend import storage
@@ -241,18 +243,18 @@ TOPICS: dict[str, dict] = {
                            "Saat merangkum, abaikan berita tentang nuklir yang hanya terkait senjata dan tidak berkaitan dengan pembangkit listrik."
     },
 
-    # "Crackspread_BBM": {
-    #     "target_sheets": ["(News)Crackspread BBM"],
-    #     "output_sheet": "(Summary)Crackspread BBM",
-    #     "has_data_sentiment": False,
-    #     "role_prompt": "analis pasar energi dan BBM di Indonesia",
-    #     "spesific_prompt": (
-    #         "Gunakan bahasa yang ringkas, faktual, dan netral tanpa kata hiperbolik seperti \"signifikan\", \"dahsyat\", atau sejenisnya. "
-    #         "Setiap poin ringkasan harus terdiri dari satu kalimat. "
-    #         "Fokus pada isu yang memengaruhi crack spread BBM seperti Pertamax, Pertalite, Solar, Avtur, harga minyak mentah, margin kilang, biaya produksi, distribusi, dan kebijakan harga BBM. "
-    #         "Kecualikan berita yang bersifat kasus hukum, kriminal, atau politik yang tidak berdampak langsung pada harga atau margin BBM."
-    #     ),
-    # },
+    "Crackspread_BBM": {
+        "target_sheets": ["(News)Crackspread BBM"],
+        "output_sheet": "(Summary)Crackspread BBM",
+        "has_data_sentiment": False,
+        "role_prompt": "analis pasar energi dan BBM di Indonesia",
+        "spesific_prompt": (
+            "Gunakan bahasa yang ringkas, faktual, dan netral tanpa kata hiperbolik seperti \"signifikan\", \"dahsyat\", atau sejenisnya. "
+            "Setiap poin ringkasan harus terdiri dari satu kalimat. "
+            "Fokus pada isu yang memengaruhi crack spread BBM seperti Pertamax, Pertalite, Solar, Avtur, harga minyak mentah, margin kilang, biaya produksi, distribusi, dan kebijakan harga BBM. "
+            "Kecualikan berita yang bersifat kasus hukum, kriminal, atau politik yang tidak berdampak langsung pada harga atau margin BBM."
+        ),
+    },
 
     "Crackspread Non-BBM": {
         "target_sheets": ["(News)Crackspread Non-BBM"],
@@ -293,26 +295,6 @@ TOPICS: dict[str, dict] = {
             "Fokus khusus pada volume produksi, ekspor-impor, kapasitas kilang, serta permintaan pasar untuk produk petrokimia seperti nafta, propilena, polipropilena, etilena, polietilena, dan produk turunan lainnya. "
             "Perhatikan faktor kapasitas produksi kilang, gangguan operasional (maintenance/turnaround), kebijakan ekspor-impor, serta pertumbuhan permintaan industri yang memengaruhi volume produk petrokimia. "
             "Kecualikan berita yang bersifat kasus hukum, kriminal, atau politik yang tidak berdampak langsung pada volume produk petrokimia."
-        ),
-    },
-
-    # Shares its news source with Crackspread_Non_BBM above (no dedicated
-    # "Volume Petrokimia" scraper exists) -- kept as a separate topic/output_sheet
-    # with a VOLUME-focused prompt (production/kapasitas, not harga/margin) so its
-    # Summary text doesn't just duplicate Crackspread_Non_BBM's for the same week
-    # (the original complaint, QA Revisi II, when this reused the same prompt).
-    "Volume_Petrokimia": {
-        "target_sheets": ["(News)Crackspread Non-BBM"],
-        "output_sheet": "(Summary)Volume Petrokimia",
-        "has_data_sentiment": False,
-        "role_prompt": "analis pasar energi dan produk kilang non-BBM di Indonesia",
-        "spesific_prompt": (
-            "Gunakan bahasa yang ringkas, faktual, dan netral tanpa kata hiperbolik seperti \"signifikan\", \"dahsyat\", atau sejenisnya. "
-            "Setiap poin ringkasan harus terdiri dari satu kalimat. "
-            "Fokus HANYA pada VOLUME/PRODUKSI produk petrokimia (LPG, nafta, propilena, butilena, sulfur, dan produk samping kilang lainnya): "
-            "kapasitas produksi, realisasi produksi, ekspor-impor, permintaan industri, dan distribusi. "
-            "JANGAN bahas harga, margin, atau crack spread -- itu di luar scope, sudah dicakup topik lain. "
-            "Kecualikan berita yang bersifat kasus hukum, kriminal, atau politik yang tidak berdampak langsung pada volume produk non-BBM."
         ),
     },
 }
@@ -818,5 +800,4 @@ def main() -> None:
 # Script Entry Point
 
 if __name__ == "__main__":
-    load_dotenv()
     main()

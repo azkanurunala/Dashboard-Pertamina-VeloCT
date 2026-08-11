@@ -951,7 +951,7 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
                         df_temp["matched_rule"] = matched_rules[mask].values
                         after = len(df_temp)
                         if before - after > 0:
-                            print(f"    CNBC relevance filter '{kata}': {before} -> {after} ({before - after} removed)")
+                            print(f"    CNBC relevance filter '{kata}': {before} → {after} ({before - after} removed)")
                             
                     hasil_list.append(df_temp)
                     print(f"    {len(df_temp)} article(s) from {nama_sumber}.")

@@ -6,6 +6,8 @@ from datetime import datetime
 import pandas as pd
 from dotenv import load_dotenv
 
+load_dotenv()
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from helpers.storage_backend import storage
@@ -15,7 +17,7 @@ from helpers.summary_helper import setup_gemini, summarize_all_news
 # Constants
 
 # Default start date used when no prior summary exists
-DEFAULT_START_DATE = datetime(2026, 4, 26)
+DEFAULT_START_DATE = datetime(2026, 4, 17)
 
 
 # Topic Configuration
@@ -24,19 +26,6 @@ TOPICS: dict[str, dict] = {
     "Indeks Volatilitas": {
         "target_sheets": ["(News)Indeks Volatilitas"],
         "output_sheet": "(Summary)Idx Volatilitas",
-        "role_prompt": "Ekonom",
-        "spesific_prompt": (
-            "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. "
-            "Fokus pada waktu, aktor utama, dan dampaknya secara global atau regional "
-            "dan berikan data kuantitatif bila ada. Gaya Bahasa: Factual dan profesional, "
-            "Tanpa opini atau spekulasi, Hindari tanda baca berlebihan (tidak gunakan "
-            "em dash/semicolon), dan exclude kasus-kasus hukum!"
-        ),
-    },
-
-    "Indeks Risiko Geopolitik": {
-        "target_sheets": ["(News)Indeks Risiko Geopolitik"],
-        "output_sheet": "(Summary)Idx Risiko Geopolitik",
         "role_prompt": "Ekonom",
         "spesific_prompt": (
             "ringkasan menggambarkan situasi pasar, kebijakan, atau keputusan utama. "
@@ -210,5 +199,4 @@ def main() -> None:
 # Script Entry Point
 
 if __name__ == "__main__":
-    load_dotenv()
     main()

@@ -7,8 +7,6 @@ Satu-satunya titik pemanggilan AI di seluruh repo: [src/helpers/summary_helper.p
 - `setup_gemini()` — baca `GEMINI_API_KEY` dari env, konfigurasi `google.generativeai`, kembalikan `GenerativeModel("gemini-2.5-flash-lite")` (model di-hardcode di `summary_helper.py:34`; varian `gemini-2.5-flash` tersedia sebagai komentar).
 - `summarize_all_news(model, ...)` — bangun prompt analis berbahasa Indonesia (ringkasan 3 poin per topik), panggil `model.generate_content()`, kembalikan teks ringkasan.
 
-> ⚠️ **Klarifikasi konfigurasi:** `.env.example` memuat `AI_TYPE=OPENAI`, `OPENAI_API_KEY`, `OPENAI_MODEL_NAME=gpt-4o` — **tidak ada kode yang membacanya**. Ini sisa scaffold rencana migrasi provider yang belum pernah dieksekusi. Provider produksi tetap Gemini; workflow CI hanya menginject `GEMINI_API_KEY`. Jangan bingung karenanya.
-
 ##### Alur Sentimen
 
 Tiga orchestrator memakai `setup_gemini` + `summarize_all_news`:
@@ -38,7 +36,7 @@ Nilai `topic` yang aktif saat ini: `(Summary)Nilai Tukar Rupiah`, `(Summary)IHSG
 
 Titik ubah minimal:
 
-1. **`src/helpers/summary_helper.py`** — ganti `setup_gemini()` dan pemanggilan `generate_content()` dengan SDK provider baru. Pertahankan signature `summarize_all_news(...)` agar 3 orchestrator tidak perlu berubah (mereka hanya `from helpers.summary_helper import setup_gemini, summarize_all_news`). Idealnya buat fungsi `setup_model()` yang branching pada `AI_TYPE`.
+1. **`src/helpers/summary_helper.py`** — ganti `setup_gemini()` dan pemanggilan `generate_content()` dengan SDK provider baru. Pertahankan signature `summarize_all_news(...)` agar 3 orchestrator tidak perlu berubah (mereka hanya `from helpers.summary_helper import setup_gemini, summarize_all_news`).
 2. **`requirements.txt`** — tambah SDK baru (mis. `openai`).
 3. **`.env` / `.env.example`** — isi `AI_TYPE`, `OPENAI_API_KEY`, `OPENAI_MODEL_NAME` (var-nya sudah disiapkan).
 4. **GitHub Secrets + workflow YAML** — tambahkan secret baru dan inject di blok `env:` `daily_morning.yml`, `daily_afternoon.yml`, `weekly.yml` (monthly tidak memanggil AI).

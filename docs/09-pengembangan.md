@@ -71,7 +71,6 @@ Lihat [06-ai-sentiment.md](06-ai-sentiment.md). Ganti model Gemini = satu baris 
 - **Error handling:** `try/except Exception` per step/scraper + `traceback.print_exc()`; jangan biarkan satu sumber mematikan pipeline. Exit code ≠ 0 hanya untuk kegagalan fatal seluruh pipeline.
 - **Idempoten:** semua tulis harus upsert-safe. Jangan pernah `INSERT` polos ke tabel ber-UNIQUE; selalu lewat `storage.write_*` yang memakai `upsert_df`.
 - **Nama kolom = kontrak dengan Power BI.** Mengubah nama/kapitalisasi kolom akan memutus Power Query dan view. Bila terpaksa, ubah serempak: scraper → DDL → view → M-code.
-- **Ejaan `crackspread` vs `crackspeed` disengaja** ([03-database.md](03-database.md)) — jangan diseragamkan.
 - **Import path:** scheduler menambah `src/` ke `sys.path`; modul saling import tanpa prefix `src.` (`from helpers.storage_backend import storage`). Jalankan script dari root repo.
 - **Branch:** kerja di `dev`, merge ke `main` untuk produksi (cron hanya membaca `main`). PR ke `main`.
 

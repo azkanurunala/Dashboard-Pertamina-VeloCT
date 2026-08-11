@@ -39,7 +39,7 @@ Pipeline pengumpulan data otomatis untuk dashboard energi Pertamina (Power BI). 
 |---|---|---|---|
 | [daily_morning.yml](.github/workflows/daily_morning.yml) | `0 1 * * 1-5` | Sen–Jum 08:00 | Berita lokal → CPO GAPKI → sentiment lokal harian |
 | [daily_afternoon.yml](.github/workflows/daily_afternoon.yml) | `0 7 * * 1-5` | Sen–Jum 14:00 | Berita internasional → sentiment intl → SAF daily |
-| [weekly.yml](.github/workflows/weekly.yml) | `0 1 * * 1` | Senin 08:00 | Sentiment mingguan → SAF/crackspeed weekly |
+| [weekly.yml](.github/workflows/weekly.yml) | `0 1 * * 1` | Senin 08:00 | Sentiment mingguan → SAF weekly |
 | [monthly.yml](.github/workflows/monthly.yml) | `0 1 1,12,15,28 * *` | Tgl 1/12/15/28 08:00 | EIA, ESDM OCR, biodiesel, bioetanol (tgl 1); petrokimia (tgl 12); WTE+IAEA (tgl 15); kapasitas EBT (tgl 28) |
 
 Catatan: cron GitHub Actions free tier biasa terlambat 3–5 jam dari jadwal. Cek kesehatan scheduler dengan `python scripts/check_workflow_schedules.py`.

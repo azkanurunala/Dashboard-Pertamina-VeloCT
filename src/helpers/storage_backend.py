@@ -41,8 +41,6 @@ SHEET_TO_TABLE: dict[str, str] = {
     "(Data)Crackspread_BBM":       "data_crackspread_bbm",
     "(Data)Crackspread_NON_BBM":   "data_crackspread_non_bbm",
     "(Data)Crackspread_BBM_YEAR":  "data_crackspread_bbm_year",
-    "(Data)Crackspeed_BBM":        "data_crackspeed_bbm",
-    "(Data)Crackspeed_NonBBM":     "data_crackspeed_non_bbm",
 }
 
 # Conflict columns used for ON CONFLICT upsert
@@ -63,8 +61,6 @@ SHEET_CONFLICT_COLS: dict[str, list[str]] = {
     "(Data)Crackspread_BBM":       ["year", "month"],
     "(Data)Crackspread_NON_BBM":   ["Year", "Month"],
     "(Data)Crackspread_BBM_YEAR":  ["year"],
-    "(Data)Crackspeed_BBM":        ["assessDate"],
-    "(Data)Crackspeed_NonBBM":     ["assessDate"],
 }
 
 # IAEA sheets that need wide↔long transform (rows=years, cols=countries in Excel)
