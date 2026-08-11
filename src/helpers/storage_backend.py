@@ -260,3 +260,4 @@ class _NeonBackend:
 storage: _OneDriveBackend | _NeonBackend = (
     _NeonBackend() if STORAGE_BACKEND == "neon" else _OneDriveBackend()
 )
+print(f"[Storage] Backend aktif: {STORAGE_BACKEND}")
