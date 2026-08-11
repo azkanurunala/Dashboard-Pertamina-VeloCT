@@ -111,7 +111,7 @@ def _get_articles_by_keyword(keyword: str) -> list[dict]:
                 if section not in GUARDIAN_ALLOWED_SECTIONS:
                     continue
             except (IndexError, AttributeError):
-                pass
+                continue
 
             print(f"\n[Match] {title}")
             print(f"        {link}")

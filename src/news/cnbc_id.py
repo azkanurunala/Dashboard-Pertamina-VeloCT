@@ -195,12 +195,13 @@ def parse_article_card(section) -> dict | None:
 
         # Filter berdasarkan kategori dari URL
         # Format: cnbcindonesia.com/{kategori}/{id}/{slug}
+        # Link non-CNBC (mis. halaman blokir Cloudflare) ditolak di sini juga.
         try:
             category = link.split("cnbcindonesia.com/")[1].split("/")[0]
             if category not in CNBC_ALLOWED_CATEGORIES:
                 return None
         except (IndexError, AttributeError):
-            pass
+            return None
 
         # Title: prefer <strong>, then heading tags, then the link itself
         title_tag = (
