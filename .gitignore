@@ -6,3 +6,9 @@ __pycache__/
 scripts/*.json
 scripts/backups/
 migration-docs.pdf
+<<<<<<< HEAD
+=======
+token.json
+token_cache.json
+*.token.json
+>>>>>>> 0914d4ba04ba0574c5aaecf55d32efdddda660a5
