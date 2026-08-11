@@ -110,7 +110,7 @@ def _extract_articles(page_source: str) -> list[dict]:
                 if section not in SCMP_ALLOWED_SECTIONS:
                     continue
             except (IndexError, AttributeError):
-                pass
+                continue
 
             title_tag = container.find("span", {"data-qa": "ContentHeadline-Headline"})
             if not title_tag:
