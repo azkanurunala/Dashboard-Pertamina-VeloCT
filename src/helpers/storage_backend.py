@@ -206,9 +206,11 @@ class _NeonBackend:
 
     def write_news_file(self, all_sheets: dict[str, pd.DataFrame]) -> None:
         from helpers import neon_helper
-        for sheet_name, df in all_sheets.items():
+        total = len(all_sheets)
+        for i, (sheet_name, df) in enumerate(all_sheets.items(), 1):
             if df.empty:
                 continue
+            print(f"  Menyimpan {sheet_name} ({i}/{total}, {len(df)} baris)...")
             df_out = df.copy()
             df_out["topic"] = sheet_name
             neon_helper.upsert_df("news_articles", df_out, ["url", "topic"])
@@ -225,9 +227,11 @@ class _NeonBackend:
 
     def write_sentiment_file(self, all_sheets: dict[str, pd.DataFrame]) -> None:
         from helpers import neon_helper
-        for sheet_name, df in all_sheets.items():
+        total = len(all_sheets)
+        for i, (sheet_name, df) in enumerate(all_sheets.items(), 1):
             if df.empty:
                 continue
+            print(f"  Menyimpan {sheet_name} ({i}/{total}, {len(df)} baris)...")
             df_out = df.copy()
             df_out["topic"] = sheet_name
             neon_helper.upsert_df("news_sentiment", df_out, ["topic", "Tanggal awal"])
