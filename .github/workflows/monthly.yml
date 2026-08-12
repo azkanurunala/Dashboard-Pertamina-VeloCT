@@ -52,4 +52,4 @@ jobs:
           pip install -r requirements-ocr.txt --extra-index-url https://download.pytorch.org/whl/cpu
 
       - name: Run monthly pipeline
-        run: python src/scheduler/scheduling_month.py
+        run: python -u src/scheduler/scheduling_month.py

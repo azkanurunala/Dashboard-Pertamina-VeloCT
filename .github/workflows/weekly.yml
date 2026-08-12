@@ -47,4 +47,4 @@ jobs:
         run: pip install -r requirements.txt psycopg2-binary
 
       - name: Run weekly pipeline
-        run: python src/scheduler/scheduling_week.py
+        run: python -u src/scheduler/scheduling_week.py

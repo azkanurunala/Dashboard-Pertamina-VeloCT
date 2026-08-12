@@ -47,4 +47,4 @@ jobs:
         run: pip install -r requirements.txt psycopg2-binary
 
       - name: Run daily afternoon pipeline
-        run: python src/scheduler/scheduling_day_afternoon.py
+        run: python -u src/scheduler/scheduling_day_afternoon.py
