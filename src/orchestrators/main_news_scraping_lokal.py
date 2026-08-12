@@ -911,8 +911,11 @@ def _find_matched_rule(row: pd.Series, terms: list[str]) -> str | None:
     return None
 
 # Circuit breaker: skip a source for the rest of the run after this many
-# consecutive empty/failed attempts (rate-limited/down sources otherwise get
-# retried on every remaining keyword across all sheets for no benefit).
+# consecutive real failures (exceptions/timeouts -- NOT empty results, since
+# many synonyms are niche and legitimately return nothing, and that shouldn't
+# count against a source that's working fine). Rate-limited/down sources
+# otherwise get retried on every remaining keyword across all sheets for no
+# benefit.
 CIRCUIT_BREAKER_THRESHOLD = 3
 _source_fail_streak: dict[str, int] = {}
 _source_disabled: set[str] = set()
@@ -944,7 +947,7 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
             nama_sumber = SOURCE_NAME_MAP.get(raw_name, raw_name)
 
             if nama_sumber in _source_disabled:
-                print(f"    Skip {nama_sumber} (circuit breaker: {CIRCUIT_BREAKER_THRESHOLD}x gagal/kosong beruntun).")
+                print(f"    Skip {nama_sumber} (circuit breaker: {CIRCUIT_BREAKER_THRESHOLD}x gagal beruntun).")
                 continue
 
             print(f"    Scraping from {nama_sumber}...")
@@ -983,8 +986,12 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
                     hasil_list.append(df_temp)
                     print(f"    {len(df_temp)} article(s) from {nama_sumber}.")
                 else:
+                    # No match for this synonym -- not a source failure. Many
+                    # synonyms are niche and legitimately return nothing; only
+                    # exceptions/timeouts should burn down the circuit breaker,
+                    # or a source with zero matches for the day gets wrongly
+                    # killed for every remaining sheet in the run.
                     print(f"    No articles from {nama_sumber}.")
-                    _source_fail_streak[nama_sumber] = _source_fail_streak.get(nama_sumber, 0) + 1
 
             except TimeoutError as exc:
                 print(f"    Failed to scrape {nama_sumber}: {exc}")
@@ -1003,7 +1010,7 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
 
             if _source_fail_streak.get(nama_sumber, 0) >= CIRCUIT_BREAKER_THRESHOLD:
                 _source_disabled.add(nama_sumber)
-                print(f"    {nama_sumber} dinonaktifkan buat sisa run ini ({CIRCUIT_BREAKER_THRESHOLD}x gagal/kosong beruntun).")
+                print(f"    {nama_sumber} dinonaktifkan buat sisa run ini ({CIRCUIT_BREAKER_THRESHOLD}x gagal beruntun).")
 
         if hasil_list:
             df_kata = pd.concat(hasil_list, ignore_index=True)
