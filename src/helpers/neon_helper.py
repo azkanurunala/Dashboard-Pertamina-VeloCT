@@ -14,7 +14,16 @@ NEON_DB_URL = os.getenv("NEON_DB_URL")
 
 @contextmanager
 def _get_conn():
-    conn = psycopg2.connect(NEON_DB_URL)
+    # connect_timeout bounds the TCP/TLS handshake; statement_timeout bounds
+    # any single query once connected -- psycopg2.connect() has no default
+    # for either, so a stalled Neon cold-start or a stuck query hangs forever
+    # with nothing to catch it (same class of bug as the earlier DNS hang in
+    # scraping_helper.py, just on the DB side).
+    conn = psycopg2.connect(
+        NEON_DB_URL,
+        connect_timeout=15,
+        options="-c statement_timeout=120000",
+    )
     try:
         yield conn
         conn.commit()
