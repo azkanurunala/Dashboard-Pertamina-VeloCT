@@ -336,12 +336,21 @@ def apply_global_exclude(df: pd.DataFrame) -> pd.DataFrame:
 
 # CORE SCRAPING LOGIC
 
-# Circuit breaker: skip a source for the rest of the run after this many
-# consecutive empty/failed attempts (rate-limited/down sources otherwise get
-# retried on every remaining keyword across all sheets for no benefit).
+# Circuit breaker: skip a source after this many consecutive real failures
+# (exceptions/timeouts -- NOT empty results, since many synonyms are niche
+# and legitimately return nothing, and that shouldn't count against a source
+# that's working fine). Rate-limited/down sources otherwise get retried on
+# every remaining keyword across all sheets for no benefit.
+#
+# A disabled source isn't dead forever -- after CIRCUIT_BREAKER_COOLDOWN_SECONDS
+# it gets one probe retry. Success clears the streak and re-enables it fully;
+# another real failure just pushes the cooldown out again. Without this, a
+# source down for 10 minutes (deploy, transient block) would stay skipped for
+# the rest of a multi-hour run even after it recovered.
 CIRCUIT_BREAKER_THRESHOLD = 3
+CIRCUIT_BREAKER_COOLDOWN_SECONDS = 900
 _source_fail_streak: dict[str, int] = {}
-_source_disabled: set[str] = set()
+_source_disabled_at: dict[str, float] = {}
 
 # Hard wall-clock deadline per source call. A source's own request timeout
 # doesn't cover a stuck DNS lookup -- generous enough for a legitimate
@@ -367,9 +376,13 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
             raw_name    = scrape_func.__name__.replace("scrape_", "").replace("main_", "").upper()
             nama_sumber = SOURCE_NAME_MAP.get(raw_name, raw_name)
 
-            if nama_sumber in _source_disabled:
-                print(f"    Skip {nama_sumber} (circuit breaker: {CIRCUIT_BREAKER_THRESHOLD}x gagal/kosong beruntun).")
-                continue
+            disabled_at = _source_disabled_at.get(nama_sumber)
+            if disabled_at is not None:
+                cooldown_left = CIRCUIT_BREAKER_COOLDOWN_SECONDS - (time.time() - disabled_at)
+                if cooldown_left > 0:
+                    print(f"    Skip {nama_sumber} (circuit breaker: {CIRCUIT_BREAKER_THRESHOLD}x gagal beruntun, cooldown {int(cooldown_left / 60)}m lagi).")
+                    continue
+                print(f"    Cooldown {nama_sumber} selesai, coba lagi...")
 
             print(f"    Scraping from {nama_sumber}...")
 
@@ -387,14 +400,23 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
 
                 if not df_temp.empty:
                     _source_fail_streak[nama_sumber] = 0
+                    _source_disabled_at.pop(nama_sumber, None)
                     df_temp["source"] = nama_sumber
                     df_temp = standardize_format(df_temp)
                     df_temp = remove_empty_content(df_temp)
                     hasil_list.append(df_temp)
                     print(f"    {len(df_temp)} article(s) from {nama_sumber}.")
                 else:
+                    # No match for this synonym -- not a source failure. Many
+                    # synonyms are niche and legitimately return nothing; only
+                    # exceptions/timeouts should burn down the circuit breaker,
+                    # or a source with zero matches for the day gets wrongly
+                    # killed for every remaining sheet in the run. A clean
+                    # empty response also proves the source itself is up, so
+                    # it clears a pending cooldown same as a real match would.
+                    _source_fail_streak[nama_sumber] = 0
+                    _source_disabled_at.pop(nama_sumber, None)
                     print(f"    No articles from {nama_sumber}.")
-                    _source_fail_streak[nama_sumber] = _source_fail_streak.get(nama_sumber, 0) + 1
 
             except TimeoutError as exc:
                 print(f"    Failed to scrape {nama_sumber}: {exc}")
@@ -410,8 +432,8 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
                 _source_fail_streak[nama_sumber] = _source_fail_streak.get(nama_sumber, 0) + 1
 
             if _source_fail_streak.get(nama_sumber, 0) >= CIRCUIT_BREAKER_THRESHOLD:
-                _source_disabled.add(nama_sumber)
-                print(f"    {nama_sumber} dinonaktifkan buat sisa run ini ({CIRCUIT_BREAKER_THRESHOLD}x gagal/kosong beruntun).")
+                _source_disabled_at[nama_sumber] = time.time()
+                print(f"    {nama_sumber} dinonaktifkan {CIRCUIT_BREAKER_COOLDOWN_SECONDS // 60}m ({CIRCUIT_BREAKER_THRESHOLD}x gagal beruntun).")
 
         if hasil_list:
             df_kata            = pd.concat(hasil_list, ignore_index=True)
