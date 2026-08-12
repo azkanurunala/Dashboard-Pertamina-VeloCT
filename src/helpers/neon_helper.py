@@ -4,6 +4,7 @@ from contextlib import contextmanager
 import numpy as np
 import pandas as pd
 import psycopg2
+from psycopg2.extras import execute_values
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -63,7 +64,6 @@ def upsert_df(table_name: str, df: pd.DataFrame, conflict_cols: list[str]) -> in
 
     cols         = list(df.columns)
     quoted_cols  = ", ".join(f'"{c}"' for c in cols)
-    placeholders = ", ".join(["%s"] * len(cols))
     conflict_str = ", ".join(f'"{c}"' for c in conflict_cols)
     update_cols  = [c for c in cols if c not in conflict_cols]
 
@@ -74,9 +74,13 @@ def upsert_df(table_name: str, df: pd.DataFrame, conflict_cols: list[str]) -> in
         on_conflict = f"ON CONFLICT ({conflict_str}) DO NOTHING"
 
     safe = table_name.replace('"', "")
-    sql  = (
+    # VALUES %s is a single placeholder execute_values expands into
+    # (row1), (row2), ... -- one INSERT per page instead of psycopg2's
+    # default executemany, which round-trips to the DB once per row and
+    # made saving tens of thousands of scraped rows take tens of minutes.
+    sql = (
         f'INSERT INTO "{safe}" ({quoted_cols}) '
-        f"VALUES ({placeholders}) "
+        f"VALUES %s "
         f"{on_conflict}"
     )
 
@@ -87,7 +91,7 @@ def upsert_df(table_name: str, df: pd.DataFrame, conflict_cols: list[str]) -> in
 
     with _get_conn() as conn:
         with conn.cursor() as cur:
-            cur.executemany(sql, rows)
+            execute_values(cur, sql, rows)
 
     return len(rows)
 
