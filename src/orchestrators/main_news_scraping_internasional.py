@@ -396,6 +396,15 @@ def scrape_keyword(keyword: str, tanggal_filter: str) -> pd.DataFrame:
                     print(f"    No articles from {nama_sumber}.")
                     _source_fail_streak[nama_sumber] = _source_fail_streak.get(nama_sumber, 0) + 1
 
+            except TimeoutError as exc:
+                print(f"    Failed to scrape {nama_sumber}: {exc}")
+                _source_fail_streak[nama_sumber] = _source_fail_streak.get(nama_sumber, 0) + 1
+                # The abandoned thread may still be driving the shared Selenium
+                # session -- drop it so the next call gets a fresh browser
+                # instead of contending with a possibly still-running one.
+                if nama_sumber == "SCMP":
+                    close_scmp_driver()
+
             except Exception as exc:
                 print(f"    Failed to scrape {nama_sumber}: {exc}")
                 _source_fail_streak[nama_sumber] = _source_fail_streak.get(nama_sumber, 0) + 1
