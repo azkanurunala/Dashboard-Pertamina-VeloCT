@@ -15,6 +15,15 @@ REQUEST_TIMEOUT = 15
 # Chrome window size used for all Selenium sessions
 CHROME_WINDOW_SIZE = "1920,1080"
 
+# Selenium's own page-load deadline. Without this, driver.get() can hang past
+# call_with_hard_timeout's join() -- that only stops the orchestrator from
+# waiting, it can't kill the browser thread, which keeps driving the *shared*
+# driver in the background. The next keyword then reuses that same driver
+# while the old call is still mid-navigation, wedging the ChromeDriver session
+# for every call after it. Bounding navigation here means Selenium raises
+# TimeoutException (already handled by callers) well before that can happen.
+PAGE_LOAD_TIMEOUT_SECONDS = 90
+
 # User-agent string passed to Chrome to mimic a real browser
 CHROME_USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -47,6 +56,7 @@ def setup_driver(headless: bool = True) -> webdriver.Chrome:
 
     try:
         driver = webdriver.Chrome(options=chrome_options)
+        driver.set_page_load_timeout(PAGE_LOAD_TIMEOUT_SECONDS)
         return driver
     except Exception as exc:
         print(f"[Driver] Failed to initialise ChromeDriver: {exc}")
